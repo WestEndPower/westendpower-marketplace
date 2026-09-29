@@ -30,6 +30,13 @@ button,input,select{font:inherit}button{cursor:pointer}button,a,input,select,sum
 #market-loading{max-width:900px;margin:80px auto;padding:30px;text-align:center;border:1px solid var(--line);border-radius:12px}
 @media(max-width:1120px){.market-grid{grid-template-columns:1fr}.market-searchbox{min-width:300px}.market-shop-nav{align-items:flex-start;flex-direction:column}}
 @media(max-width:760px){.market-shell{padding:10px}.market-header{align-items:stretch;flex-direction:column}.market-searchbox{min-width:0;width:100%}.market-layout{grid-template-columns:1fr}.market-sidebar{position:static}.market-sidebar details:not([open]) .market-checks{display:none}.market-grid{grid-template-columns:1fr}.market-card-body{grid-template-columns:1fr}.market-top{margin:10px 0}.market-results{top:4px;flex-wrap:wrap}.market-results-actions{width:100%;justify-content:flex-end}.market-branding img{max-width:160px}.market-specs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.market-notice{width:min(480px,calc(100vw - 32px));max-height:calc(100vh - 32px);padding:0;border:0;border-radius:14px;box-shadow:0 20px 70px rgba(0,0,0,.28);color:var(--ink)}
+.market-notice::backdrop{background:rgba(16,28,20,.65)}
+.market-notice-inner{padding:25px}
+.market-notice h2{margin:0 0 12px;font-size:24px}
+.market-notice p{margin:0 0 18px;line-height:1.5}
+.market-notice button{width:100%;min-height:46px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-weight:800}
 </style>
 </head>
 <body>
@@ -95,6 +102,27 @@ button,input,select{font:inherit}button{cursor:pointer}button,a,input,select,sum
     <div id="market-compare-content" class="market-compare-content"></div>
   </dialog>
 </div>
+
+<dialog id="market-notice" class="market-notice" aria-labelledby="market-notice-title" aria-describedby="market-notice-text">
+  <div class="market-notice-inner">
+    <h2 id="market-notice-title">Marketplace Preview</h2>
+    <p id="market-notice-text">The West End Marketplace is under construction. Product information, pricing, availability and financing offers are being updated. Please contact West End Power to confirm details before ordering.</p>
+    <button id="market-notice-continue" type="button">Continue to Marketplace</button>
+  </div>
+</dialog>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const notice = document.getElementById('market-notice');
+  const continueButton = document.getElementById('market-notice-continue');
+  let seen = false;
+  try { seen = sessionStorage.getItem('westend-marketplace-notice-seen') === '1'; } catch (_) {}
+  if (!seen && typeof notice.showModal === 'function') notice.showModal();
+  continueButton.addEventListener('click', function () {
+    try { sessionStorage.setItem('westend-marketplace-notice-seen', '1'); } catch (_) {}
+    notice.close();
+  });
+});
+</script>
 <script src="brand-settings.js"></script>
 <script src="universal/marketplace.js"></script>
 </body>
