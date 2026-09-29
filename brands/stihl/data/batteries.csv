@@ -1,0 +1,18 @@
+SKU,Description,Active,BrandID,Model,MSRP,SalePrice,Category,ImageURL,ProductURL,SortOrder,System,FinancingEligible,QtyDanbury,QtyNewMilford,BatteryID,Voltage,MaxVoltage,Ah,Wh,Weight,WeightUnit
+EA02 400 6501,AS2 Battery,T,STIHL,AS 2,64.99,,Batteries,,,793,Battery,T,0,1,AS2,10.8,12,2.1,28,0.44,lb.
+4520 400 6531,AK10 Battery ,T,STIHL,AK 10,0,,Batteries,,,795,Battery,T,0,1,AK10,36,40,2,72,1.76,lb.
+4520 400 6536,AK20 Battery,T,STIHL,AK 20,149.99,,Batteries,,,796,Battery,T,0,1,AK20,36,40,4,144,2.65,lb.
+4520 400 6546,AK30.0S Battery,T,STIHL,AK 30 S,171.99,,Batteries,,,797,Battery,T,0,1,AK30S,36,40,5,180,2.87,lb.
+4850 400 6566,AP200S Battery,T,STIHL,AP 200 S,203.99,,Batteries,,,800,Battery,T,0,1,AP200S,,,,,,
+4850 400 6586,AP300S Battery,T,STIHL,AP 300 S,320.99,,Batteries,,,801,Battery,T,0,1,AP300S,36,40,7.2,281,3.97,lb.
+4850 400 6526,AP20.1 Battery,T,STIHL,AP 20,139.99,,Batteries,,,798,Battery,T,0,0,AP20.1,36,40,3.9,144,2.9,lb.
+4850 400 6591,AP30.1 Battery,T,STIHL,AP 30,219.99,,Batteries,,,799,Battery,T,0,0,AP30.1,36,40,7.2,270,4,lb.
+EA13 400 6501,AP100.0 P Battery,T,STIHL,AP 100 P,149.99,,Batteries,,,802,Battery,T,0,0,AP100P,36,40,2.9,111,2,lb.
+EA13 400 6511,AP200.0 P Battery,T,STIHL,AP 200 P,199.99,,Batteries,,,803,Battery,T,0,0,AP200P,36,40,5.8,222,3.1,lb.
+EA13 400 6522,AP300.0 P Battery,T,STIHL,AP 300 P,329.99,,Batteries,,,804,Battery,T,0,0,AP300P,36,40,8.7,333,4.2,lb.
+EA13 400 6521,AP300.0 P C Battery,T,STIHL,AP 300 PC,349.99,,Batteries,,,805,Battery,T,0,0,AP300PC,36,40,8.7,333,4.2,lb.
+4871 400 6511,AR2000L Battery,T,STIHL,AR 2000 L,941.99,,Batteries,,,806,Battery,T,0,0,AR2000L,36,40,27.4,1015,16.31,lb.
+4871 400 6521,AR3000L Battery,T,STIHL,AR 2000L,1390.99,,Batteries,,,807,Battery,T,0,1,AR3000L,36,40,41.2,1520,20.94,lb.
+4520 400 6516,AK10 Battery ,T,STIHL,AK 10,99.99,,Batteries,,,794,Battery,T,0,0,,,,,,,
+7010 200 0010,AR2000L Backpack Battery Kit,T,STIHL,AR 2000 L,1229.99,,Batteries,,,808,Battery,T,0,0,,,,,,,
+7010 200 0011,AR3000L Backpack Battery Kit,T,STIHL,AR 3000 L,1639.99,,Batteries,,,809,Battery,T,0,1,,,,,,,

@@ -1,0 +1,11 @@
+SKU,Description,Active,BrandID,MSRP,SalePrice,ImageURL,ProductURL,SortOrder,System,FinancingEligible,QtyDanbury,QtyNewMilford,ChargerID,ChargerName,Voltage,Weight,WeightUnit,OutputAmps,InputWatts
+EA03 430 2502,AL1 Charger,T,STIHL,64.99,,,,957,AS,T,,,AL1,AL1 Charger,120,,,,
+EA03 430 5702,AL5 Battery Charger,T,STIHL,74.99,,,,958,AS,T,,,AL5,AL5 Battery Charger,120,,,,
+EA11 430 5702,AL5-2 High Speed Charger,T,STIHL,106.99,,,,962,AS,T,,,AL5-2,AL5-2 High Speed Charger,120,,,,
+4850 430 2522,AL101 Charger,T,STIHL,64.99,,,,955,AK|AR,T,,,AL101,AL101 Charger,120,,,,
+EA09 430 5502,AL301 Rapid Charger with Cooling Fan,T,STIHL,117.99,,,,960,AK|AP|AR,T,,,AL301,AL301 Rapid Charger with Cooling Fan,120,,,,
+EA09 430 5702,AL501 High-Speed Charger with Cooling Fan,T,STIHL,192.99,,,,838,AK|AP|AR,T,,,AL501,AL501 High-Speed Charger with Cooling Fan,120,,,,
+EA04 430 5502,AL301-4 Multi-Charger,T,STIHL,374.99,,,,839,AP,T,,,AL301-4,AL301-4 Multi-Charger,120,,,,
+EA10 430 5502,AL1602 Ultra Rapid Charger,T,STIHL,649.99,,,,961,AP,T,,,AL1602,AL1602 Ultra Rapid Charger,,,,,
+WA04 430 2505,,,,,,,,,,,,,,,,,,,
+WA04 430 5500,,,,,,,,,,,,,,,,,,,
