@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -38,20 +38,336 @@ button,input,select{font:inherit}button{cursor:pointer}button,a,input,select,sum
 .market-notice p{margin:0 0 18px;line-height:1.5}
 .market-notice a{color:var(--accent2);font-weight:800}
 .market-notice button{width:100%;min-height:46px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-weight:800}
+
+.market-tractor-nav-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:10px;
+}
+.market-tractor-nav{min-width:110px}
+.market-tractor-filter-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px 16px;
+  margin-top:10px;
+}
+.market-tractor-filter-group{
+  min-width:0;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#fff;
+}
+.market-tractor-filter-group>strong,
+.market-tractor-detail>strong,
+.market-tractor-secondary>strong,
+.market-tractor-two-col>div>strong{
+  display:block;
+  margin-bottom:7px;
+  font-size:13px;
+  font-weight:900;
+}
+.market-tractor-detail{
+  margin:8px 0 10px;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#fff;
+}
+.market-tractor-secondary{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid var(--line);
+}
+.market-tractor-two-col{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:10px;
+}
+.market-tractor-packages{
+  margin-top:10px;
+}
+@media(max-width:760px){
+  .market-tractor-filter-grid,
+  .market-tractor-two-col{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+
+<style id="compact-tractor-filter-spacing-fix">
+/* Compact Tractor filters: remove dead-space panels */
+.market-tractor-filter-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  column-gap:24px;
+  row-gap:10px;
+  margin-top:8px;
+}
+
+.market-tractor-filter-group{
+  border:0 !important;
+  border-radius:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  min-width:0;
+}
+
+.market-tractor-filter-group > strong{
+  display:block;
+  margin:0 0 4px !important;
+}
+
+.market-tractor-nav-row{
+  margin:0 0 8px !important;
+}
+
+.market-tractor-detail{
+  margin:4px 0 8px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+}
+
+.market-tractor-secondary{
+  margin-top:6px !important;
+  padding-top:4px !important;
+  border-top:0 !important;
+}
+
+.market-tractor-two-col{
+  margin-top:6px !important;
+  gap:12px !important;
+}
+
+.market-tractor-packages{
+  margin-top:10px !important;
+}
+
+.market-tractor-filter-group .market-chip-row{
+  margin:0 !important;
+}
+
+@media(max-width:760px){
+  .market-tractor-filter-grid{
+    grid-template-columns:1fr;
+    row-gap:8px;
+  }
+}
+</style>
+
+<style id="marketplace-simple-filter-layout">
+
+  #market-shop-tabs,
+  #market-power-wrap{
+    display:none !important;
+  }
+
+  .market-primary-filter-row{
+    display:grid;
+    grid-template-columns:minmax(260px,1fr) minmax(420px,2fr);
+    gap:20px;
+    align-items:start;
+    margin:0 0 8px;
+  }
+
+  .market-primary-left{
+    text-align:left;
+  }
+
+  .market-primary-right{
+    text-align:right;
+  }
+
+  .market-primary-right .market-compact-buttons{
+    justify-content:flex-end;
+  }
+
+  .market-compact-heading{
+    font-size:12px;
+    font-weight:800;
+    line-height:1.15;
+    margin:0 0 5px;
+    text-transform:uppercase;
+  }
+
+  .market-compact-buttons{
+    display:flex;
+    flex-wrap:wrap;
+    gap:5px;
+  }
+
+  .market-b-filter-tabs{
+    display:flex;
+    flex-wrap:wrap;
+    gap:5px;
+  }
+
+  @media (max-width:760px){
+    .market-primary-filter-row{
+      grid-template-columns:1fr;
+      gap:8px;
+    }
+
+    .market-primary-right{
+      text-align:left;
+    }
+
+    .market-primary-right .market-compact-buttons{
+      justify-content:flex-start;
+    }
+  }
+
+</style>
+
+<style id="marketplace-layout-lock">
+
+  /* ======================================================
+     FIRST ROW
+     Models / Series LEFT
+     Packages / Promos RIGHT
+     ====================================================== */
+
+  .market-primary-filter-row{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) !important;
+    width:100% !important;
+    gap:16px !important;
+    align-items:start !important;
+    margin:0 0 8px !important;
+  }
+
+  .market-primary-left{
+    min-width:0 !important;
+    text-align:left !important;
+    justify-self:start !important;
+  }
+
+  .market-primary-left .market-compact-buttons{
+    justify-content:flex-start !important;
+  }
+
+  .market-primary-right{
+    min-width:0 !important;
+    width:100% !important;
+    text-align:right !important;
+    justify-self:stretch !important;
+  }
+
+  .market-primary-right .market-compact-heading{
+    text-align:right !important;
+  }
+
+  .market-primary-right .market-compact-buttons{
+    display:flex !important;
+    flex-wrap:wrap !important;
+    justify-content:flex-end !important;
+    width:100% !important;
+  }
+
+
+  /* ======================================================
+     SERIES / MODEL OPTIONS
+     ALWAYS THEIR OWN FULL-WIDTH ROW
+     ====================================================== */
+
+  .market-series-options,
+  .market-model-options{
+    display:block !important;
+    width:100% !important;
+    clear:both !important;
+    text-align:left !important;
+    margin-top:6px !important;
+  }
+
+  .market-series-options .market-compact-buttons,
+  .market-model-options .market-compact-buttons{
+    justify-content:flex-start !important;
+  }
+
+
+  /* ======================================================
+     NARROW SEARCH
+     ALWAYS NEW FULL-WIDTH ROW
+     ====================================================== */
+
+  .market-narrow-search{
+    display:block !important;
+    position:relative !important;
+    float:none !important;
+    clear:both !important;
+    width:100% !important;
+    max-width:none !important;
+    flex:none !important;
+    margin:8px 0 0 !important;
+    padding:0 !important;
+    text-align:left !important;
+  }
+
+  .market-narrow-search .market-compact-heading{
+    display:block !important;
+    width:100% !important;
+    text-align:left !important;
+  }
+
+  .market-b-filter-tabs{
+    display:flex !important;
+    width:100% !important;
+    flex-wrap:wrap !important;
+    justify-content:flex-start !important;
+    gap:5px !important;
+  }
+
+  .market-b-filter-values{
+    display:block !important;
+    width:100% !important;
+    clear:both !important;
+    margin-top:6px !important;
+  }
+
+
+  /* ======================================================
+     TABLET / PHONE
+     KEEP PACKAGE SIDE RIGHT-ALIGNED
+     ====================================================== */
+
+  @media (max-width:760px){
+
+    .market-primary-filter-row{
+      grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr) !important;
+      gap:8px !important;
+    }
+
+    .market-primary-right{
+      text-align:right !important;
+    }
+
+    .market-primary-right .market-compact-heading{
+      text-align:right !important;
+    }
+
+    .market-primary-right .market-compact-buttons{
+      justify-content:flex-end !important;
+    }
+
+  }
+
 </style>
 </head>
 <body>
-<div id="market-loading">Loading product catalog…</div>
+<div id="market-loading">Loading product catalogâ€¦</div>
 <div id="market-app" class="market-shell" hidden>
   <header class="market-header">
     <div class="market-branding">
       <a class="market-home-link" href="https://www.westendpower.com/" aria-label="West End Power home">
         <img id="market-dealer-logo" hidden alt="">
       </a>
-      <div><h1>Welcome to West End Power Marketplace</h1><p id="market-dealer-name" hidden></p></div>
+      <div><h1>West End Marketplace</h1><p id="market-dealer-name" hidden></p></div>
     </div>
     <div class="market-searchbox">
-      <input id="market-search" type="search" placeholder="Search model, category, specification…">
+      <input id="market-search" type="search" placeholder="Search model, category, specificationâ€¦">
       <button id="market-clear" class="market-clear" type="button">Clear</button>
     </div>
   </header>
@@ -99,7 +415,7 @@ button,input,select{font:inherit}button{cursor:pointer}button,a,input,select,sum
   </div>
 
   <dialog id="market-compare-dialog">
-    <div class="market-dialog-head"><h2>Compare Visible Products</h2><button id="market-compare-close" type="button" aria-label="Close">×</button></div>
+    <div class="market-dialog-head"><h2>Compare Visible Products</h2><button id="market-compare-close" type="button" aria-label="Close">Ã—</button></div>
     <div id="market-compare-content" class="market-compare-content"></div>
   </dialog>
 </div>
