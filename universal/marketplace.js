@@ -1555,9 +1555,19 @@
         '<section class="market-card-left">'+
           '<div class="market-image-wrap">'+
             offerOverlay(f)+
-            '<a class="market-image" href="'+esc(first.productUrl||f.productUrl||'#')+'" target="_blank" rel="noopener">'+
-            (f.image?'<img src="'+esc(f.image)+'" alt="'+esc(f.brand+' '+f.model)+'" loading="lazy">':'<span>Image Coming Soon</span>')+
-            '</a>'+
+            (
+              (first.productUrl||f.productUrl)
+                ? (
+                  '<a class="market-image" href="'+esc(first.productUrl||f.productUrl)+'" target="_blank" rel="noopener">'+
+                  (f.image?'<img src="'+esc(f.image)+'" alt="'+esc(f.brand+' '+f.model)+'" loading="lazy">':'<span>Image Coming Soon</span>')+
+                  '</a>'
+                )
+                : (
+                  '<div class="market-image">'+
+                  (f.image?'<img src="'+esc(f.image)+'" alt="'+esc(f.brand+' '+f.model)+'" loading="lazy">':'<span>Image Coming Soon</span>')+
+                  '</div>'
+                )
+            )+
           '</div>'+
           ((first.productUrl||f.productUrl)?'<a class="market-product-details" href="'+esc(first.productUrl||f.productUrl)+'" target="_blank" rel="noopener">View Details â†—</a>':'')+
         '</section>'+
@@ -1980,3 +1990,4 @@
 
   document.addEventListener('DOMContentLoaded',init);
 })();
+
