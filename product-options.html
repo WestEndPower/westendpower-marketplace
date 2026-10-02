@@ -100,7 +100,7 @@ async function init(){
  else {$('return-link').href='./marketplace.html';$('return-link').textContent='← Return to '+category}
  if(!sku){$('app').innerHTML='<section class="section"><h2>No product selected</h2><p>Return to the product page and choose View Options.</p></section>';return}
  try{
-  const brands=['billygoat','toro'].includes(requestedBrand)?[requestedBrand]:(requestedBrand==='yanmar'||requestedBrand==='stihl'?[requestedBrand]:['stihl','yanmar']);
+  const brands=['billygoat','toro','honda'].includes(requestedBrand)?[requestedBrand]:(requestedBrand==='yanmar'||requestedBrand==='stihl'?[requestedBrand]:['stihl','yanmar']);
   let root='';
   for(const brand of brands){const candidate='brands/'+brand+'/data/';const rows=await csv(candidate+'products.csv');if(rows.some(x=>clean(x.SKU)===sku)){root=candidate;break}}
   if(!root)throw new Error('Product SKU not found: '+sku);
