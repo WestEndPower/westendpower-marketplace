@@ -18,7 +18,8 @@ window.WESTEND_BRANDS = {
     id: "TORO",
     name: "Toro",
     dataRoot: "brands/toro/data/"
-  }
+  },
+  BILLYGOAT: { id: "BILLYGOAT", name: "Billy Goat", dataRoot: "brands/billygoat/data/" }
 };
 
 window.WESTEND_ACTIVE_BRAND = "YANMAR";
