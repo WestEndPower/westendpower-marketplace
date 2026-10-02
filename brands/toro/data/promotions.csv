@@ -1,0 +1,2 @@
+﻿PromotionID,QualifyingSKU,Active,PromotionGroup,PromoName,PromotionType,DisplayLabel,StartDate,EndDate,QualifyingCategory,QualifyingBrandID,QualifyingSubCategory,QualifyingSeries,QualifyingSystem,QualifyingQty,MinimumSpend,RewardSKU,RewardQty,RewardType,RewardAmount,RewardPercent,Stackable,ExcludeFromBid,ExcludeFromFleet,ExcludeFinancing,SortOrder,Notes
+FreeBatterywithAPSeriesPurchase,BA02 211 0000 US,F,FREE-BATTERY,Free Battery Promo,FreeItem,Free Battery with Purchase,2026-07-01,2026-07-31,,STIHL,,,AP,1,,4850 400 6586,1,FreeItem,,,F,T,T,T,1,Limited To Availability

@@ -1545,7 +1545,7 @@
     const specs=familySpecs(f).slice(0,4);
     const description=[f.power,f.subcategory].filter(Boolean).join(' - ');
     const equipmentMode=state.shopMode==='equipment';
-    const optionsUrl='product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+(f.brand==='BILLYGOAT'?'&brand=BILLYGOAT':'');
+    const optionsUrl='product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+(['BILLYGOAT','TORO'].includes(f.brand)?'&brand='+encodeURIComponent(f.brand):'');
     const runtimeUrl='index.html?category='+encodeURIComponent(f.category)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';
     return '<article class="market-card" data-key="'+esc(f.key)+'">'+
       '<header class="market-card-head"><h3><strong>'+esc(f.model)+'</strong>'+(description?'<span>'+esc(description)+'</span>':'')+'</h3>'+
@@ -1938,7 +1938,7 @@
   function marketplaceBrandProfiles(){
     const brands=window.WESTEND_BRANDS||{};
 
-    return ['STIHL','YANMAR','BILLYGOAT']
+    return ['STIHL','YANMAR','BILLYGOAT','TORO']
       .map(id=>brands[id])
       .filter(Boolean);
   }
