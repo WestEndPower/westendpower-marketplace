@@ -48,7 +48,8 @@
     const n = Number(clean(v).replace(/[$,%]/g,''));
     return Number.isFinite(n) ? n : 0;
   };
-  const money = v => Number(v||0).toLocaleString('en-US',{style:'currency',currency:'USD'});
+  const moneyFormatter = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'});
+  const money = v => moneyFormatter.format(Number(v||0));
   const esc = v => clean(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   function parseCsv(text){
@@ -76,7 +77,7 @@
   }
 
   async function csv(path){
-    const r=await fetch(path,{cache:'no-store'});
+    const r=await fetch(path,{cache:'no-cache'});
     if(!r.ok) throw new Error(path+' '+r.status);
     return parseCsv(await r.text());
   }
@@ -1416,7 +1417,7 @@
   function cartMarkup(f){
     const eligible=f.variants.filter(v=>v.buyOnline && v.price>0);
     if(!eligible.length) return '';
-    const options=eligible.map((v,i)=>'<option value="'+esc(v.sku+'|'+f.variants.indexOf(v))+'">'+esc((/kit|package/i.test(v.type)?'Package':'Tool Only')+' â€” '+money(v.price))+'</option>').join('');
+    const options=eligible.map((v,i)=>'<option value="'+esc(v.sku+'|'+f.variants.indexOf(v))+'">'+esc((/kit|package/i.test(v.type)?'Package':'Unit')+' â€” '+money(v.price))+'</option>').join('');
     return '<div class="market-cart-controls">'+
       '<select data-cart-variant="'+esc(f.key)+'" aria-label="Choose Purchase Option"><option value="" selected disabled>Choose Purchase Option</option>'+options+'</select>'+
       '<input data-cart-qty="'+esc(f.key)+'" type="number" min="1" max="99" value="1" aria-label="Quantity">'+
@@ -1445,7 +1446,7 @@
 
     if(v.recommendedPackage && Array.isArray(v.packageItems)){
       const componentTotal=v.packageItems.reduce((sum,x)=>sum+(Number(x.price)||0)*(Number(x.quantity)||1),0);
-      addLine(v.sku,f.model+' â€” Tool Only',qty,Math.max(0,v.price-componentTotal));
+      addLine(v.sku,f.model+' â€” Unit',qty,Math.max(0,v.price-componentTotal));
       v.packageItems.forEach(x=>addLine(x.sku,x.name,qty*(Number(x.quantity)||1),Number(x.price)||0));
     }else{
       addLine(v.sku,v.description||f.brand+' '+f.model,qty,v.price);
@@ -1502,7 +1503,7 @@
     const tool=f.variants.find(v=>!/kit|package/i.test(v.type));
     const kit=f.variants.find(v=>/kit|package/i.test(v.type));
     const rows=[];
-    if(tool) rows.push(pricePanel('Tool Only',tool,false,f));
+    if(tool) rows.push(pricePanel('Unit',tool,false,f));
     if(kit) rows.push(pricePanel('Package',kit,true,f));
     if(!rows.length && f.variants[0]) rows.push(pricePanel('Price',f.variants[0],false,f));
     return '<div class="market-price-lines">'+rows.join('')+'</div>';
@@ -1585,8 +1586,29 @@
     '</article>';
   }
 
+  let cardRenderVersion=0;
   function renderCards(){
-    $('#market-grid').innerHTML=DATA.filtered.length ? DATA.filtered.map(card).join('') : '<div class="market-empty"><h2>No products match those filters.</h2><p>Clear one or more filters to see additional options.</p></div>';
+    const version=++cardRenderVersion;
+    const grid=$('#market-grid');
+    const families=DATA.filtered.slice();
+    const batchSize=24;
+    let offset=0;
+    grid.setAttribute('aria-busy',families.length>batchSize ? 'true' : 'false');
+    if(!families.length){
+      grid.innerHTML='<div class="market-empty"><h2>No products match those filters.</h2><p>Clear one or more filters to see additional options.</p></div>';
+      return;
+    }
+    grid.innerHTML=families.slice(0,batchSize).map(card).join('');
+    offset=batchSize;
+    function appendBatch(){
+      // A changed filter invalidates any pending cards from the previous results.
+      if(version!==cardRenderVersion) return;
+      grid.insertAdjacentHTML('beforeend',families.slice(offset,offset+batchSize).map(card).join(''));
+      offset+=batchSize;
+      if(offset<families.length) setTimeout(appendBatch,16);
+      else grid.setAttribute('aria-busy','false');
+    }
+    if(offset<families.length) setTimeout(appendBatch,16);
   }
 
   function renderResultMeta(){
