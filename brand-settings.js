@@ -21,7 +21,8 @@ window.WESTEND_BRANDS = {
   },
   BILLYGOAT: { id: "BILLYGOAT", name: "Billy Goat", dataRoot: "brands/billygoat/data/" },
   REDMAX: { id: "REDMAX", name: "RedMax", dataRoot: "brands/redmax/data/" },
-  GREENWORKS: { id: "GREENWORKS", name: "Greenworks", dataRoot: "brands/greenworks/data/" }
+  GREENWORKS: { id: "GREENWORKS", name: "Greenworks", dataRoot: "brands/greenworks/data/" },
+  MITM: { id: "MITM", name: "Mi-T-M", dataRoot: "brands/mitm/data/" }
 };
 
 window.WESTEND_ACTIVE_BRAND = "YANMAR";
