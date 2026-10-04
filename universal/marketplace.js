@@ -103,6 +103,7 @@
       }
 
       const familyModel=
+        (normalizedBrand==='YANMAR' && category==='Compact Tractors' ? model : '') ||
         marketplaceFamily ||
         seriesFamily ||
         model ||
