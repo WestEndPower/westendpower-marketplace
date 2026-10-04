@@ -963,6 +963,7 @@
     return marketplaceGroups('B');
   }
   function renderTopFilters(){
+    const homeButton='<button type="button" class="market-chip market-home" data-market-home aria-label="Return to Marketplace home">Home</button>';
     const tabs=$('#market-shop-tabs');
     tabs.innerHTML='';
     tabs.hidden=true;
@@ -1001,6 +1002,7 @@
       categoryPanel.hidden=false;
 
       categoryHost.innerHTML=
+        homeButton +
         '<button type="button" ' +
           'class="market-chip market-all-categories active" ' +
           'data-category="">' +
@@ -1052,6 +1054,7 @@
     const promoAvailable=marketplacePromoAvailable();
 
     contextPanel.hidden = !(
+      state.category ||
       quickSpecs.length ||
       seriesValues.length ||
       modelValues.length ||
@@ -1064,6 +1067,7 @@
       '<div class="market-series-model-nav">' +
         '<div class="market-compact-heading">MODELS / SERIES</div>' +
         '<div class="market-compact-buttons">' +
+          (state.category ? homeButton : '') +
 
           '<button type="button" ' +
             'class="market-chip' +
@@ -1674,8 +1678,30 @@
     }catch(e){}
   }
 
+  function returnMarketplaceHome(){
+    state.shopMode='equipment';
+    state.category='';state.subcategory='';state.power='';
+    state.seriesOrEngine='';state.width='';
+    state.brand.clear();state.availability.clear();
+    state.buyOnline=false;state.promoOnly=false;state.search='';
+    state.specFilters.clear();state.hpRanges.clear();
+    state.seriesModelOpen=false;state.seriesModelView='';
+    state.seriesFilter='';state.modelFilter='';
+    state.packageFilter='';state.packageComponents.clear();state.openBFilter='';
+    $('#market-search').value='';
+    $('#filter-buy-online').checked=false;
+    renderTopFilters();renderSidebar();filterFamilies();
+    const home=$('[data-market-home]');
+    if(home) home.focus({preventScroll:true});
+    window.scrollTo({top:0,behavior:'smooth'});
+    track('marketplace_home');
+  }
+
   function wire(){
     document.addEventListener('click',e=>{
+      if(e.target.closest('[data-market-home]')){
+        returnMarketplaceHome();return;
+      }
       const shop=e.target.closest('[data-shop-mode]');
       if(shop){
         state.shopMode=shop.dataset.shopMode||'equipment';
