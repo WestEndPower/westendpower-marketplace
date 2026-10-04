@@ -602,7 +602,24 @@
     return null;
   }
 
+  function marketplaceHasSelection(){
+    return state.shopMode!=='equipment' ||
+      Boolean(clean(state.search) || state.category || state.subcategory ||
+        state.power || state.seriesOrEngine || state.width ||
+        state.seriesFilter || state.modelFilter || state.packageFilter) ||
+      state.brand.size>0 || state.availability.size>0 ||
+      state.buyOnline || state.promoOnly ||
+      Array.from(state.specFilters.values()).some(values=>values.size>0) ||
+      state.hpRanges.size>0 || state.packageComponents.size>0;
+  }
+
   function filterFamilies(){
+    if(!marketplaceHasSelection()){
+      DATA.families=activeFamilies();
+      DATA.filtered=[];
+      renderCards();renderResultMeta();updateCompareButton();
+      return;
+    }
     const q=searchKey(state.search);
     DATA.families=activeFamilies();
     const out=DATA.families.filter(f=>{
@@ -1592,6 +1609,10 @@
 
   let cardRenderVersion=0;
   function renderCards(){
+    if(!marketplaceHasSelection()){
+      $('#market-grid').innerHTML='';
+      return;
+    }
     const version=++cardRenderVersion;
     const grid=$('#market-grid');
     const families=DATA.filtered.slice();
@@ -1616,6 +1637,9 @@
   }
 
   function renderResultMeta(){
+    const showProducts=marketplaceHasSelection();
+    $('#market-result-count').parentElement.hidden=!showProducts;
+    $('#market-compare-float').style.display=showProducts ? '' : 'none';
     $('#market-result-count').textContent=DATA.filtered.length;
 
     const bits=[];
