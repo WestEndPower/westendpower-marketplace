@@ -1081,6 +1081,20 @@
       state.promoOnly
     );
 
+    const subcategoryValues = distinct(
+      DATA.products.filter(p=>
+        truthy(p.Active) && clean(p.Category)===state.category
+      ).map(p=>clean(p.SubCategory)).filter(Boolean)
+    );
+    const subcategoryHtml = state.category && subcategoryValues.length
+      ? '<div class="market-compact-group market-subcategory-nav" style="width:100%;margin-bottom:10px">' +
+          '<div class="market-compact-heading">SUBCATEGORIES</div>' +
+          '<div class="market-compact-buttons">' +
+            button('All Subcategories','','subcategory',!state.subcategory) +
+            subcategoryValues.map(value=>button(value,value,'subcategory',state.subcategory===value)).join('') +
+          '</div></div>'
+      : '';
+
     const seriesModelHtml =
       '<div class="market-series-model-nav">' +
         '<div class="market-compact-heading">MODELS / SERIES</div>' +
@@ -1345,6 +1359,7 @@
 
       '</div>' +
 
+      subcategoryHtml +
       seriesModelDetailHtml +
 
       narrowSearchHtml;
@@ -1738,7 +1753,7 @@
       const c=e.target.closest('[data-category]');
       if(c){ state.category=c.dataset.category||''; state.subcategory=''; state.power=''; resetContext(); renderTopFilters(); renderSidebar(); filterFamilies(); track('marketplace_category',{category:state.category||'all'}); return; }
       const s=e.target.closest('[data-subcategory]');
-      if(s){ const v=s.dataset.subcategory||''; state.subcategory=state.subcategory===v?'':v; state.seriesOrEngine='';state.width='';state.specFilters.clear(); renderTopFilters(); renderSidebar(); filterFamilies(); track('marketplace_subcategory',{subcategory:state.subcategory||'all'}); return; }
+      if(s){ const v=s.dataset.subcategory||''; state.subcategory=state.subcategory===v?'':v; state.power='';state.seriesFilter='';state.modelFilter='';state.seriesModelView='';state.seriesModelOpen=false;state.hpRanges.clear();state.packageFilter='';state.packageComponents.clear();state.openBFilter='';state.seriesOrEngine='';state.width='';state.specFilters.clear(); renderTopFilters(); renderSidebar(); filterFamilies(); track('marketplace_subcategory',{subcategory:state.subcategory||'all'}); return; }
       const p=e.target.closest('[data-power]');
       if(p){ const v=p.dataset.power||''; state.power=state.power===v?'':v; resetContext(); renderTopFilters(); renderSidebar(); filterFamilies(); track('marketplace_power',{power:state.power||'all'}); return; }
       const x=e.target.closest('[data-context]');
@@ -2063,4 +2078,3 @@
 
   document.addEventListener('DOMContentLoaded',init);
 })();
-
