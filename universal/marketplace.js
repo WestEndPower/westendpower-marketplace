@@ -1057,6 +1057,47 @@
     return clean(row && (row.Engine || row.EngineBrand || row.EngineMake));
   }
 
+  function rowHpValue(row){
+    const direct=[
+      row && row.GrossEngineHP,
+      row && row.NetEngineHP,
+      row && row.EngineHP,
+      row && row['Engine Hp'],
+      row && row.Horsepower
+    ].map(clean).find(Boolean);
+    if(direct) return direct;
+
+    const hpGroup=marketplaceFilterHeaders('B').find(group=>
+      /(^|\s)(engine\s*)?hp$|horsepower/i.test(clean(group.label))
+    );
+
+    return hpGroup ? clean(row && row[hpGroup.field]) : '';
+  }
+
+  function rowWidthValue(row){
+    const candidates=[
+      row && row['Cutting Width'],
+      row && row['Deck Width'],
+      row && row['Clearing Width'],
+      row && row['Working Width'],
+      row && row['Mower Width']
+    ];
+
+    for(const value of candidates){
+      if(clean(value)) return clean(value);
+    }
+
+    for(let i=1;i<=10;i++){
+      const label=clean(row && row['SpecLabel'+i]);
+      const value=clean(row && row['SpecValue'+i]);
+      if(value && /cut(ting)?\s*width|deck\s*width|clearing\s*width|working\s*width|mower\s*width/i.test(label)){
+        return value;
+      }
+    }
+
+    return '';
+  }
+
   function renderTopFilters(){
     const homeButton='<button type="button" class="market-chip market-home" data-market-home aria-label="Return to Marketplace home">Home</button>';
     const tabs=$('#market-shop-tabs');
@@ -1385,47 +1426,6 @@
           '</div>'
         )
         : '';
-
-    function rowHpValue(row){
-      const direct=[
-        row && row.GrossEngineHP,
-        row && row.NetEngineHP,
-        row && row.EngineHP,
-        row && row['Engine Hp'],
-        row && row.Horsepower
-      ].map(clean).find(Boolean);
-      if(direct) return direct;
-
-      const hpGroup=marketplaceFilterHeaders('B').find(group=>
-        /(^|\s)(engine\s*)?hp$|horsepower/i.test(clean(group.label))
-      );
-
-      return hpGroup ? clean(row && row[hpGroup.field]) : '';
-    }
-
-    function rowWidthValue(row){
-      const candidates=[
-        ['Cutting Width',row && row['Cutting Width']],
-        ['Deck Width',row && row['Deck Width']],
-        ['Clearing Width',row && row['Clearing Width']],
-        ['Working Width',row && row['Working Width']],
-        ['Mower Width',row && row['Mower Width']]
-      ];
-
-      for(const [,value] of candidates){
-        if(clean(value)) return clean(value);
-      }
-
-      for(let i=1;i<=10;i++){
-        const label=clean(row && row['SpecLabel'+i]);
-        const value=clean(row && row['SpecValue'+i]);
-        if(value && /cut(ting)?\s*width|deck\s*width|clearing\s*width|working\s*width|mower\s*width/i.test(label)){
-          return value;
-        }
-      }
-
-      return '';
-    }
 
     const dimensionRows=(DATA.products||[]).filter(row=>
       truthy(row.Active) &&
