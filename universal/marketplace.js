@@ -1606,8 +1606,6 @@
 
     widthHost.hidden = true;
     widthHost.innerHTML = '';
-
-    state.width = '';
   }
 
   function renderSidebar(){
