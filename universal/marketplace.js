@@ -1529,35 +1529,33 @@
       : 'Available to Order';
   }
 
-  function availabilityContactEmail(){
-    return clean(DATA.settings.AvailabilityEmail) ||
-      clean((activeLocations().find(x=>clean(x.Email))||{}).Email);
+  function smsPhone(value){
+    return clean(value).replace(/[^0-9+]/g,'');
   }
 
   function inventoryMarkup(f){
     const status=familyInventoryStatus(f);
-    const stocked=status.locations.filter(x=>x.normallyStocked);
-    const subject='Availability / Lead Time - '+clean(f.brand)+' '+clean(f.model);
     const skuList=distinct(relevantVariants(f).map(v=>v.sku)).join(', ');
-    const body='I would like to check availability / lead time for '+clean(f.brand)+' '+clean(f.model)+(skuList?' (SKU: '+skuList+')':'')+'.';
-    const email=availabilityContactEmail();
-    const href=email
-      ? 'mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body)
-      : '';
+    const body='I would like to request lead time for '+clean(f.brand)+' '+clean(f.model)+(skuList?' (SKU: '+skuList+')':'')+'.';
+
+    const locationRows=status.locations.map(location=>{
+      if(location.normallyStocked){
+        return '<div class="market-inventory-line"><span aria-hidden="true">✓</span> '+esc(location.name)+' - Normally In Stock</div>';
+      }
+
+      const phone=smsPhone(location.phone);
+      if(!phone){
+        return '<div class="market-inventory-line market-inventory-order">'+esc(location.name)+' - Request Lead Time</div>';
+      }
+
+      const href='sms:'+phone+'?body='+encodeURIComponent(body);
+      return '<a class="market-inventory-contact market-inventory-location-contact" href="'+esc(href)+'">'+esc(location.name)+' - Request Lead Time</a>';
+    }).join('');
 
     return '<div class="market-inventory-wrap">'+
       '<button type="button" class="market-inventory-button" data-inventory-toggle="'+esc(f.key)+'" aria-expanded="false">Check Inventory</button>'+
       '<div class="market-inventory-popover" data-inventory-popover="'+esc(f.key)+'" hidden>'+
-        (
-          stocked.length
-            ? stocked.map(x=>'<div class="market-inventory-line"><span aria-hidden="true">✓</span> Normally In Stock @ '+esc(x.name)+'</div>').join('')
-            : '<div class="market-inventory-line market-inventory-order">Available to Order</div>'
-        )+
-        (
-          href
-            ? '<a class="market-inventory-contact" href="'+esc(href)+'">Check Availability / Lead Time</a>'
-            : ''
-        )+
+        locationRows+
       '</div>'+
     '</div>';
   }
