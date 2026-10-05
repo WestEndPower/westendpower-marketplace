@@ -614,16 +614,8 @@
       state.hpRanges.size>0 || state.packageComponents.size>0;
   }
 
-  function filterFamilies(){
-    if(!marketplaceHasSelection()){
-      DATA.families=activeFamilies();
-      DATA.filtered=[];
-      renderCards();renderResultMeta();updateCompareButton();
-      return;
-    }
+  function marketplaceFamilyMatches(f,ignoreBrand=false){
     const q=searchKey(state.search);
-    DATA.families=activeFamilies();
-    const out=DATA.families.filter(f=>{
       if(state.category && f.category!==state.category) return false;
       if(state.subcategory && f.subcategory!==state.subcategory) return false;
       if(state.power && f.power!==state.power) return false;
@@ -643,7 +635,7 @@
       if(state.width){
         const wp=widthPair(f); if(!wp || clean(wp[1])!==state.width) return false;
       }
-      if(state.brand.size && !state.brand.has(f.brand)) return false;
+      if(!ignoreBrand && state.brand.size && !state.brand.has(f.brand)) return false;
       if(state.availability.size){
         const labels=[];
         if(f.stock>0) labels.push('Stocked');
@@ -695,7 +687,33 @@
         if(!hay.includes(q)) return false;
       }
       return true;
-    });
+
+  }
+
+  function renderDynamicBrands(){
+    const brands=distinct(activeFamilies()
+      .filter(f=>marketplaceFamilyMatches(f,true))
+      .map(f=>f.brand)).sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
+    const eligible=new Set(brands);
+    for(const brand of state.brand){
+      if(!eligible.has(brand))state.brand.delete(brand);
+    }
+    $('#filter-brand').innerHTML=brands.map(b=>
+      '<label><input type="checkbox" data-brand="'+esc(b)+'"'+
+      (state.brand.has(b)?' checked':'')+'> <span>'+esc(b)+'</span></label>'
+    ).join('');
+  }
+
+  function filterFamilies(){
+    renderDynamicBrands();
+    if(!marketplaceHasSelection()){
+      DATA.families=activeFamilies();
+      DATA.filtered=[];
+      renderCards();renderResultMeta();updateCompareButton();
+      return;
+    }
+    DATA.families=activeFamilies();
+    const out=DATA.families.filter(f=>marketplaceFamilyMatches(f));
     DATA.filtered=out;
     renderCards();
     renderResultMeta();
@@ -1387,25 +1405,7 @@
   function renderSidebar(){
     DATA.families=activeFamilies();
 
-    const brands=distinct(
-      DATA.families.map(f=>f.brand)
-    ).sort((a,b)=>
-      a.localeCompare(
-        b,
-        undefined,
-        {sensitivity:"base"}
-      )
-    );
-
-    $('#filter-brand').innerHTML=
-      brands.map(b=>
-        '<label>' +
-          '<input type="checkbox" data-brand="' +
-            esc(b) +
-          '"> ' +
-          '<span>' + esc(b) + '</span>' +
-        '</label>'
-      ).join('');
+    renderDynamicBrands();
 
     $('#filter-availability').innerHTML=
       ['Stocked','Available to Order'].map(x=>
