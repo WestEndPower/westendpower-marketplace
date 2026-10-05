@@ -633,26 +633,17 @@
         if(!variantMatch) return false;
       }
       if(state.seriesOrEngine){
-        const contextMatch=(f.variants||[]).some(v=>
-          v.marketplaceRow &&
-          marketplacePowerContextValue(v.marketplaceRow,state.power)===state.seriesOrEngine
-        );
+        const contextGroup=marketplacePowerContextGroup();
+        const contextMatch=
+          contextGroup &&
+          (f.variants||[]).some(v=>
+            v.marketplaceRow &&
+            clean(v.marketplaceRow[contextGroup.field])===state.seriesOrEngine
+          );
+
         if(!contextMatch) return false;
       }
-      if(state.width){
-        const widthMatch=(f.variants||[]).some(v=>
-          v.marketplaceRow &&
-          rowWidthValue(v.marketplaceRow)===state.width
-        );
-        if(!widthMatch) return false;
-      }
-      if(state.hpRanges.size){
-        const hpMatch=(f.variants||[]).some(v=>
-          v.marketplaceRow &&
-          state.hpRanges.has(rowHpValue(v.marketplaceRow))
-        );
-        if(!hpMatch) return false;
-      }
+
       if(!ignoreBrand && state.brand.size && !state.brand.has(f.brand)) return false;
       if(state.availability.size){
         const label=availabilityText(f);
@@ -887,11 +878,14 @@
       return false;
     }
 
-    if(
-      state.seriesOrEngine &&
-      marketplacePowerContextValue(row,state.power)!==state.seriesOrEngine
-    ){
-      return false;
+    if(state.seriesOrEngine){
+      const contextGroup=marketplacePowerContextGroup();
+      if(
+        !contextGroup ||
+        clean(row[contextGroup.field])!==state.seriesOrEngine
+      ){
+        return false;
+      }
     }
 
     if(
@@ -1037,95 +1031,29 @@
     return marketplaceGroups('B');
   }
 
-  function marketplaceEngineGroup(){
-    return marketplaceFilterHeaders('B').find(group=>
-      /^engine$/i.test(clean(group.label))
-    ) || null;
-  }
-
-  function marketplacePowerContextValue(row,powerType){
-    const power=clean(powerType || (row && row.PowerType));
-    if(/^battery$/i.test(power)){
-      return clean(row && row.System);
-    }
-
-    const engineGroup=marketplaceEngineGroup();
-    if(engineGroup){
-      const grouped=clean(row && row[engineGroup.field]);
-      if(grouped) return grouped;
-    }
-
-    const direct=clean(row && (row.EngineBrand || row.EngineMake || row.Engine));
-    if(direct) return direct;
-
-    for(let i=1;i<=10;i++){
-      const label=clean(row && row['SpecLabel'+i]);
-      const value=clean(row && row['SpecValue'+i]);
-      if(value && /^engine(\s*(brand|make|manufacturer))?$/i.test(label)){
-        return value;
-      }
-    }
-
-    return '';
-  }
-
-  function rowHpValue(row){
-    const direct=[
-      row && row.GrossEngineHP,
-      row && row.NetEngineHP,
-      row && row.EngineHP,
-      row && row['Engine Hp'],
-      row && row.Horsepower
-    ].map(clean).find(Boolean);
-    if(direct) return direct;
-
-    const hpGroup=marketplaceFilterHeaders('B').find(group=>
-      /(^|\s)(engine\s*)?hp$|horsepower/i.test(clean(group.label))
+  function marketplacePowerContextGroups(){
+    return marketplaceFilterHeaders('B').filter(group=>
+      !/^power\s*type$/i.test(clean(group.label))
     );
-
-    if(hpGroup){
-      const grouped=clean(row && row[hpGroup.field]);
-      if(grouped) return grouped;
-    }
-
-    for(let i=1;i<=10;i++){
-      const label=clean(row && row['SpecLabel'+i]);
-      const value=clean(row && row['SpecValue'+i]);
-      if(value && /(^|\s)(engine\s*)?hp$|horsepower/i.test(label)){
-        return value;
-      }
-    }
-
-    return '';
   }
 
-  function rowWidthValue(row){
-    const candidates=[
-      row && row.CuttingWidth,
-      row && row.DeckWidth,
-      row && row.ClearingWidth,
-      row && row.WorkingWidth,
-      row && row.MowerWidth,
-      row && row['Cutting Width'],
-      row && row['Deck Width'],
-      row && row['Clearing Width'],
-      row && row['Working Width'],
-      row && row['Mower Width']
-    ];
+  function marketplacePowerContextGroup(){
+    const groups=marketplacePowerContextGroups();
 
-    for(const value of candidates){
-      if(clean(value)) return clean(value);
+    if(!state.power){
+      return null;
     }
 
-    for(let i=1;i<=10;i++){
-      const label=clean(row && row['SpecLabel'+i]);
-      const value=clean(row && row['SpecValue'+i]);
-      if(value && /cut(ting)?\s*width|deck\s*width|clearing\s*width|working\s*width|mower\s*width/i.test(label)){
-        return value;
-      }
-    }
-
-    return '';
+    return groups.find(group=>
+      (DATA.products||[]).some(row=>
+        marketplaceRowMatches(
+          row,
+          {ignoreField:group.field}
+        ) &&
+        clean(row.PowerType)===state.power &&
+        clean(row[group.field])
+      )
+    ) || null;
   }
 
   function renderTopFilters(){
@@ -1227,19 +1155,22 @@
         .filter(Boolean)
     );
 
-    const powerContextValues = state.power
-      ? distinct(
-          DATA.products
-            .filter(p=>
-              truthy(p.Active) &&
-              clean(p.Category)===state.category &&
-              (!state.subcategory || clean(p.SubCategory)===state.subcategory) &&
-              clean(p.PowerType)===state.power
-            )
-            .map(p=>marketplacePowerContextValue(p,state.power))
-            .filter(Boolean)
-        )
-      : [];
+    const powerContextGroup=marketplacePowerContextGroup();
+
+    const powerContextValues =
+      state.power && powerContextGroup
+        ? distinct(
+            DATA.products
+              .filter(p=>
+                truthy(p.Active) &&
+                clean(p.Category)===state.category &&
+                (!state.subcategory || clean(p.SubCategory)===state.subcategory) &&
+                clean(p.PowerType)===state.power
+              )
+              .map(p=>clean(p[powerContextGroup.field]))
+              .filter(Boolean)
+          )
+        : [];
 
     const packageChoices=marketplacePackageChoices();
     const promoAvailable=marketplacePromoAvailable();
@@ -1441,7 +1372,7 @@
         ? (
           '<div class="market-compact-group market-power-context">' +
             '<div class="market-compact-heading">' +
-              (/^battery$/i.test(state.power) ? 'BATTERY SERIES' : 'ENGINE') +
+              esc(powerContextGroup ? powerContextGroup.label : '') +
             '</div>' +
             '<div class="market-compact-buttons">' +
               powerContextValues.map(value=>
@@ -1453,55 +1384,6 @@
                 )
               ).join('') +
             '</div>' +
-          '</div>'
-        )
-        : '';
-
-    const dimensionRows=(DATA.products||[]).filter(row=>
-      truthy(row.Active) &&
-      clean(row.Category)===state.category &&
-      (!state.subcategory || clean(row.SubCategory)===state.subcategory) &&
-      (!state.power || clean(row.PowerType)===state.power) &&
-      (!state.seriesOrEngine || marketplacePowerContextValue(row,state.power)===state.seriesOrEngine)
-    );
-
-    const hpValues=distinct(dimensionRows.map(rowHpValue).filter(Boolean));
-    const widthValues=distinct(dimensionRows.map(rowWidthValue).filter(Boolean));
-
-    const hpWidthHtml =
-      (
-        hpValues.length || widthValues.length
-      )
-        ? (
-          '<div class="market-sort-filter-row">' +
-            (
-              hpValues.length
-                ? (
-                  '<div class="market-compact-group">' +
-                    '<div class="market-compact-heading">HP</div>' +
-                    '<div class="market-compact-buttons">' +
-                      hpValues.map(value=>
-                        '<button type="button" class="market-chip'+(state.hpRanges.has(value)?' active':'')+'" data-hp-value="'+esc(value)+'">'+esc(value)+'</button>'
-                      ).join('') +
-                    '</div>' +
-                  '</div>'
-                )
-                : ''
-            ) +
-            (
-              widthValues.length
-                ? (
-                  '<div class="market-compact-group">' +
-                    '<div class="market-compact-heading">CUTTING / CLEARING WIDTH</div>' +
-                    '<div class="market-compact-buttons">' +
-                      widthValues.map(value=>
-                        button(value,value,'width',state.width===value)
-                      ).join('') +
-                    '</div>' +
-                  '</div>'
-                )
-                : ''
-            ) +
           '</div>'
         )
         : '';
@@ -1624,7 +1506,6 @@
       '</div>' +
 
       powerContextHtml +
-      hpWidthHtml +
       subcategoryHtml +
       seriesModelDetailHtml +
 
@@ -2299,18 +2180,6 @@
           state.specFilters.delete(label);
         }
 
-        renderTopFilters();
-        renderSidebar();
-        filterFamilies();
-        return;
-      }
-
-      const hp=e.target.closest('[data-hp-value]');
-      if(hp){
-        const value=hp.dataset.hpValue||'';
-        state.hpRanges.has(value)
-          ? state.hpRanges.delete(value)
-          : state.hpRanges.add(value);
         renderTopFilters();
         renderSidebar();
         filterFamilies();
