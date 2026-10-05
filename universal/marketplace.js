@@ -706,7 +706,21 @@
     return '<button type="button" class="market-chip'+(active?' active':'')+'" data-'+kind+'="'+esc(value)+'">'+esc(label)+'</button>';
   }
 
+  let marketplaceHeaderCacheSource=null;
+  const marketplaceHeaderCache=new Map();
   function marketplaceFilterHeaders(kind){
+    if(marketplaceHeaderCacheSource!==DATA.products){
+      marketplaceHeaderCacheSource=DATA.products;
+      marketplaceHeaderCache.clear();
+    }
+    const key=String(kind||'').trim().toUpperCase();
+    if(!marketplaceHeaderCache.has(key)){
+      marketplaceHeaderCache.set(key,discoverMarketplaceFilterHeaders(key));
+    }
+    return marketplaceHeaderCache.get(key);
+  }
+
+  function discoverMarketplaceFilterHeaders(kind){
     if(!DATA.products || !DATA.products.length){
       return [];
     }
@@ -2043,9 +2057,55 @@
 
     return lists.flat();
   }
-  async function init(){
+  function unpackMarketplaceTable(table){
+    if(!table || !Array.isArray(table.headers) || !Array.isArray(table.rows) ||
+       !['dense','sparse'].includes(table.encoding) ||
+       table.headers.some(h=>typeof h!=='string' || !h) ||
+       new Set(table.headers).size!==table.headers.length){
+      throw new Error('Invalid combined catalog table');
+    }
+    return table.rows.map(values=>{
+      if(!Array.isArray(values))throw new Error('Invalid catalog row');
+      const row=Object.fromEntries(table.headers.map(h=>[h,'']));
+      if(table.encoding==='dense'){
+        if(values.length!==table.headers.length || values.some(v=>typeof v!=='string'))throw new Error('Invalid dense catalog row');
+        table.headers.forEach((h,i)=>row[h]=values[i]);
+      }else{
+        if(values.length%2)throw new Error('Invalid sparse catalog row');
+        const seen=new Set();
+        for(let i=0;i<values.length;i+=2){
+          const index=values[i],value=values[i+1];
+          if(!Number.isInteger(index)||index<0||index>=table.headers.length||seen.has(index)||typeof value!=='string')throw new Error('Invalid sparse catalog cell');
+          seen.add(index);row[table.headers[index]]=value;
+        }
+      }
+      return row;
+    });
+  }
+
+  async function loadMarketplaceCatalog(){
     try{
-      const [products,batteries,chargers,compatibility,financePrograms,settingsRows]=await Promise.all([
+      const preload=document.querySelector('link[data-marketplace-catalog]');
+      const url=preload ? preload.getAttribute('href') : 'data/marketplace-catalog.json';
+      const response=await fetch(url,{cache:'default',credentials:'same-origin'});
+      if(!response.ok)throw new Error('Combined catalog HTTP '+response.status);
+      const bundle=await response.json();
+      const expected=marketplaceBrandProfiles().map(p=>clean(p.id).toUpperCase());
+      if(bundle.schema!==1 || JSON.stringify(bundle.brands)!==JSON.stringify(expected) ||
+         bundle.componentBrand!==clean(activeBrand().id).toUpperCase() ||
+         !Array.isArray(bundle.productSources) || bundle.productSources.length!==expected.length ||
+         bundle.productSources.some((table,i)=>table.brand!==expected[i]) || !bundle.tables){
+        throw new Error('Combined catalog does not match this Marketplace');
+      }
+      const products=bundle.productSources.flatMap(unpackMarketplaceTable);
+      if(!products.length)throw new Error('Combined catalog has no products');
+      const result=[products,...['batteries','chargers','compatibility','financePrograms','settingsRows'].map(name=>unpackMarketplaceTable(bundle.tables[name]))];
+      window.WESTEND_MARKETPLACE_CATALOG_SOURCE='combined';
+      return result;
+    }catch(error){
+      console.warn('Combined catalog unavailable; loading original CSV files.',error);
+      window.WESTEND_MARKETPLACE_CATALOG_SOURCE='csv-fallback';
+      return Promise.all([
         loadMarketplaceProducts(),
         csv(brandDataPath('batteries.csv')),
         csv(brandDataPath('chargers.csv')),
@@ -2053,6 +2113,12 @@
         csv(brandDataPath('finance-programs.csv')),
         csv('data/dealer-settings.csv')
       ]);
+    }
+  }
+
+  async function init(){
+    try{
+      const [products,batteries,chargers,compatibility,financePrograms,settingsRows]=await loadMarketplaceCatalog();
       DATA.products=products;
       DATA.batteries=batteries;
       DATA.chargers=chargers;
@@ -2070,6 +2136,7 @@
       applyDealer(DATA.settings);
       renderTopFilters(); renderSidebar(); filterFamilies(); wire(); updateCartFloat();
       $('#market-loading').hidden=true; $('#market-app').hidden=false;
+      window.WESTEND_MARKETPLACE_READY_MS=Math.round(performance.now());
     }catch(err){
       console.error(err);
       $('#market-loading').innerHTML='<strong>Unable to load product data.</strong><br>'+esc(err.message||err);

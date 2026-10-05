@@ -63,9 +63,9 @@ function sync({brand,sourceFile,root=path.resolve(__dirname,'..'),backupRoot}){
   try{fs.writeFileSync(temp,data,'utf8');fs.renameSync(temp,target);}finally{if(fs.existsSync(temp))fs.unlinkSync(temp);}
   return {changed:true,rows:result.rows.length};
 }
+module.exports={parse,encode,merge,sync,isPrivate};
 if(require.main===module){
   const [brand,sourceFile]=process.argv.slice(2);
-  try{const result=sync({brand,sourceFile});console.log(`${brand}: ${result.changed?'updated':'unchanged'}, ${result.rows} product rows`);}
+  try{const result=sync({brand,sourceFile});const catalog=require('./build-marketplace-catalog.cjs').buildCatalog();console.log(`${brand}: ${result.changed?'updated':'unchanged'}, ${result.rows} product rows; catalog ${catalog.version}`);}
   catch(e){const message=new Date().toISOString()+' '+String(brand)+' '+e.message+'\r\n';try{const logDir=path.join(process.env.LOCALAPPDATA||os.tmpdir(),'WestEndPower');fs.mkdirSync(logDir,{recursive:true});fs.appendFileSync(path.join(logDir,'marketplace-sync.log'),message);}catch{}console.error(message);process.exitCode=1;}
 }
-module.exports={parse,encode,merge,sync,isPrivate};
