@@ -11,6 +11,8 @@
     settings: {},
     locations: [],
     inventoryByBrand: new Map(),
+    financeSummaryCache: new Map(),
+    financeSummaryPending: new Map(),
     equipmentFamilies: [],
     batteryFamilies: [],
     chargerFamilies: [],
@@ -54,7 +56,42 @@
   const money = v => moneyFormatter.format(Number(v||0));
   const esc = v => clean(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const MARKETPLACE_API='https://westendpower-configurator-api.westendpower-nm.workers.dev';
+  const MARKETPLACE_TAX_RATE=0.0635;
   const skuKey = v => clean(v).toUpperCase().replace(/[^A-Z0-9]/g,'');
+
+  function monthlyPayment(principal,apr,months){
+    principal=Number(principal)||0;
+    apr=Number(apr)||0;
+    months=Number(months)||0;
+    if(!principal || !months) return 0;
+    if(apr<=0) return principal/months;
+    const rate=apr/100/12;
+    return principal*rate/(1-Math.pow(1+rate,-months));
+  }
+
+  function programAllowsRebate(program){
+    const raw=clean(program && program.RebateCompatible);
+    return raw==='' || truthy(raw);
+  }
+
+  function programMinimumDown(program,total){
+    if(!program) return 0;
+    const fixed=num(program.MinDownAmount||program.MinimumDownAmount);
+    const rawPercent=num(program.MinDownPercent||program.MinimumDownPercent);
+    const percent=rawPercent>0 && rawPercent<1 ? rawPercent*100 : rawPercent;
+    if(fixed>0) return Math.min(fixed,total);
+    if(percent>0) return Math.min(Math.ceil(total*percent/100/10)*10,total);
+    return 0;
+  }
+
+  function bestMarketplaceFinanceProgram(programs){
+    return (programs||[]).slice().sort((a,b)=>{
+      const aa=num(a.APR), ab=num(b.APR);
+      return aa-ab ||
+        num(b.TermMonths)-num(a.TermMonths) ||
+        num(a.MinDownAmount)-num(b.MinDownAmount);
+    })[0]||null;
+  }
 
   function parseCsv(text){
     text = String(text||'').replace(/^\uFEFF/,'');
@@ -594,14 +631,148 @@
     };
   }
 
-  function cardFinanceMarkup(f){
-    const finance=financeOfferData(f);
-    if(!finance) return '';
+  function financeSummaryKey(f){
+    const variant=(f.variants||[]).find(v=>!/kit|package/i.test(v.type)) || f.variants[0] || {};
+    return clean(f.brand).toUpperCase()+'|'+skuKey(variant.sku);
+  }
 
-    return '<div class="market-card-finance">'+
-      '<strong>'+esc(finance.aprLabel)+' APR</strong>'+
-      '<span>for '+esc(finance.termMonths)+' months</span>'+
-    '</div>';
+  function cardFinanceMarkup(f){
+    const key=financeSummaryKey(f);
+    if(!key || /\|$/.test(key)) return '';
+
+    const summary=DATA.financeSummaryCache.get(key);
+
+    if(!summary){
+      requestMarketplaceFinanceSummary(f);
+      return '<div class="market-card-finance market-card-finance-loading">Calculating payment...</div>';
+    }
+
+    if(summary.none) return '';
+
+    const lines=[
+      '<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'/mo</strong><span> × '+esc(summary.termMonths)+'</span></div>',
+      '<div class="market-card-finance-apr">'+esc(summary.aprLabel)+' APR</div>'
+    ];
+
+    if(summary.requiredDown>0){
+      lines.push('<div class="market-card-finance-note">'+money(summary.requiredDown)+' down required</div>');
+    }
+
+    if(summary.rebateAmount>0){
+      lines.push(
+        '<div class="market-card-finance-note">'+
+          (
+            summary.rebateCompatible
+              ? 'Includes '+money(summary.rebateAmount)+' rebate'
+              : 'In lieu of '+money(summary.rebateAmount)+' rebate'
+          )+
+        '</div>'
+      );
+    }
+
+    return '<div class="market-card-finance">'+lines.join('')+'</div>';
+  }
+
+  async function requestMarketplaceFinanceSummary(f){
+    const key=financeSummaryKey(f);
+    if(!key || /\|$/.test(key) ||
+       DATA.financeSummaryCache.has(key) ||
+       DATA.financeSummaryPending.has(key)){
+      return;
+    }
+
+    const variant=(f.variants||[]).find(v=>!/kit|package/i.test(v.type)) || f.variants[0] || {};
+    const sku=clean(variant.sku);
+    const brandId=clean(f.brand).toUpperCase();
+
+    const request=(async()=>{
+      try{
+        const financeResponse=await fetch(MARKETPLACE_API+'/customer-finance-programs',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({brandId,sku}),
+          cache:'no-store'
+        });
+
+        const financeData=await financeResponse.json().catch(()=>({}));
+        if(!financeResponse.ok) throw new Error(financeData.error||'Finance programs unavailable.');
+
+        const program=bestMarketplaceFinanceProgram(financeData.programs);
+        if(!program){
+          DATA.financeSummaryCache.set(key,{none:true});
+          return;
+        }
+
+        const pricingResponse=await fetch(MARKETPLACE_API+'/customer-pricing',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            brandId,
+            sku,
+            quantity:1,
+            paymentMethod:'finance',
+            financeProgramId:clean(program.ProgramID)
+          }),
+          cache:'no-store'
+        });
+
+        const pricing=await pricingResponse.json().catch(()=>({}));
+        if(!pricingResponse.ok) throw new Error(pricing.error||'Finance pricing unavailable.');
+
+        const sellingPrice=num(pricing.customerLinePrice);
+        const row=variant.marketplaceRow||{};
+        const taxable=clean(row.Taxable).toUpperCase()!=='F';
+        const salesTax=taxable ? sellingPrice*MARKETPLACE_TAX_RATE : 0;
+
+        const lenderDown=programMinimumDown(program,sellingPrice+salesTax);
+        const requiredDown=Math.max(
+          lenderDown,
+          num(pricing.profitProtectionDown)
+        );
+
+        const applicationFee=
+          brandId==='YANMAR'
+            ? 299
+            : num(program.CustomerOriginationFee||program.ApplicationFee);
+
+        const amountFinanced=Math.max(
+          sellingPrice+salesTax-requiredDown,
+          0
+        )+applicationFee;
+
+        let apr=num(program.APR);
+        if(apr>0 && apr<1) apr*=100;
+
+        const monthly=monthlyPayment(
+          amountFinanced,
+          apr,
+          num(program.TermMonths)
+        );
+
+        const rowRebate=num(row.RebateToCustomer);
+        const rebateActive=
+          rowRebate>0 &&
+          dateActive(row.RebateStartDate,row.RebateEndDate);
+
+        DATA.financeSummaryCache.set(key,{
+          monthly,
+          apr,
+          aprLabel:apr===0?'0%':apr.toFixed(2).replace(/\.00$/,'')+'%',
+          termMonths:num(program.TermMonths),
+          requiredDown,
+          rebateAmount:rebateActive?rowRebate:0,
+          rebateCompatible:programAllowsRebate(program)
+        });
+      }catch(error){
+        console.warn('Marketplace finance summary unavailable for '+key,error);
+        DATA.financeSummaryCache.set(key,{none:true});
+      }finally{
+        DATA.financeSummaryPending.delete(key);
+        renderCards();
+      }
+    })();
+
+    DATA.financeSummaryPending.set(key,request);
   }
 
     function engineValue(f){
