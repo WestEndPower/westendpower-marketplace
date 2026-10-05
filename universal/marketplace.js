@@ -633,8 +633,11 @@
         if(!variantMatch) return false;
       }
       if(state.seriesOrEngine){
-        const target=/battery/i.test(state.power) ? f.system : engineValue(f);
-        if(clean(target)!==state.seriesOrEngine) return false;
+        const contextMatch=(f.variants||[]).some(v=>
+          v.marketplaceRow &&
+          marketplacePowerContextValue(v.marketplaceRow,state.power)===state.seriesOrEngine
+        );
+        if(!contextMatch) return false;
       }
       if(state.width){
         const wp=widthPair(f); if(!wp || clean(wp[1])!==state.width) return false;
@@ -873,6 +876,13 @@
     }
 
     if(
+      state.seriesOrEngine &&
+      marketplacePowerContextValue(row,state.power)!==state.seriesOrEngine
+    ){
+      return false;
+    }
+
+    if(
       state.seriesFilter &&
       clean(row.Series)!==state.seriesFilter
     ){
@@ -1014,6 +1024,27 @@
   function marketplaceSpecGroups(){
     return marketplaceGroups('B');
   }
+
+  function marketplaceEngineGroup(){
+    return marketplaceFilterHeaders('B').find(group=>
+      /^engine$/i.test(clean(group.label))
+    ) || null;
+  }
+
+  function marketplacePowerContextValue(row,powerType){
+    const power=clean(powerType || (row && row.PowerType));
+    if(/^battery$/i.test(power)){
+      return clean(row && row.System);
+    }
+
+    const engineGroup=marketplaceEngineGroup();
+    if(engineGroup){
+      return clean(row && row[engineGroup.field]);
+    }
+
+    return clean(row && (row.Engine || row.EngineBrand || row.EngineMake));
+  }
+
   function renderTopFilters(){
     const homeButton='<button type="button" class="market-chip market-home" data-market-home aria-label="Return to Marketplace home">Home</button>';
     const tabs=$('#market-shop-tabs');
@@ -1102,6 +1133,31 @@
         .filter(Boolean)
     ).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
 
+    const powerValues = distinct(
+      DATA.products
+        .filter(p=>
+          truthy(p.Active) &&
+          clean(p.Category)===state.category &&
+          (!state.subcategory || clean(p.SubCategory)===state.subcategory)
+        )
+        .map(p=>clean(p.PowerType))
+        .filter(Boolean)
+    );
+
+    const powerContextValues = state.power
+      ? distinct(
+          DATA.products
+            .filter(p=>
+              truthy(p.Active) &&
+              clean(p.Category)===state.category &&
+              (!state.subcategory || clean(p.SubCategory)===state.subcategory) &&
+              clean(p.PowerType)===state.power
+            )
+            .map(p=>marketplacePowerContextValue(p,state.power))
+            .filter(Boolean)
+        )
+      : [];
+
     const packageChoices=marketplacePackageChoices();
     const promoAvailable=marketplacePromoAvailable();
 
@@ -1147,6 +1203,19 @@
             '" data-series-nav="all">' +
             'All Models' +
           '</button>' +
+
+          (
+            promoAvailable || state.promoOnly
+              ? (
+                '<button type="button" ' +
+                  'class="market-chip market-promo-chip' +
+                    (state.promoOnly ? ' active' : '') +
+                  '" data-package-promo="1">' +
+                  'Promos' +
+                '</button>'
+              )
+              : ''
+          ) +
 
           '<button type="button" ' +
             'class="market-chip' +
@@ -1236,46 +1305,68 @@
           )
         );
 
-    const packagesPromosHtml =
-      '<div class="market-compact-group market-packages-promos">' +
-
-        '<div class="market-compact-heading">' +
-          'PACKAGES / PROMOS' +
-        '</div>' +
-
+    const powerTypeHtml =
+      '<div class="market-compact-group market-power-type">' +
+        '<div class="market-compact-heading">POWER TYPE</div>' +
         '<div class="market-compact-buttons">' +
-
-          (
-            promoAvailable || state.promoOnly
-              ? (
-                '<button type="button" ' +
-                  'class="market-chip market-promo-chip' +
-                    (state.promoOnly ? ' active' : '') +
-                  '" data-package-promo="1">' +
-                  'Promos' +
-                '</button>'
-              )
-              : ''
-          ) +
-
-          packageGroups.map(group =>
-            '<button type="button" ' +
-              'class="market-chip' +
-                (
-                  state.packageComponents.has(group.field)
-                    ? ' active'
-                    : ''
-                ) +
-              '" data-package-component="' +
-                esc(group.field) +
-              '">' +
-                esc(group.label) +
-            '</button>'
+          powerValues.map(value=>
+            button(
+              value,
+              value,
+              'power',
+              state.power===value
+            )
           ).join('') +
-
         '</div>' +
+      '</div>' +
 
-      '</div>';
+      (
+        packageGroups.length
+          ? (
+            '<div class="market-compact-group market-package-filter" style="margin-top:8px">' +
+              '<div class="market-compact-heading">PACKAGES</div>' +
+              '<div class="market-compact-buttons">' +
+                packageGroups.map(group =>
+                  '<button type="button" ' +
+                    'class="market-chip' +
+                      (
+                        state.packageComponents.has(group.field)
+                          ? ' active'
+                          : ''
+                      ) +
+                    '" data-package-component="' +
+                      esc(group.field) +
+                    '">' +
+                      esc(group.label) +
+                  '</button>'
+                ).join('') +
+              '</div>' +
+            '</div>'
+          )
+          : ''
+      );
+
+    const powerContextHtml =
+      state.power && powerContextValues.length
+        ? (
+          '<div class="market-compact-group market-power-context">' +
+            '<div class="market-compact-heading">' +
+              (/^battery$/i.test(state.power) ? 'BATTERY SERIES' : 'ENGINE') +
+            '</div>' +
+            '<div class="market-compact-buttons">' +
+              powerContextValues.map(value=>
+                button(
+                  value,
+                  value,
+                  'context',
+                  state.seriesOrEngine===value
+                )
+              ).join('') +
+            '</div>' +
+          '</div>'
+        )
+        : '';
+
     const openBGroup=
       quickSpecs.find(group=>
         group.field===state.openBFilter
@@ -1388,11 +1479,12 @@
         '</div>' +
 
         '<div class="market-primary-right">' +
-          packagesPromosHtml +
+          powerTypeHtml +
         '</div>' +
 
       '</div>' +
 
+      powerContextHtml +
       subcategoryHtml +
       seriesModelDetailHtml +
 
@@ -1400,7 +1492,6 @@
     widthHost.hidden = true;
     widthHost.innerHTML = '';
 
-    state.seriesOrEngine = '';
     state.width = '';
   }
 
@@ -1867,7 +1958,19 @@
       const s=e.target.closest('[data-subcategory]');
       if(s){ const v=s.dataset.subcategory||''; state.subcategory=state.subcategory===v?'':v; state.power='';state.seriesFilter='';state.modelFilter='';state.seriesModelView='';state.seriesModelOpen=false;state.hpRanges.clear();state.packageFilter='';state.packageComponents.clear();state.openBFilter='';state.seriesOrEngine='';state.width='';state.specFilters.clear(); renderTopFilters(); renderSidebar(); filterFamilies(); track('marketplace_subcategory',{subcategory:state.subcategory||'all'}); return; }
       const p=e.target.closest('[data-power]');
-      if(p){ const v=p.dataset.power||''; state.power=state.power===v?'':v; resetContext(); renderTopFilters(); renderSidebar(); filterFamilies(); track('marketplace_power',{power:state.power||'all'}); return; }
+      if(p){
+        const v=p.dataset.power||'';
+        state.power=state.power===v?'':v;
+        state.seriesOrEngine='';
+        state.seriesFilter='';
+        state.modelFilter='';
+        state.seriesModelView='';
+        renderTopFilters();
+        renderSidebar();
+        filterFamilies();
+        track('marketplace_power',{power:state.power||'all'});
+        return;
+      }
       const x=e.target.closest('[data-context]');
       if(x){ const v=x.dataset.context||''; state.seriesOrEngine=state.seriesOrEngine===v?'':v; renderTopFilters(); filterFamilies(); return; }
       const seriesNav=
