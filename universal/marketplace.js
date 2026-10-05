@@ -711,7 +711,14 @@
             sku,
             quantity:1,
             paymentMethod:'finance',
-            financeProgramId:clean(program.ProgramID)
+            financeProgramId:clean(program.ProgramID),
+            cart:{
+              primarySku:sku,
+              items:[{
+                sku,
+                quantity:1
+              }]
+            }
           }),
           cache:'no-store'
         });
@@ -721,10 +728,15 @@
 
         const sellingPrice=num(pricing.customerLinePrice);
         const row=variant.marketplaceRow||{};
+        const freight=Math.max(
+          num(row.FreightAmount||row.CustomerFreightAmount),
+          0
+        );
         const taxable=clean(row.Taxable).toUpperCase()!=='F';
-        const salesTax=taxable ? sellingPrice*MARKETPLACE_TAX_RATE : 0;
+        const taxableSubtotal=sellingPrice+freight;
+        const salesTax=taxable ? taxableSubtotal*MARKETPLACE_TAX_RATE : 0;
 
-        const lenderDown=programMinimumDown(program,sellingPrice+salesTax);
+        const lenderDown=programMinimumDown(program,taxableSubtotal+salesTax);
         const requiredDown=Math.max(
           lenderDown,
           num(pricing.profitProtectionDown)
@@ -736,7 +748,7 @@
             : num(program.CustomerOriginationFee||program.ApplicationFee);
 
         const amountFinanced=Math.max(
-          sellingPrice+salesTax-requiredDown,
+          taxableSubtotal+salesTax-requiredDown,
           0
         )+applicationFee;
 
