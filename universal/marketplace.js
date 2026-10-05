@@ -587,9 +587,21 @@
     const aprLabel=apr===0 ? '0%' : apr.toFixed(2).replace(/\.00$/,'')+'%';
     return {
       program:p,
+      aprLabel,
+      termMonths:clean(p.TermMonths),
       label:aprLabel+' for '+clean(p.TermMonths),
       sublabel:'Month Financing'
     };
+  }
+
+  function cardFinanceMarkup(f){
+    const finance=financeOfferData(f);
+    if(!finance) return '';
+
+    return '<div class="market-card-finance">'+
+      '<strong>'+esc(finance.aprLabel)+' APR</strong>'+
+      '<span>for '+esc(finance.termMonths)+' months</span>'+
+    '</div>';
   }
 
     function engineValue(f){
@@ -1835,6 +1847,7 @@
             ((first.productUrl||f.productUrl)?'<a class="market-product-details" href="'+esc(first.productUrl||f.productUrl)+'" target="_blank" rel="noopener">View Details</a>':'')+
             '<label class="market-product-details market-compare-detail"><input type="checkbox" data-compare="'+esc(f.key)+'" '+(state.compare.has(f.key)?'checked':'')+'> <span>Compare</span></label>'+
           '</div>'+
+          cardFinanceMarkup(f)+
         '</section>'+
         '<section class="market-buy">'+
           familyPriceMarkup(f)+
