@@ -44,6 +44,8 @@
     compare: new Set()
   };
 
+  let applyingUrlState=false;
+
   const $ = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
   const clean = v => String(v == null ? '' : v).trim();
@@ -915,6 +917,7 @@
       DATA.families=activeFamilies();
       DATA.filtered=[];
       renderCards();renderResultMeta();updateCompareButton();
+      syncMarketplaceUrl();
       return;
     }
     DATA.families=activeFamilies();
@@ -923,6 +926,7 @@
     renderCards();
     renderResultMeta();
     updateCompareButton();
+    syncMarketplaceUrl();
   }
 
   function button(label,value,kind,active){
@@ -2131,6 +2135,83 @@
     if(count) count.textContent=n ? String(n) : '';
   }
 
+  function marketplaceUrlParams(){
+    const params=new URLSearchParams();
+
+    if(state.category) params.set('category',state.category);
+    if(state.subcategory) params.set('subcategory',state.subcategory);
+    if(state.power) params.set('power',state.power);
+    if(state.seriesOrEngine) params.set('filter',state.seriesOrEngine);
+    if(state.seriesFilter) params.set('series',state.seriesFilter);
+    if(state.modelFilter) params.set('model',state.modelFilter);
+    if(state.promoOnly) params.set('promo','1');
+    if(state.buyOnline) params.set('online','1');
+    if(state.search) params.set('q',state.search);
+
+    if(state.brand.size){
+      params.set('brand',Array.from(state.brand).join(','));
+    }
+
+    if(state.availability.size){
+      params.set('availability',Array.from(state.availability).join(','));
+    }
+
+    return params;
+  }
+
+  function syncMarketplaceUrl(push=false){
+    if(applyingUrlState) return;
+
+    const params=marketplaceUrlParams();
+    const query=params.toString();
+    const next=location.pathname+(query?'?'+query:'')+location.hash;
+    const current=location.pathname+location.search+location.hash;
+
+    if(next===current) return;
+
+    history[push?'pushState':'replaceState'](
+      {marketplace:true},
+      '',
+      next
+    );
+  }
+
+  function applyMarketplaceUrl(){
+    applyingUrlState=true;
+
+    const params=new URLSearchParams(location.search);
+
+    state.shopMode='equipment';
+    state.category=clean(params.get('category'));
+    state.subcategory=clean(params.get('subcategory'));
+    state.power=clean(params.get('power'));
+    state.seriesOrEngine=clean(params.get('filter'));
+    state.seriesFilter=clean(params.get('series'));
+    state.modelFilter=clean(params.get('model'));
+    state.promoOnly=params.get('promo')==='1';
+    state.buyOnline=params.get('online')==='1';
+    state.search=clean(params.get('q'));
+
+    state.brand.clear();
+    clean(params.get('brand'))
+      .split(',')
+      .map(clean)
+      .filter(Boolean)
+      .forEach(value=>state.brand.add(value));
+
+    state.availability.clear();
+    clean(params.get('availability'))
+      .split(',')
+      .map(clean)
+      .filter(Boolean)
+      .forEach(value=>state.availability.add(value));
+
+    if($('#market-search')) $('#market-search').value=state.search;
+    if($('#filter-buy-online')) $('#filter-buy-online').checked=state.buyOnline;
+
+    applyingUrlState=false;
+  }
+
   function resetContext(){
     state.seriesOrEngine=''; state.width=''; state.specFilters.clear();
   }
@@ -2646,6 +2727,7 @@
       DATA.families=activeFamilies();
       DATA.filtered=DATA.families.slice();
       applyDealer(DATA.settings);
+      applyMarketplaceUrl();
       renderTopFilters(); renderSidebar(); filterFamilies(); wire(); updateCartFloat();
       $('#market-loading').hidden=true; $('#market-app').hidden=false;
       window.WESTEND_MARKETPLACE_READY_MS=Math.round(performance.now());
@@ -2654,6 +2736,13 @@
       $('#market-loading').innerHTML='<strong>Unable to load product data.</strong><br>'+esc(err.message||err);
     }
   }
+
+  window.addEventListener('popstate',()=>{
+    applyMarketplaceUrl();
+    renderTopFilters();
+    renderSidebar();
+    filterFamilies();
+  });
 
   document.addEventListener('DOMContentLoaded',init);
 })();
