@@ -1051,10 +1051,22 @@
 
     const engineGroup=marketplaceEngineGroup();
     if(engineGroup){
-      return clean(row && row[engineGroup.field]);
+      const grouped=clean(row && row[engineGroup.field]);
+      if(grouped) return grouped;
     }
 
-    return clean(row && (row.Engine || row.EngineBrand || row.EngineMake));
+    const direct=clean(row && (row.EngineBrand || row.EngineMake || row.Engine));
+    if(direct) return direct;
+
+    for(let i=1;i<=10;i++){
+      const label=clean(row && row['SpecLabel'+i]);
+      const value=clean(row && row['SpecValue'+i]);
+      if(value && /^engine(\s*(brand|make|manufacturer))?$/i.test(label)){
+        return value;
+      }
+    }
+
+    return '';
   }
 
   function rowHpValue(row){
@@ -1071,11 +1083,29 @@
       /(^|\s)(engine\s*)?hp$|horsepower/i.test(clean(group.label))
     );
 
-    return hpGroup ? clean(row && row[hpGroup.field]) : '';
+    if(hpGroup){
+      const grouped=clean(row && row[hpGroup.field]);
+      if(grouped) return grouped;
+    }
+
+    for(let i=1;i<=10;i++){
+      const label=clean(row && row['SpecLabel'+i]);
+      const value=clean(row && row['SpecValue'+i]);
+      if(value && /(^|\s)(engine\s*)?hp$|horsepower/i.test(label)){
+        return value;
+      }
+    }
+
+    return '';
   }
 
   function rowWidthValue(row){
     const candidates=[
+      row && row.CuttingWidth,
+      row && row.DeckWidth,
+      row && row.ClearingWidth,
+      row && row.WorkingWidth,
+      row && row.MowerWidth,
       row && row['Cutting Width'],
       row && row['Deck Width'],
       row && row['Clearing Width'],
