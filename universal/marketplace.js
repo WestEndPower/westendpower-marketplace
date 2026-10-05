@@ -1008,7 +1008,7 @@
 
     const categories=
       distinct(
-        DATA.equipmentFamilies.map(f=>f.category)
+        DATA.products.filter(p=>truthy(p.Active)).map(p=>clean(p.Category))
       ).filter(x=>
         !/^batteries|chargers$/i.test(x)
       );
