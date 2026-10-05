@@ -656,6 +656,7 @@
           ) ||
           state.promoOnly ||
           state.specFilters.size ||
+          state.seriesOrEngine ||
           state.seriesFilter ||
           state.modelFilter;
 
@@ -1972,7 +1973,17 @@
         return;
       }
       const x=e.target.closest('[data-context]');
-      if(x){ const v=x.dataset.context||''; state.seriesOrEngine=state.seriesOrEngine===v?'':v; renderTopFilters(); filterFamilies(); return; }
+      if(x){
+        const v=x.dataset.context||'';
+        state.seriesOrEngine=state.seriesOrEngine===v?'':v;
+        state.seriesFilter='';
+        state.modelFilter='';
+        state.seriesModelView='';
+        renderTopFilters();
+        renderSidebar();
+        filterFamilies();
+        return;
+      }
       const seriesNav=
         e.target.closest('[data-series-nav]');
 
