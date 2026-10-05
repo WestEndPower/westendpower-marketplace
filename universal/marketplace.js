@@ -1608,8 +1608,8 @@
     return DATA.inventoryByBrand.get(clean(brand).toUpperCase()) || new Set();
   }
 
-  function familyInventoryStatus(f){
-    const variants=relevantVariants(f);
+  function familyInventoryStatus(f,variant){
+    const variants=variant ? [variant] : relevantVariants(f);
     const shared=inventorySkuSet(f.brand);
     const sharedHit=variants.some(v=>shared.has(skuKey(v.sku)));
 
@@ -1648,10 +1648,11 @@
     return clean(value).replace(/[^0-9+]/g,'');
   }
 
-  function inventoryMarkup(f){
-    const status=familyInventoryStatus(f);
-    const skuList=distinct(relevantVariants(f).map(v=>v.sku)).join(', ');
+  function inventoryMarkup(f,variant,slot){
+    const status=familyInventoryStatus(f,variant);
+    const skuList=distinct((variant ? [variant] : relevantVariants(f)).map(v=>v.sku)).join(', ');
     const body='I would like to request lead time for '+clean(f.brand)+' '+clean(f.model)+(skuList?' (SKU: '+skuList+')':'')+'.';
+    const inventoryKey=f.key+'|'+clean(slot||'family')+'|'+skuKey(skuList);
 
     const locationRows=status.locations.map(location=>{
       if(location.normallyStocked){
@@ -1668,8 +1669,8 @@
     }).join('');
 
     return '<div class="market-inventory-wrap">'+
-      '<button type="button" class="market-inventory-button" data-inventory-toggle="'+esc(f.key)+'" aria-expanded="false">Check Inventory</button>'+
-      '<div class="market-inventory-popover" data-inventory-popover="'+esc(f.key)+'" hidden>'+
+      '<button type="button" class="market-inventory-button" data-inventory-toggle="'+esc(inventoryKey)+'" aria-expanded="false">Check Inventory</button>'+
+      '<div class="market-inventory-popover" data-inventory-popover="'+esc(inventoryKey)+'" hidden>'+
         locationRows+
       '</div>'+
     '</div>';
@@ -1757,6 +1758,7 @@
       (!isPackage && /battery/i.test(f.power)?'<small class="market-sold-separate">Battery and charger sold separately</small>':'')+
       (include?'<small class="market-package-includes">'+esc(include)+'</small>':'')+
       (savings?'<small class="market-package-savings">'+esc(savings)+'</small>':'')+
+      '<div class="market-price-inventory">'+inventoryMarkup(f,v,isPackage?'package':'unit')+'</div>'+
     '</div>';
   }
 
@@ -1810,12 +1812,7 @@
     const optionsUrl='product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+(['BILLYGOAT','TORO','HONDA','REDMAX','GREENWORKS','MITM'].includes(f.brand)?'&brand='+encodeURIComponent(f.brand):'');
     const runtimeUrl='index.html?category='+encodeURIComponent(f.category)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';
     return '<article class="market-card" data-key="'+esc(f.key)+'">'+
-      '<header class="market-card-head"><h3><strong>'+esc(f.model)+'</strong>'+(description?'<span>'+esc(description)+'</span>':'')+'</h3>'+
-        '<div class="market-card-head-actions">'+
-          inventoryMarkup(f)+
-          '<label class="market-compare-pick"><input type="checkbox" data-compare="'+esc(f.key)+'" '+(state.compare.has(f.key)?'checked':'')+'> <span>Compare</span></label>'+
-        '</div>'+
-      '</header>'+
+      '<header class="market-card-head"><h3><strong>'+esc(f.model)+'</strong>'+(description?'<span>'+esc(description)+'</span>':'')+'</h3></header>'+
       '<div class="market-card-body">'+
         '<section class="market-card-left">'+
           '<div class="market-image-wrap">'+
@@ -1834,7 +1831,10 @@
                 )
             )+
           '</div>'+
-          ((first.productUrl||f.productUrl)?'<a class="market-product-details" href="'+esc(first.productUrl||f.productUrl)+'" target="_blank" rel="noopener">View Details</a>':'')+
+          '<div class="market-detail-actions">'+
+            ((first.productUrl||f.productUrl)?'<a class="market-product-details" href="'+esc(first.productUrl||f.productUrl)+'" target="_blank" rel="noopener">View Details</a>':'')+
+            '<label class="market-product-details market-compare-detail"><input type="checkbox" data-compare="'+esc(f.key)+'" '+(state.compare.has(f.key)?'checked':'')+'> <span>Compare</span></label>'+
+          '</div>'+
         '</section>'+
         '<section class="market-buy">'+
           familyPriceMarkup(f)+
