@@ -649,9 +649,11 @@
 
     if(summary.none) return '';
 
+    const zeroApr=num(summary.apr)===0;
     const lines=[
-      '<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'/mo</strong><span> × '+esc(summary.termMonths)+'</span></div>',
-      '<div class="market-card-finance-apr">'+esc(summary.aprLabel)+' APR</div>'
+      '<div class="market-card-finance-head">'+(zeroApr?'0% FINANCING AVAILABLE':'FINANCING AVAILABLE')+'</div>',
+      '<div class="market-card-finance-payment"><span class="market-card-finance-aslow">AS LOW AS</span><strong>'+money(summary.monthly)+'/mo</strong></div>',
+      '<div class="market-card-finance-apr">'+esc(summary.aprLabel)+' APR <span class="market-card-finance-dot">•</span> '+esc(summary.termMonths)+' MONTHS</div>'
     ];
 
     if(summary.requiredDown>0){
