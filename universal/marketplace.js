@@ -9,6 +9,8 @@
     financePrograms: [],
     batterySystems: new Set(),
     settings: {},
+    locations: [],
+    inventoryByBrand: new Map(),
     equipmentFamilies: [],
     batteryFamilies: [],
     chargerFamilies: [],
@@ -51,6 +53,8 @@
   const moneyFormatter = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'});
   const money = v => moneyFormatter.format(Number(v||0));
   const esc = v => clean(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const MARKETPLACE_API='https://westendpower-configurator-api.westendpower-nm.workers.dev';
+  const skuKey = v => clean(v).toUpperCase().replace(/[^A-Z0-9]/g,'');
 
   function parseCsv(text){
     text = String(text||'').replace(/^\uFEFF/,'');
@@ -637,10 +641,8 @@
       }
       if(!ignoreBrand && state.brand.size && !state.brand.has(f.brand)) return false;
       if(state.availability.size){
-        const labels=[];
-        if(f.stock>0) labels.push('Stocked');
-        else labels.push('Available to Order');
-        if(!labels.some(x=>state.availability.has(x))) return false;
+        const label=availabilityText(f);
+        if(!state.availability.has(label)) return false;
       }
       if(state.buyOnline && !f.buyOnline) return false;
       if(state.shopMode==='equipment'){
@@ -1408,7 +1410,7 @@
     renderDynamicBrands();
 
     $('#filter-availability').innerHTML=
-      ['Stocked','Available to Order'].map(x=>
+      ['Normally In Stock','Available to Order'].map(x=>
         '<label>' +
           '<input type="checkbox" data-availability="' +
             esc(x) +
@@ -1460,9 +1462,104 @@
     return Object.entries(f.specs).filter(([,v])=>clean(v)).slice(0,5);
   }
 
+  function relevantVariants(f){
+    const variants=(f && f.variants)||[];
+    if(state.shopMode!=='equipment') return variants;
+
+    const hasVariantFilters=
+      state.packageComponents.size ||
+      state.promoOnly ||
+      state.specFilters.size ||
+      state.seriesFilter ||
+      state.modelFilter;
+
+    if(!hasVariantFilters) return variants;
+
+    const matched=variants.filter(v=>
+      v.marketplaceRow &&
+      marketplaceRowMatches(v.marketplaceRow)
+    );
+
+    return matched.length ? matched : variants;
+  }
+
+  function activeLocations(){
+    return (DATA.locations||[])
+      .filter(row=>truthy(row.Active))
+      .sort((a,b)=>num(a.SortOrder)-num(b.SortOrder));
+  }
+
+  function inventorySkuSet(brand){
+    return DATA.inventoryByBrand.get(clean(brand).toUpperCase()) || new Set();
+  }
+
+  function familyInventoryStatus(f){
+    const variants=relevantVariants(f);
+    const shared=inventorySkuSet(f.brand);
+    const sharedHit=variants.some(v=>shared.has(skuKey(v.sku)));
+
+    const locations=activeLocations().map(location=>{
+      const qtyField=clean(location.InventoryQtyField);
+      const normallyStocked=
+        sharedHit ||
+        variants.some(v=>
+          qtyField &&
+          v.marketplaceRow &&
+          num(v.marketplaceRow[qtyField])>0
+        );
+
+      return {
+        id:clean(location.LocationID),
+        name:clean(location.ShortName)||clean(location.LocationName),
+        email:clean(location.Email),
+        phone:clean(location.Phone),
+        normallyStocked
+      };
+    });
+
+    return {
+      normallyStocked:locations.some(x=>x.normallyStocked),
+      locations
+    };
+  }
+
   function availabilityText(f){
-    if(f.stock>0) return 'Stocked';
-    return 'Available to Order';
+    return familyInventoryStatus(f).normallyStocked
+      ? 'Normally In Stock'
+      : 'Available to Order';
+  }
+
+  function availabilityContactEmail(){
+    return clean(DATA.settings.AvailabilityEmail) ||
+      clean((activeLocations().find(x=>clean(x.Email))||{}).Email);
+  }
+
+  function inventoryMarkup(f){
+    const status=familyInventoryStatus(f);
+    const stocked=status.locations.filter(x=>x.normallyStocked);
+    const subject='Availability / Lead Time - '+clean(f.brand)+' '+clean(f.model);
+    const skuList=distinct(relevantVariants(f).map(v=>v.sku)).join(', ');
+    const body='I would like to check availability / lead time for '+clean(f.brand)+' '+clean(f.model)+(skuList?' (SKU: '+skuList+')':'')+'.';
+    const email=availabilityContactEmail();
+    const href=email
+      ? 'mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body)
+      : '';
+
+    return '<div class="market-inventory-wrap">'+
+      '<button type="button" class="market-inventory-button" data-inventory-toggle="'+esc(f.key)+'" aria-expanded="false">Check Inventory</button>'+
+      '<div class="market-inventory-popover" data-inventory-popover="'+esc(f.key)+'" hidden>'+
+        (
+          stocked.length
+            ? stocked.map(x=>'<div class="market-inventory-line"><span aria-hidden="true">✓</span> Normally In Stock @ '+esc(x.name)+'</div>').join('')
+            : '<div class="market-inventory-line market-inventory-order">Available to Order</div>'
+        )+
+        (
+          href
+            ? '<a class="market-inventory-contact" href="'+esc(href)+'">Check Availability / Lead Time</a>'
+            : ''
+        )+
+      '</div>'+
+    '</div>';
   }
 
   function cartMarkup(f){
@@ -1601,7 +1698,10 @@
     const runtimeUrl='index.html?category='+encodeURIComponent(f.category)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';
     return '<article class="market-card" data-key="'+esc(f.key)+'">'+
       '<header class="market-card-head"><h3><strong>'+esc(f.model)+'</strong>'+(description?'<span>'+esc(description)+'</span>':'')+'</h3>'+
-        '<label class="market-compare-pick"><input type="checkbox" data-compare="'+esc(f.key)+'" '+(state.compare.has(f.key)?'checked':'')+'> <span>Compare</span></label>'+
+        '<div class="market-card-head-actions">'+
+          inventoryMarkup(f)+
+          '<label class="market-compare-pick"><input type="checkbox" data-compare="'+esc(f.key)+'" '+(state.compare.has(f.key)?'checked':'')+'> <span>Compare</span></label>'+
+        '</div>'+
       '</header>'+
       '<div class="market-card-body">'+
         '<section class="market-card-left">'+
@@ -1941,6 +2041,28 @@
 
       const w=e.target.closest('[data-width]');
       if(w){ const v=w.dataset.width||''; state.width=state.width===v?'':v; renderTopFilters(); filterFamilies(); return; }
+      const inventoryToggle=e.target.closest('[data-inventory-toggle]');
+      if(inventoryToggle){
+        const key=inventoryToggle.dataset.inventoryToggle||'';
+        const popover=document.querySelector('[data-inventory-popover="'+CSS.escape(key)+'"]');
+        const opening=popover && popover.hidden;
+
+        $('[data-inventory-popover]').forEach(x=>{ x.hidden=true; });
+        $('[data-inventory-toggle]').forEach(x=>x.setAttribute('aria-expanded','false'));
+
+        if(popover && opening){
+          popover.hidden=false;
+          inventoryToggle.setAttribute('aria-expanded','true');
+          track('marketplace_check_inventory',{product_key:key});
+        }
+        return;
+      }
+
+      if(!e.target.closest('.market-inventory-wrap')){
+        $('[data-inventory-popover]').forEach(x=>{ x.hidden=true; });
+        $('[data-inventory-toggle]').forEach(x=>x.setAttribute('aria-expanded','false'));
+      }
+
       const add=e.target.closest('[data-add-cart]');
       if(add){ addFamilyToCart(add.dataset.addCart||'',add); return; }
     });
@@ -2116,9 +2238,50 @@
     }
   }
 
+  async function loadMarketplaceLocations(){
+    try{
+      return await csv('data/locations.csv');
+    }catch(error){
+      console.warn('Marketplace locations unavailable.',error);
+      return [];
+    }
+  }
+
+  async function loadInventoryAvailability(brands){
+    const results=await Promise.all(
+      brands.map(async brand=>{
+        try{
+          const response=await fetch(MARKETPLACE_API+'/inventory-availability',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({brandId:brand})
+          });
+          if(!response.ok) return [brand,new Set()];
+          const data=await response.json();
+          const set=new Set(
+            (Array.isArray(data.availability)?data.availability:[])
+              .filter(x=>num(x.quantity)>0)
+              .map(x=>skuKey(x.sku))
+              .filter(Boolean)
+          );
+          return [brand,set];
+        }catch(error){
+          console.warn('Inventory availability unavailable for '+brand,error);
+          return [brand,new Set()];
+        }
+      })
+    );
+
+    DATA.inventoryByBrand=new Map(results);
+  }
+
   async function init(){
     try{
-      const [products,batteries,chargers,compatibility,financePrograms,settingsRows]=await loadMarketplaceCatalog();
+      const [catalog,locations]=await Promise.all([
+        loadMarketplaceCatalog(),
+        loadMarketplaceLocations()
+      ]);
+      const [products,batteries,chargers,compatibility,financePrograms,settingsRows]=catalog;
       DATA.products=products;
       DATA.batteries=batteries;
       DATA.chargers=chargers;
@@ -2128,6 +2291,10 @@
         batteries.filter(x=>truthy(x.Active)).map(x=>clean(x.BatteryID).match(/^[A-Za-z]+/)?.[0]||'').filter(Boolean).map(x=>x.toUpperCase())
       );
       DATA.settings=settingsRows[0]||{};
+      DATA.locations=locations;
+      await loadInventoryAvailability(
+        marketplaceBrandProfiles().map(profile=>clean(profile.id).toUpperCase())
+      );
       DATA.equipmentFamilies=enrichFactoryPackageSavings(enrichRecommendedPackages(groupFamilies(products)));
       DATA.batteryFamilies=groupComponents(batteries,'battery');
       DATA.chargerFamilies=groupComponents(chargers,'charger');
