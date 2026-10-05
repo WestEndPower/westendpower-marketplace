@@ -640,7 +640,18 @@
         if(!contextMatch) return false;
       }
       if(state.width){
-        const wp=widthPair(f); if(!wp || clean(wp[1])!==state.width) return false;
+        const widthMatch=(f.variants||[]).some(v=>
+          v.marketplaceRow &&
+          rowWidthValue(v.marketplaceRow)===state.width
+        );
+        if(!widthMatch) return false;
+      }
+      if(state.hpRanges.size){
+        const hpMatch=(f.variants||[]).some(v=>
+          v.marketplaceRow &&
+          state.hpRanges.has(rowHpValue(v.marketplaceRow))
+        );
+        if(!hpMatch) return false;
       }
       if(!ignoreBrand && state.brand.size && !state.brand.has(f.brand)) return false;
       if(state.availability.size){
@@ -1306,18 +1317,25 @@
           )
         );
 
+    const powerButtons = state.power
+      ? [
+          button('All Power Types','','power',false),
+          button(state.power,state.power,'power',true)
+        ].join('')
+      : powerValues.map(value=>
+          button(
+            value,
+            value,
+            'power',
+            false
+          )
+        ).join('');
+
     const powerTypeHtml =
       '<div class="market-compact-group market-power-type">' +
         '<div class="market-compact-heading">POWER TYPE</div>' +
         '<div class="market-compact-buttons">' +
-          powerValues.map(value=>
-            button(
-              value,
-              value,
-              'power',
-              state.power===value
-            )
-          ).join('') +
+          powerButtons +
         '</div>' +
       '</div>' +
 
@@ -1364,6 +1382,96 @@
                 )
               ).join('') +
             '</div>' +
+          '</div>'
+        )
+        : '';
+
+    function rowHpValue(row){
+      const direct=[
+        row && row.GrossEngineHP,
+        row && row.NetEngineHP,
+        row && row.EngineHP,
+        row && row['Engine Hp'],
+        row && row.Horsepower
+      ].map(clean).find(Boolean);
+      if(direct) return direct;
+
+      const hpGroup=marketplaceFilterHeaders('B').find(group=>
+        /(^|\s)(engine\s*)?hp$|horsepower/i.test(clean(group.label))
+      );
+
+      return hpGroup ? clean(row && row[hpGroup.field]) : '';
+    }
+
+    function rowWidthValue(row){
+      const candidates=[
+        ['Cutting Width',row && row['Cutting Width']],
+        ['Deck Width',row && row['Deck Width']],
+        ['Clearing Width',row && row['Clearing Width']],
+        ['Working Width',row && row['Working Width']],
+        ['Mower Width',row && row['Mower Width']]
+      ];
+
+      for(const [,value] of candidates){
+        if(clean(value)) return clean(value);
+      }
+
+      for(let i=1;i<=10;i++){
+        const label=clean(row && row['SpecLabel'+i]);
+        const value=clean(row && row['SpecValue'+i]);
+        if(value && /cut(ting)?\s*width|deck\s*width|clearing\s*width|working\s*width|mower\s*width/i.test(label)){
+          return value;
+        }
+      }
+
+      return '';
+    }
+
+    const dimensionRows=(DATA.products||[]).filter(row=>
+      truthy(row.Active) &&
+      clean(row.Category)===state.category &&
+      (!state.subcategory || clean(row.SubCategory)===state.subcategory) &&
+      (!state.power || clean(row.PowerType)===state.power) &&
+      (!state.seriesOrEngine || marketplacePowerContextValue(row,state.power)===state.seriesOrEngine)
+    );
+
+    const hpValues=distinct(dimensionRows.map(rowHpValue).filter(Boolean));
+    const widthValues=distinct(dimensionRows.map(rowWidthValue).filter(Boolean));
+
+    const hpWidthHtml =
+      (
+        hpValues.length || widthValues.length
+      )
+        ? (
+          '<div class="market-sort-filter-row">' +
+            (
+              hpValues.length
+                ? (
+                  '<div class="market-compact-group">' +
+                    '<div class="market-compact-heading">HP</div>' +
+                    '<div class="market-compact-buttons">' +
+                      hpValues.map(value=>
+                        '<button type="button" class="market-chip'+(state.hpRanges.has(value)?' active':'')+'" data-hp-value="'+esc(value)+'">'+esc(value)+'</button>'
+                      ).join('') +
+                    '</div>' +
+                  '</div>'
+                )
+                : ''
+            ) +
+            (
+              widthValues.length
+                ? (
+                  '<div class="market-compact-group">' +
+                    '<div class="market-compact-heading">CUTTING / CLEARING WIDTH</div>' +
+                    '<div class="market-compact-buttons">' +
+                      widthValues.map(value=>
+                        button(value,value,'width',state.width===value)
+                      ).join('') +
+                    '</div>' +
+                  '</div>'
+                )
+                : ''
+            ) +
           '</div>'
         )
         : '';
@@ -1472,7 +1580,7 @@
         )
         : '';
 
-    context.innerHTML =
+    const contextHtml =
       '<div class="market-primary-filter-row">' +
 
         '<div class="market-primary-left">' +
@@ -1486,10 +1594,16 @@
       '</div>' +
 
       powerContextHtml +
+      hpWidthHtml +
       subcategoryHtml +
       seriesModelDetailHtml +
 
       narrowSearchHtml;
+
+    context.innerHTML=contextHtml;
+    const mobileContext=$('#market-mobile-context');
+    if(mobileContext) mobileContext.innerHTML=contextHtml;
+
     widthHost.hidden = true;
     widthHost.innerHTML = '';
 
@@ -1943,6 +2057,18 @@
 
   function wire(){
     document.addEventListener('click',e=>{
+      const openFilters=e.target.closest('[data-mobile-filters-open]');
+      if(openFilters){
+        document.body.classList.add('market-mobile-filters-open');
+        return;
+      }
+
+      const closeFilters=e.target.closest('[data-mobile-filters-close]');
+      if(closeFilters){
+        document.body.classList.remove('market-mobile-filters-open');
+        return;
+      }
+
       if(e.target.closest('[data-market-home]')){
         returnMarketplaceHome();return;
       }
@@ -2151,8 +2277,20 @@
         return;
       }
 
+      const hp=e.target.closest('[data-hp-value]');
+      if(hp){
+        const value=hp.dataset.hpValue||'';
+        state.hpRanges.has(value)
+          ? state.hpRanges.delete(value)
+          : state.hpRanges.add(value);
+        renderTopFilters();
+        renderSidebar();
+        filterFamilies();
+        return;
+      }
+
       const w=e.target.closest('[data-width]');
-      if(w){ const v=w.dataset.width||''; state.width=state.width===v?'':v; renderTopFilters(); filterFamilies(); return; }
+      if(w){ const v=w.dataset.width||''; state.width=state.width===v?'':v; renderTopFilters(); renderSidebar(); filterFamilies(); return; }
       const inventoryToggle=e.target.closest('[data-inventory-toggle]');
       if(inventoryToggle){
         const key=inventoryToggle.dataset.inventoryToggle||'';
