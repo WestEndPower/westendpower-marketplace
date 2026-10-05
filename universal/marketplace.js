@@ -2047,8 +2047,8 @@
         const popover=document.querySelector('[data-inventory-popover="'+CSS.escape(key)+'"]');
         const opening=popover && popover.hidden;
 
-        $('[data-inventory-popover]').forEach(x=>{ x.hidden=true; });
-        $('[data-inventory-toggle]').forEach(x=>x.setAttribute('aria-expanded','false'));
+        $$('[data-inventory-popover]').forEach(x=>{ x.hidden=true; });
+        $$('[data-inventory-toggle]').forEach(x=>x.setAttribute('aria-expanded','false'));
 
         if(popover && opening){
           popover.hidden=false;
@@ -2059,8 +2059,8 @@
       }
 
       if(!e.target.closest('.market-inventory-wrap')){
-        $('[data-inventory-popover]').forEach(x=>{ x.hidden=true; });
-        $('[data-inventory-toggle]').forEach(x=>x.setAttribute('aria-expanded','false'));
+        $$('[data-inventory-popover]').forEach(x=>{ x.hidden=true; });
+        $$('[data-inventory-toggle]').forEach(x=>x.setAttribute('aria-expanded','false'));
       }
 
       const add=e.target.closest('[data-add-cart]');
