@@ -45,13 +45,32 @@ function merge(source,current,{preferWorkbookImage=false}={}){
   if(!rows.length)throw Error('Products export has no usable rows; Marketplace left unchanged');
   return {headers,rows};
 }
+function canonicalImagePaths(root){
+ const {spawnSync}=require('node:child_process');
+ const listing=spawnSync('git',['-C',root,'ls-files','-z','--cached','--','images'],{encoding:'utf8'});
+ if(listing.status!==0)throw Error('Cannot read Git image filenames.');
+ const known=new Map();for(const name of listing.stdout.split('\0').filter(Boolean)){const key=name.toLowerCase();if(known.has(key)&&known.get(key)!==name)throw Error('Ambiguous image capitalization: '+name);known.set(key,name);}
+ return image=>{
+  const tracked=known.get(image.toLowerCase());if(tracked)return tracked;
+  let current=root;const actual=[];
+  for(const part of image.split('/')){
+   const entries=fs.existsSync(current)?fs.readdirSync(current):[];
+   const matches=entries.filter(n=>n.toLowerCase()===part.toLowerCase());
+   if(matches.length>1)throw Error('Ambiguous image folder/filename: '+image);
+   const name=matches[0]||part;actual.push(name);current=path.join(current,name);
+  }
+  return actual.join('/');
+ };
+}
 function copyBillyGoatImages(rows,sourceFile,root,directory){
+  const canonical=canonicalImagePaths(root);
   const sourceRoot=path.dirname(path.dirname(sourceFile));
   const jobs=[];
   for(const row of rows){
     const image=String(row.ImageURL||'').trim().replace(/\\/g,'/');
     if(!/^images\/products\/[A-Za-z0-9_. -]+\.(?:jpe?g|png|webp|svg)$/i.test(image))continue;
-    const source=path.join(sourceRoot,image),target=path.join(root,image);
+    const source=path.join(sourceRoot,image),actualImage=canonical(image),target=path.join(root,actualImage);
+    row.ImageURL=actualImage;
     if(!fs.existsSync(source)){if(fs.existsSync(target))continue;throw Error('Billy Goat image missing: '+source+'. Put the image in the configurator images/products folder and retry.');}
     const bytes=fs.readFileSync(source);
     if(!bytes.length)throw Error('Billy Goat image is empty: '+source);
@@ -80,10 +99,11 @@ function sync({brand,sourceFile,root=path.resolve(__dirname,'..'),backupRoot}){
   if(!fs.existsSync(target))throw Error('Marketplace brand products file not found: '+target);
   const old=fs.readFileSync(target,'utf8');
   const result=merge(parse(fs.readFileSync(sourceFile,'utf8')),parse(old),{preferWorkbookImage:brand==='billygoat'});
-  const data=encode(result.headers,result.rows);
+
   const directory=backupRoot||path.join(process.env.USERPROFILE||os.homedir(),'Desktop','Marketplace-Brand-Backups','automatic-product-sync');
   fs.mkdirSync(directory,{recursive:true});
   const imageCount=brand==='billygoat'?copyBillyGoatImages(result.rows,sourceFile,root,directory):0;
+  const data=encode(result.headers,result.rows);
   if(data===old)return {changed:false,rows:result.rows.length,imageCount};
   const stamp=new Date().toISOString().replace(/[:.]/g,'-');
   fs.copyFileSync(target,path.join(directory,`${brand}-${stamp}-${process.pid}.csv`));
