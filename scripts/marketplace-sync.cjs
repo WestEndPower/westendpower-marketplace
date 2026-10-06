@@ -25,7 +25,7 @@ function parse(text){
   return {headers,rows};
 }
 function encode(headers,rows){const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';return '\uFEFF'+[headers.map(q).join(','),...rows.map(r=>headers.map(h=>q(r[h])).join(','))].join('\r\n')+'\r\n';}
-function merge(source,current){
+function merge(source,current,{preferWorkbookImage=false}={}){
   for(const h of ['SKU','Category','Model','Series'])if(!source.headers.includes(h))throw Error('Public products export missing '+h);
   const headers=source.headers.filter(h=>!isPrivate(h));
   for(const h of [...LINKS,'MarketplaceFamily'])if(current.headers.includes(h)&&!headers.includes(h))headers.push(h);
@@ -38,12 +38,39 @@ function merge(source,current){
     const old=oldBySKU.get(sku.toUpperCase())||{};
     const out=Object.fromEntries(headers.map(h=>[h,r[h]??'']));
     // Marketplace's curated image and external links survive data refreshes.
-    for(const h of LINKS)if(String(old[h]||'').trim())out[h]=old[h];
+    for(const h of LINKS)if(String(old[h]||'').trim()){if(h==='ImageURL'&&preferWorkbookImage&&String(r[h]||'').trim())continue;out[h]=old[h];}
     if(!String(out.MarketplaceFamily||'').trim()&&old.MarketplaceFamily)out.MarketplaceFamily=old.MarketplaceFamily;
     rows.push(out);
   }
   if(!rows.length)throw Error('Products export has no usable rows; Marketplace left unchanged');
   return {headers,rows};
+}
+function copyBillyGoatImages(rows,sourceFile,root,directory){
+  const sourceRoot=path.dirname(path.dirname(sourceFile));
+  const jobs=[];
+  for(const row of rows){
+    const image=String(row.ImageURL||'').trim().replace(/\\/g,'/');
+    if(!/^images\/products\/[A-Za-z0-9_. -]+\.(?:jpe?g|png|webp|svg)$/i.test(image))continue;
+    const source=path.join(sourceRoot,image),target=path.join(root,image);
+    if(!fs.existsSync(source)){if(fs.existsSync(target))continue;throw Error('Billy Goat image missing: '+source+'. Put the image in the configurator images/products folder and retry.');}
+    const bytes=fs.readFileSync(source);
+    if(!bytes.length)throw Error('Billy Goat image is empty: '+source);
+    if(fs.existsSync(target)&&fs.readFileSync(target).equals(bytes))continue;
+    jobs.push({source,target,bytes});
+  }
+  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+  const journal=[];
+  try{
+    for(const job of jobs){
+      fs.mkdirSync(path.dirname(job.target),{recursive:true});
+      const saved=path.join(directory,'images-'+stamp+'-'+process.pid,path.basename(job.target));
+      const exists=fs.existsSync(job.target);
+      if(exists){fs.mkdirSync(path.dirname(saved),{recursive:true});fs.copyFileSync(job.target,saved);}
+      journal.push({target:job.target,saved,exists});
+      fs.writeFileSync(job.target,job.bytes);
+    }
+  }catch(error){for(const job of journal.reverse()){if(job.exists)fs.copyFileSync(job.saved,job.target);else fs.rmSync(job.target,{force:true});}throw error;}
+  return jobs.length;
 }
 function sync({brand,sourceFile,root=path.resolve(__dirname,'..'),backupRoot}){
   if(!BRANDS.includes(brand))throw Error('Unknown brand');
@@ -52,16 +79,17 @@ function sync({brand,sourceFile,root=path.resolve(__dirname,'..'),backupRoot}){
   const target=path.join(root,'brands',brand,'data','products.csv');
   if(!fs.existsSync(target))throw Error('Marketplace brand products file not found: '+target);
   const old=fs.readFileSync(target,'utf8');
-  const result=merge(parse(fs.readFileSync(sourceFile,'utf8')),parse(old));
+  const result=merge(parse(fs.readFileSync(sourceFile,'utf8')),parse(old),{preferWorkbookImage:brand==='billygoat'});
   const data=encode(result.headers,result.rows);
-  if(data===old)return {changed:false,rows:result.rows.length};
   const directory=backupRoot||path.join(process.env.USERPROFILE||os.homedir(),'Desktop','Marketplace-Brand-Backups','automatic-product-sync');
   fs.mkdirSync(directory,{recursive:true});
+  const imageCount=brand==='billygoat'?copyBillyGoatImages(result.rows,sourceFile,root,directory):0;
+  if(data===old)return {changed:false,rows:result.rows.length,imageCount};
   const stamp=new Date().toISOString().replace(/[:.]/g,'-');
   fs.copyFileSync(target,path.join(directory,`${brand}-${stamp}-${process.pid}.csv`));
   const temp=target+'.sync-'+process.pid;
   try{fs.writeFileSync(temp,data,'utf8');fs.renameSync(temp,target);}finally{if(fs.existsSync(temp))fs.unlinkSync(temp);}
-  return {changed:true,rows:result.rows.length};
+  return {changed:true,rows:result.rows.length,imageCount};
 }
 module.exports={parse,encode,merge,sync,isPrivate};
 if(require.main===module){
