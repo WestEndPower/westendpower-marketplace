@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   'use strict';
 
   const DATA = {
@@ -618,6 +618,7 @@
       '<div class="market-card-finance-head">FINANCING AVAILABLE</div>'+
       '<div class="market-card-finance-apr">'+esc(summary.aprLabel)+' APR <span class="market-card-finance-dot">•</span> '+esc(summary.termMonths)+' MONTHS</div>'+
       '<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month</span></strong></div>'+
+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+
       button+'</div>';
   }
 

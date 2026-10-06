@@ -3,6 +3,8 @@
 'use strict';
 const API='https://westendpower-configurator-api.westendpower-nm.workers.dev';
 const TAX_RATE=0.0635;
+// MARKETPLACE_LIVE_PRICING_V2: quantities, inventory precedence and cent-rounded totals.
+const cents=v=>Math.round((Number(v)+Number.EPSILON)*100)/100;
 const clean=v=>String(v==null?'':v).trim();
 const truthy=v=>/^(T|TRUE|Y|YES|1)$/i.test(clean(v));
 const num=v=>{const n=Number(clean(v).replace(/[$,%]/g,''));return Number.isFinite(n)?n:0;};
@@ -69,12 +71,14 @@ async function programs(brandId,sku,inventoryId){
   const data=await post('/customer-finance-programs',{brandId,sku,inventoryId:selected});
   return (data.programs||[]).filter(p=>num(p.TermMonths)>0 && clean(p.ProgramID));
 }
-async function quote(brandId,sku,row,paymentMethod,program,inventoryId){
+async function quote(brandId,sku,row,paymentMethod,program,inventoryId,quantity=1){
+  quantity=Number(quantity);
+  if(!Number.isInteger(quantity)||quantity<1||quantity>100)throw new Error('Choose a whole-number quantity from 1 to 100.');
   const selected=await selectInventory(brandId,sku,inventoryId);
   const pricing=await post('/customer-pricing',{
-    brandId,sku,quantity:1,paymentMethod,inventoryId:selected,includeFreightQuote:true,
+    brandId,sku,quantity,paymentMethod,inventoryId:selected,includeFreightQuote:true,
     ...(program?{financeProgramId:clean(program.ProgramID)}:{}),
-    cart:{primarySku:sku,items:[{sku,quantity:1,inventoryId:selected}]}
+    cart:{primarySku:sku,items:[{sku,quantity,inventoryId:selected}]}
   });
   if(!Number.isFinite(Number(pricing.customerLinePrice)) || num(pricing.customerLinePrice)<0) throw new Error('Pricing is not available for this product.');
   const sellingPrice=num(pricing.customerLinePrice);
@@ -82,19 +86,19 @@ async function quote(brandId,sku,row,paymentMethod,program,inventoryId){
   if(!freightQuote)throw new Error('The pricing API needs the Freight update before these payment options can load.');
   const freightConfirmed=freightQuote.confirmed===true && Number.isFinite(Number(freightQuote.amount)) && freightQuote.amount!==null;
   const freight=freightConfirmed?Math.max(num(freightQuote.amount),0):0;
-  const taxableSubtotal=sellingPrice+freight;
-  const salesTax=clean(row.Taxable).toUpperCase()!=='F'?taxableSubtotal*TAX_RATE:0;
-  const outTheDoor=taxableSubtotal+salesTax;
+  const taxableSubtotal=cents(sellingPrice+freight);
+  const salesTax=!/^(F|FALSE|N|NO|0)$/i.test(clean(row.Taxable))?cents(taxableSubtotal*TAX_RATE):0;
+  const outTheDoor=cents(taxableSubtotal+salesTax);
   const requiredDown=program?Math.max(programMinimumDown(program,outTheDoor),num(pricing.profitProtectionDown)):0;
-  const applicationFee=program?(brandId==='YANMAR'?299:num(program.CustomerOriginationFee||program.ApplicationFee)):0;
-  const amountFinanced=program?Math.max(outTheDoor-requiredDown,0)+applicationFee:0;
+  const applicationFee=program?(brandId==='YANMAR'?299:num(program.CustomerOriginationFee||program.ApplicationFee||program.UCCFilingFee)):0;
+  const amountFinanced=program?cents(Math.max(outTheDoor-requiredDown,0)+applicationFee):0;
   let apr=program?num(program.APR):0;
   if(apr>0 && apr<1) apr*=100;
   const termMonths=program?num(program.TermMonths):0;
-  return {pricing,sellingPrice,freight,freightConfirmed,freightSource:freightQuote.source,freightMessage:freightQuote.message||'',inventoryId:selected,salesTax,outTheDoor,requiredDown,applicationFee,amountFinanced,
+  return {quantity,pricing,sellingPrice,freight,freightConfirmed,freightSource:freightQuote.source,freightMessage:freightQuote.message||'',inventoryId:selected,salesTax,outTheDoor,requiredDown,applicationFee,amountFinanced,
     apr,aprLabel:apr===0?'0%':apr.toFixed(2).replace(/\.00$/,'')+'%',termMonths,
     monthly:program?monthlyPayment(amountFinanced,apr,termMonths):0,
-    rebateAmount:num(pricing.customerRebate),rebateCompatible:program?programAllowsRebate(program):true};
+    rebateAmount:cents(num(pricing.customerRebate)*quantity),rebateCompatible:program?programAllowsRebate(program):true};
 }
 root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFinanceProgram,monthlyPayment,programMinimumDown,programAllowsRebate};
 })(typeof window==='undefined'?globalThis:window);
