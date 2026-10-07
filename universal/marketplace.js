@@ -1875,6 +1875,8 @@
     const description=[f.power,f.subcategory].filter(Boolean).join(' - ');
     const equipmentMode=state.shopMode==='equipment';
     const optionsUrl='product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+(['BILLYGOAT','TORO','HONDA','REDMAX','GREENWORKS','MITM'].includes(f.brand)?'&brand='+encodeURIComponent(f.brand):'');
+    // WEP_TORO_BUILD_LINK_V1: the configurator owns compatibility and pricing.
+    const buildUrl=f.brand==='TORO'?'https://toro-equipment-configurator.westendpower-nm.workers.dev/?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+'&from=marketplace':'';
     const runtimeUrl='index.html?category='+encodeURIComponent(f.category)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';
     return '<article class="market-card" data-key="'+esc(f.key)+'">'+
       '<header class="market-card-head"><h3><strong>'+esc(f.model)+'</strong>'+(description?'<span>'+esc(description)+'</span>':'')+'</h3></header>'+
@@ -1906,6 +1908,7 @@
           familyPriceMarkup(f)+
           (equipmentMode
             ? '<div class="market-actions"><a href="'+optionsUrl+'">'+(/battery/i.test(f.power)?'View Accessories':'View Options')+'</a>'+
+                (buildUrl?'<a href="'+esc(buildUrl)+'">Build Your Own</a>':'')+
                 (/battery/i.test(f.power)?'<a href="'+runtimeUrl+'" target="_blank">Run/Charge Times</a>':'')+
               '</div>'
             : '')+
