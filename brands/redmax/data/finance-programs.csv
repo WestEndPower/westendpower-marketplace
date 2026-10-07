@@ -1,1 +1,25 @@
-Active,SortOrder,ProgramName,APR,TermMonths,CustomerOriginationFee,MinAmount,MaxAmount,RebateCompatible,StartDate,EndDate,Public,Display,ExcludeFromBid,ExcludeFromFleet,MinDownAmount,MinDownPercent,Group_ALL_STIHL,FSA 120,Group_RMA,Group_RM,Group_ALL_ZTR,Group_RZ100,Group_RZ200,Group_RZ500,Group_RZ700,Group_RZ752,Group_RZ900,Group_AZA,Group_RZA,Notes,ProgramID,BrandID,Lender,ApplicationURL
+Active,SortOrder,ProgramName,APR,TermMonths,InterestFreeDays,FirstPaymentDueDays,FirstPaymentDueDate,CustomerOriginationFee,MinAmount,MaxAmount,RebateCompatible,StartDate,EndDate,Public,Display,ExcludeFromBid,ExcludeFromFleet,MinDownAmount,MinDownPercent,Group_ALL_REDMAX,Notes,ProgramID,BrandID,Lender,ApplicationURL
+T,1,0.00% for 24 Months,0,24,,,,150,1500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-1,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,2,0.00% for 24 Months,0,24,120,150,,150,1500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-2,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,3,1.99% for 36 Months,0.0199,36,120,150,,150,1500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-3,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,4,2.99% for 48 Months,0.0299,48,120,150,,150,1500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-4,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,5,0.00% for 12 Months,0,12,,,,50,500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-5,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,6,0.00% for 36 Months,0,36,,,,150,1500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-6,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,7,0.00% for 48 Months,0,48,,,,150,3000,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-7,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,8,1.99% for 48 Months,0.0199,48,,,,150,1500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-8,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,9,3.99% for 60 Months,0.0399,60,,,,150,2500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-9,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,10,2.99% for 24 Months,0.0299,24,,,,150,1500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-10,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,11,3.99% for 36 Months,0.0399,36,,,,150,3000,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-11,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,12,4.99% for 48 Months,0.0499,48,,,,150,4500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-12,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,13,5.99% for 60 Months,0.0599,60,,,,150,6000,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-13,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,14,5.99% for 12 Months,0.0599,12,,,,50,500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-14,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,15,7.99% for 24 Months,0.0799,24,,,,150,1500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-15,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,16,9.99% for 36 Months,0.0999,36,,,,150,1500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-16,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,17,11.99% for 48 Months,0.1199,48,,,,150,1500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-17,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,18,8.99% for 12 Months,0.0899,12,,,,50,500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-18,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,19,10.99% for 24 Months,0.1099,24,,,,150,1500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-19,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,20,12.99% for 36 Months,0.1299,36,,,,150,1500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-20,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,21,14.99% for 48 Months,0.1499,48,,,,150,1500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-21,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,22,10.99% for 36 Months,0.1099,36,,,,150,1500,75000,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,20260801-22,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,,7.99% for 48 Months,0.0799,48,,,,150,75000,,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498
+T,,8.99% for 60 Months,0.0899,60,,,,150,75000,,T,2026-08-01,2026-10-31,T,T,T,F,,,T,,,REDMAX,Sheffield Financial,https://prequalify.sheffieldFinancial.com/Apply/Dealer/51498

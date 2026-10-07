@@ -1,2 +1,12 @@
-"Active","Amount","AppliesTo","AppliesToValue","ApplyWhen","ChargeType","DeliveryGroup","DisplayLabel","FreightGroup","MaximumCharge","MinimumCharge","Percent","QtyMax","QtyMin","RuleID","RuleName","SortOrder","Notes"
-"T","200","FreightGroup","Zero-Turns","NotInStock","Fixed","","Special Order Freight","Zero-Turns","","","","2","1","FRT-STIHL-RZ","STIHL RZ Special Order Freight","20","$200 per unit for 1 or 2 RZ mowers; no freight for 3 or more."
+Active,Amount,AppliesTo,AppliesToValue,ApplyWhen,ChargeType,DeliveryGroup,DisplayLabel,FreightGroup,MaximumCharge,MinimumCharge,Percent,QtyMax,QtyMin,RuleID,RuleName,SortOrder,Notes
+T,20,FreightGroup,HANDHELD_20,NotInStock,Fixed,,Special Order Freight,HANDHELD_20,,,,,,"FRT-HANDHELD_20
+
+20",RedMax Handheld $20 Freight,20,
+T,25,FreightGroup,HANDHELD_25,NotInStock,Fixed,,Special Order Freight,HANDHELD_25,,,,,,"FRT-HANDHELD_25
+25",RedMax Handheld $25 Freight,30,
+T,40,FreightGroup,HANDHELD_40,NotInStock,Fixed,,Special Order Freight,HANDHELD_40,,,,,,"FRT-HANDHELD_40
+40",RedMax Handheld $40 Freight,40,
+T,60,FreightGroup,HANDHELD_60,NotInStock,Fixed,,Special Order Freight,HANDHELD_60,,,,,,"FRT-HANDHELD_60
+60",RedMax Handheld $60 Freight,50,
+T,100,FreightGroup,HANDHELD_100,NotInStock,Fixed,,Special Order Freight,HANDHELD_100,,,,,,"FRT-HANDHELD_100
+100",RedMax Handheld $100 Freight,60,
