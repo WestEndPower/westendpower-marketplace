@@ -1,7 +1,7 @@
 ﻿<!doctype html>
 <html lang="en">
 <head>
-<link rel="preload" href="data/marketplace-catalog.json?v=f317e3384dc840eb" as="fetch" crossorigin="anonymous" data-marketplace-catalog>
+<link rel="preload" href="data/marketplace-catalog.json?v=6dd921ac3e380f6b" as="fetch" crossorigin="anonymous" data-marketplace-catalog>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>West End Power Marketplace</title>
@@ -390,6 +390,19 @@ button,input,select{font:inherit}button{cursor:pointer}button,a,input,select,sum
   }
 
 </style>
+<style id="inventory-text-confirm-v1">
+.market-price-inventory{padding-top:8px}
+.market-price-inventory .market-inventory-wrap{width:100%}
+.market-inventory-button,.market-price-inventory .market-inventory-button{width:100%;min-width:160px;min-height:44px;padding:10px 14px;border:2px solid #104a79;border-radius:7px;background:#145b96;color:#fff;font-size:14px;font-weight:900;box-shadow:0 2px 4px rgba(0,0,0,.15)}
+.market-inventory-button:hover,.market-inventory-button[aria-expanded="true"]{background:#104a79;color:#fff}
+.market-inventory-button:focus-visible,.market-inventory-text-action:focus-visible{outline:3px solid #e7a700;outline-offset:3px}
+.market-inventory-popover{min-width:265px;max-width:min(330px,82vw);padding:12px}
+.market-inventory-store+.market-inventory-store{margin-top:12px;padding-top:12px;border-top:1px solid #d9e1e7}
+.market-inventory-line{font-size:14px;line-height:1.35}
+.market-inventory-contact.market-inventory-text-action{display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:7px;padding:9px 10px;border:1px solid #176b35;border-radius:6px;background:#edf7ef;color:#155c2f;font-size:13px;font-weight:900;text-align:center;text-decoration:none;white-space:normal}
+.market-inventory-contact.market-inventory-text-action:hover{background:#dceee0;text-decoration:underline}
+</style>
+
 </head>
 <body>
 <div id="market-loading">Loading product catalogâ€¦</div>

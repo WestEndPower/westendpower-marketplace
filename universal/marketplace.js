@@ -1715,32 +1715,31 @@
   }
 
   function inventoryMarkup(f,variant,slot){
+    // INVENTORY_TEXT_CONFIRM_V1
     const status=familyInventoryStatus(f,variant);
     const skuList=distinct((variant ? [variant] : relevantVariants(f)).map(v=>v.sku)).join(', ');
-    const body='I would like to request lead time for '+clean(f.brand)+' '+clean(f.model)+(skuList?' (SKU: '+skuList+')':'')+'.';
+    const product=clean(f.brand)+' '+clean(f.model)+(skuList?' (SKU: '+skuList+')':'');
     const inventoryKey=f.key+'|'+clean(slot||'family')+'|'+skuKey(skuList);
-
+    const separator=/iPad|iPhone|iPod/i.test(navigator.userAgent)?'&':'?';
     const locationRows=status.locations.map(location=>{
-      if(location.normallyStocked){
-        return '<div class="market-inventory-line"><span aria-hidden="true">✓</span> '+esc(location.name)+' - Normally In Stock</div>';
-      }
-
+      const stocked=location.normallyStocked;
+      const label=stocked?'Stocked':'Request Lead Time';
+      const body=(stocked?'Please confirm availability of ':'Please provide lead time for ')+product+' at '+clean(location.name)+'. I am interested in quantity 1.';
       const phone=smsPhone(location.phone);
-      if(!phone){
-        return '<div class="market-inventory-line market-inventory-order">'+esc(location.name)+' - Request Lead Time</div>';
-      }
-
-      const href='sms:'+phone+'?body='+encodeURIComponent(body);
-      return '<a class="market-inventory-contact market-inventory-location-contact" href="'+esc(href)+'">'+esc(location.name)+' - Request Lead Time</a>';
+      const heading='<div class="market-inventory-line'+(stocked?'':' market-inventory-order')+'">'+
+        (stocked?'<span aria-hidden="true">✓</span> ':'')+esc(location.name)+' - '+label+'</div>';
+      if(!phone) return '<div class="market-inventory-store">'+heading+'</div>';
+      const href='sms:'+phone+separator+'body='+encodeURIComponent(body);
+      const action=stocked?'Text to Confirm Availability':'Text to Request Lead Time';
+      return '<div class="market-inventory-store">'+heading+
+        '<a class="market-inventory-contact market-inventory-text-action" aria-label="'+esc(action+' at '+location.name)+'" href="'+esc(href)+'">'+action+'</a></div>';
     }).join('');
-
     return '<div class="market-inventory-wrap">'+
       '<button type="button" class="market-inventory-button" data-inventory-toggle="'+esc(inventoryKey)+'" aria-expanded="false">Check Inventory</button>'+
-      '<div class="market-inventory-popover" data-inventory-popover="'+esc(inventoryKey)+'" hidden>'+
-        locationRows+
-      '</div>'+
+      '<div class="market-inventory-popover" data-inventory-popover="'+esc(inventoryKey)+'" hidden>'+locationRows+'</div>'+
     '</div>';
   }
+
 
   function cartMarkup(f){
     const eligible=f.variants.filter(v=>v.buyOnline && v.price>0);
