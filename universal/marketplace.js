@@ -1812,7 +1812,7 @@
     const shown=promo ? promo.price : v.price;
     const include=isPackage ? packageSummary(v) : '';
     const savings=isPackage && Number(v.packageSavings||0)>0 && Number(v.packageValue||0)>0
-      ? 'Package Value '+money(v.packageValue)+' Â· Save '+money(v.packageSavings)
+      ? 'Separately '+money(v.packageValue)+' | Save '+money(v.packageSavings)
       : '';
     return '<div class="market-price-choice'+(isPackage?' market-package-choice':'')+'">'+
       '<div class="market-price-heading"><span>'+esc(label)+'</span><span class="market-price-pair">'+
@@ -2504,7 +2504,7 @@
       const bundle=await response.json();
       const expected=marketplaceBrandProfiles().map(p=>clean(p.id).toUpperCase());
       if(bundle.schema!==1 || JSON.stringify(bundle.brands)!==JSON.stringify(expected) ||
-         bundle.componentBrand!==clean(activeBrand().id).toUpperCase() ||
+         bundle.componentBrand!=="STIHL" ||
          !Array.isArray(bundle.productSources) || bundle.productSources.length!==expected.length ||
          bundle.productSources.some((table,i)=>table.brand!==expected[i]) || !bundle.tables){
         throw new Error('Combined catalog does not match this Marketplace');
@@ -2519,10 +2519,10 @@
       window.WESTEND_MARKETPLACE_CATALOG_SOURCE='csv-fallback';
       return Promise.all([
         loadMarketplaceProducts(),
-        csv(brandDataPath('batteries.csv')),
-        csv(brandDataPath('chargers.csv')),
-        csv(brandDataPath('compatibility-runtime.csv')),
-        csv(brandDataPath('finance-programs.csv')),
+        csv('brands/stihl/data/batteries.csv'),
+        csv('brands/stihl/data/chargers.csv'),
+        csv('brands/stihl/data/compatibility-runtime.csv'),
+        csv('brands/stihl/data/finance-programs.csv'),
         csv('data/dealer-settings.csv')
       ]);
     }
