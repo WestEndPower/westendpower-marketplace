@@ -1677,7 +1677,7 @@
   }
 
   function familyInventoryStatus(f,variant){
-    const variants=variant ? [variant] : relevantVariants(f);
+    const variants=Array.isArray(variant) ? variant : (variant ? [variant] : relevantVariants(f));
     const inventory=inventorySkuSet(f.brand);
 
     const records=distinct(variants.map(v=>skuKey(v.sku)))
@@ -1738,7 +1738,7 @@
 
   function inventoryMarkup(f,variant,slot){
     const status=familyInventoryStatus(f,variant);
-    const skuList=distinct((variant ? [variant] : relevantVariants(f)).map(v=>v.sku)).join(', ');
+    const skuList=distinct((Array.isArray(variant) ? variant : (variant ? [variant] : relevantVariants(f))).map(v=>v.sku)).join(', ');
     const product=clean(f.brand)+' '+clean(f.model)+(skuList?' (SKU: '+skuList+')':'');
     const inventoryKey=f.key+'|'+clean(slot||'family')+'|'+skuKey(skuList);
     const separator=/iPad|iPhone|iPod/i.test(navigator.userAgent)?'&':'?';
@@ -1846,7 +1846,7 @@
     return parts.length ? parts.join(' and ')+' included' : '';
   }
 
-  function pricePanel(label,v,isPackage,f){
+  function pricePanel(label,v,isPackage,f,variantGroup){
     if(!v) return '';
     const promo=promoInfo(v);
     const regular=promo ? promo.regular : (v.msrp>0 ? v.msrp : v.price);
@@ -1864,16 +1864,37 @@
       (!isPackage && /battery/i.test(f.power)?'<small class="market-sold-separate">Battery and charger sold separately</small>':'')+
       (include?'<small class="market-package-includes">'+esc(include)+'</small>':'')+
       (savings?'<small class="market-package-savings">'+esc(savings)+'</small>':'')+
-      '<div class="market-price-inventory">'+inventoryMarkup(f,v,isPackage?'package':'unit')+'</div>'+
+      '<div class="market-price-inventory">'+inventoryMarkup(f,variantGroup||v,isPackage?'package':'unit')+'</div>'+
     '</div>';
   }
 
   function familyPriceMarkup(f){
-    const tool=f.variants.find(v=>!/kit|package/i.test(v.type));
-    const kit=f.variants.find(v=>/kit|package/i.test(v.type));
+    const groups=new Map();
+    (f.variants||[]).forEach(v=>{
+      const raw=clean(v.type);
+      const match=raw.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+      const base=clean(match?match[1]:raw);
+      const suffix=match?' ('+clean(match[2])+')':'';
+      const isPackage=/kit|package/i.test(base);
+      const label=(isPackage?'Package':'Unit')+suffix;
+      if(!groups.has(label)) groups.set(label,[]);
+      groups.get(label).push(v);
+    });
     const rows=[];
-    if(tool) rows.push(pricePanel('Unit',tool,false,f));
-    if(kit) rows.push(pricePanel('Package',kit,true,f));
+    [...groups.entries()]
+      .sort((a,b)=>{
+        const rank=label=>/49-State/i.test(label)?0:/50-State/i.test(label)?1:2;
+        return rank(a[0])-rank(b[0]);
+      })
+      .forEach(([label,variants])=>{
+      const first=variants[0];
+      const prices=[...new Set(variants.map(v=>Number(v.price)||0))];
+      if(prices.length>1){
+        variants.forEach(v=>rows.push(pricePanel(label+' - SKU '+v.sku,v,/^Package/.test(label),f)));
+      }else{
+        rows.push(pricePanel(label,first,/^Package/.test(label),f,variants));
+      }
+    });
     if(!rows.length && f.variants[0]) rows.push(pricePanel('Price',f.variants[0],false,f));
     return '<div class="market-price-lines">'+rows.join('')+'</div>';
   }
