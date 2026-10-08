@@ -116,7 +116,9 @@
         (normalizedBrand==='YANMAR' && category==='Compact Tractors' ? model : '') ||
         marketplaceFamily ||
         seriesFamily ||
-        model ||
+        (clean(p.ProductType).toLowerCase()==='tool' && !clean(p.Model)
+          ? clean(p.SKU)
+          : model) ||
         clean(p.SKU);
 
       const key=(brand+'|'+familyModel).toUpperCase();
