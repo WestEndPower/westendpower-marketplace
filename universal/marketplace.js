@@ -1881,7 +1881,7 @@
     const buildUrl=f.brand==='TORO'?optionsUrl:''; // WEP_MARKET_OPTIONS_V1
     const runtimeUrl='index.html?category='+encodeURIComponent(f.category)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';
     return '<article class="market-card" data-key="'+esc(f.key)+'">'+
-      '<header class="market-card-head"><h3><strong>'+esc(heading)+'</strong>'+(first.sku?'<span style="display:block;font-size:0.8em;font-weight:400">SKU: '+esc(first.sku)+'</span>':'')+'</h3></header>'+
+      '<header class="market-card-head"><h3><strong>'+esc(heading)+'</strong>'+(first.sku?'<div style="display:block;width:100%;font-size:0.8em;font-weight:400;clear:both">SKU: '+esc(first.sku)+'</div>':'')+'</h3></header>'+
       '<div class="market-card-body">'+
         '<section class="market-card-left">'+
           '<div class="market-image-wrap">'+
