@@ -121,7 +121,7 @@
           : model) ||
         clean(p.SKU);
 
-      const key=(brand+'|'+familyModel).toUpperCase();
+      const key=(brand+'|'+familyModel+'|'+clean(p.PowerType)).toUpperCase();
       const rowSort=num(p.SortOrder)||999999;
 
       if(!map.has(key)){
@@ -1673,43 +1673,63 @@
   }
 
   function inventorySkuSet(brand){
-    return DATA.inventoryByBrand.get(clean(brand).toUpperCase()) || new Set();
+    return DATA.inventoryByBrand.get(clean(brand).toUpperCase()) || new Map();
   }
 
   function familyInventoryStatus(f,variant){
     const variants=variant ? [variant] : relevantVariants(f);
-    const shared=inventorySkuSet(f.brand);
-    const sharedHit=variants.some(v=>shared.has(skuKey(v.sku)));
+    const inventory=inventorySkuSet(f.brand);
+
+    const records=distinct(variants.map(v=>skuKey(v.sku)))
+      .map(sku=>inventory.get(sku))
+      .filter(Boolean);
+
+    const inStock=records.some(x=>x.quantity>0);
+    const incoming=!inStock && records.some(x=>x.onOrderQuantity>0);
 
     const locations=activeLocations().map(location=>{
       const qtyField=clean(location.InventoryQtyField);
-      const normallyStocked=
-        sharedHit ||
-        variants.some(v=>
-          qtyField &&
-          v.marketplaceRow &&
-          num(v.marketplaceRow[qtyField])>0
-        );
+      const normallyStocked=variants.some(v=>
+        qtyField &&
+        v.marketplaceRow &&
+        num(v.marketplaceRow[qtyField])>0
+      );
+
+      const status=inStock
+        ? 'in-stock'
+        : incoming
+          ? 'incoming'
+          : normallyStocked
+            ? 'normally-stocked'
+            : 'out-of-stock';
 
       return {
         id:clean(location.LocationID),
         name:clean(location.ShortName)||clean(location.LocationName),
         email:clean(location.Email),
         phone:clean(location.Phone),
-        normallyStocked
+        status,
+        normallyStocked:status!=='out-of-stock'
       };
     });
 
     return {
-      normallyStocked:locations.some(x=>x.normallyStocked),
+      status:inStock ? 'in-stock' :
+        incoming ? 'incoming' :
+        locations.some(x=>x.status==='normally-stocked')
+          ? 'normally-stocked' : 'out-of-stock',
+      normallyStocked:inStock || incoming ||
+        locations.some(x=>x.status==='normally-stocked'),
       locations
     };
   }
 
   function availabilityText(f){
-    return familyInventoryStatus(f).normallyStocked
-      ? 'Normally In Stock'
-      : 'Available to Order';
+    const status=familyInventoryStatus(f).status;
+    return status==='in-stock' ? 'In Stock' :
+      status==='incoming' ? 'Incoming' :
+      status==='normally-stocked' ? 'Normally Stocked' :
+      'Out of Stock - Check Lead Time';
   }
 
   function smsPhone(value){
@@ -1717,31 +1737,50 @@
   }
 
   function inventoryMarkup(f,variant,slot){
-    // INVENTORY_TEXT_CONFIRM_V1
     const status=familyInventoryStatus(f,variant);
     const skuList=distinct((variant ? [variant] : relevantVariants(f)).map(v=>v.sku)).join(', ');
     const product=clean(f.brand)+' '+clean(f.model)+(skuList?' (SKU: '+skuList+')':'');
     const inventoryKey=f.key+'|'+clean(slot||'family')+'|'+skuKey(skuList);
     const separator=/iPad|iPhone|iPod/i.test(navigator.userAgent)?'&':'?';
+
     const locationRows=status.locations.map(location=>{
-      const stocked=location.normallyStocked;
-      const label=stocked?'Stocked':'Request Lead Time';
-      const body=(stocked?'Please confirm availability of ':'Please provide lead time for ')+product+' at '+clean(location.name)+'. I am interested in quantity 1.';
+      const type=location.status;
+      const label=type==='in-stock' ? 'In Stock' :
+        type==='incoming' ? 'Incoming' :
+        type==='normally-stocked' ? 'Normally Stocked' :
+        'Out of Stock - Check Lead Time';
+
+      const available=type!=='out-of-stock';
+      const action=type==='out-of-stock'
+        ? 'Text to Request Lead Time'
+        : 'Text to Confirm Availability';
+
+      const body=type==='out-of-stock'
+        ? 'Please provide lead time for '+product+' at '+clean(location.name)+'. I am interested in quantity 1.'
+        : 'Please confirm availability of '+product+' at '+clean(location.name)+'. I am interested in quantity 1.';
+
       const phone=smsPhone(location.phone);
-      const heading='<div class="market-inventory-line'+(stocked?'':' market-inventory-order')+'">'+
-        (stocked?'<span aria-hidden="true">✓</span> ':'')+esc(location.name)+' - '+label+'</div>';
+      const heading='<div class="market-inventory-line'+
+        (available?'':' market-inventory-order')+'">'+
+        esc(location.name)+' - '+esc(label)+'</div>';
+
       if(!phone) return '<div class="market-inventory-store">'+heading+'</div>';
+
       const href='sms:'+phone+separator+'body='+encodeURIComponent(body);
-      const action=stocked?'Text to Confirm Availability':'Text to Request Lead Time';
+
       return '<div class="market-inventory-store">'+heading+
-        '<a class="market-inventory-contact market-inventory-text-action" aria-label="'+esc(action+' at '+location.name)+'" href="'+esc(href)+'">'+action+'</a></div>';
+        '<a class="market-inventory-contact market-inventory-text-action" aria-label="'+
+        esc(action+' at '+location.name)+'" href="'+esc(href)+'">'+
+        action+'</a></div>';
     }).join('');
+
     return '<div class="market-inventory-wrap">'+
-      '<button type="button" class="market-inventory-button" data-inventory-toggle="'+esc(inventoryKey)+'" aria-expanded="false">Check Inventory</button>'+
-      '<div class="market-inventory-popover" data-inventory-popover="'+esc(inventoryKey)+'" hidden>'+locationRows+'</div>'+
+      '<button type="button" class="market-inventory-button" data-inventory-toggle="'+
+      esc(inventoryKey)+'" aria-expanded="false">Check Inventory</button>'+
+      '<div class="market-inventory-popover" data-inventory-popover="'+
+      esc(inventoryKey)+'" hidden>'+locationRows+'</div>'+
     '</div>';
   }
-
 
   function cartMarkup(f){
     const eligible=f.variants.filter(v=>v.buyOnline && v.price>0);
@@ -2551,25 +2590,30 @@
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({brandId:brand})
           });
-          if(!response.ok) return [brand,new Set()];
+          if(!response.ok) throw new Error('HTTP '+response.status);
+
           const data=await response.json();
-          const set=new Set(
-            (Array.isArray(data.availability)?data.availability:[])
-              .filter(x=>num(x.quantity)>0)
-              .map(x=>skuKey(x.sku))
-              .filter(Boolean)
-          );
-          return [brand,set];
+          const inventory=new Map();
+
+          for(const item of (Array.isArray(data.availability)?data.availability:[])){
+            const sku=skuKey(item.sku);
+            if(!sku) continue;
+            inventory.set(sku,{
+              quantity:Math.max(0,num(item.quantity)),
+              onOrderQuantity:Math.max(0,num(item.onOrderQuantity))
+            });
+          }
+
+          return [brand,inventory];
         }catch(error){
           console.warn('Inventory availability unavailable for '+brand,error);
-          return [brand,new Set()];
+          return [brand,new Map()];
         }
       })
     );
 
     DATA.inventoryByBrand=new Map(results);
   }
-
   async function init(){
     try{
       const [catalog,locations]=await Promise.all([
