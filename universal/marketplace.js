@@ -1817,7 +1817,7 @@
       ? 'Separately '+money(v.packageValue)+' | Save '+money(v.packageSavings)
       : '';
     return '<div class="market-price-choice'+(isPackage?' market-package-choice':'')+'">'+
-      '<div class="market-price-heading"><span>'+esc(label)+(v.sku?' - SKU: '+esc(v.sku):'')+'</span><span class="market-price-pair">'+
+      '<div class="market-price-heading"><span>'+esc(label)+'</span><span class="market-price-pair">'+
         (promo?'<del>'+money(regular)+'</del>':'')+
         '<strong>'+(shown>0?money(shown):'Pricing Coming Soon')+'</strong>'+
       '</span></div>'+
