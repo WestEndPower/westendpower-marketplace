@@ -1817,7 +1817,7 @@
       ? 'Separately '+money(v.packageValue)+' | Save '+money(v.packageSavings)
       : '';
     return '<div class="market-price-choice'+(isPackage?' market-package-choice':'')+'">'+
-      '<div class="market-price-heading"><span>'+esc(label)+'</span><span class="market-price-pair">'+
+      '<div class="market-price-heading"><span>'+esc(label)+(v.sku?' - SKU: '+esc(v.sku):'')+'</span><span class="market-price-pair">'+
         (promo?'<del>'+money(regular)+'</del>':'')+
         '<strong>'+(shown>0?money(shown):'Pricing Coming Soon')+'</strong>'+
       '</span></div>'+
@@ -1874,14 +1874,14 @@
     function card(f){
     const first=f.variants[0]||{};
     const specs=familySpecs(f).slice(0,4);
-    const description=[f.power,f.subcategory].filter(Boolean).join(' - ');
+    const heading=clean(first.description)||clean(f.model)||clean(first.sku);
     const equipmentMode=state.shopMode==='equipment';
     const optionsUrl='product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+(['BILLYGOAT','TORO','HONDA','REDMAX','GREENWORKS','MITM'].includes(f.brand)?'&brand='+encodeURIComponent(f.brand):'');
     // WEP_TORO_BUILD_LINK_V1: the configurator owns compatibility and pricing.
     const buildUrl=f.brand==='TORO'?optionsUrl:''; // WEP_MARKET_OPTIONS_V1
     const runtimeUrl='index.html?category='+encodeURIComponent(f.category)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';
     return '<article class="market-card" data-key="'+esc(f.key)+'">'+
-      '<header class="market-card-head"><h3><strong>'+esc(f.model)+'</strong>'+(description?'<span>'+esc(description)+'</span>':'')+'</h3></header>'+
+      '<header class="market-card-head"><h3><strong>'+esc(heading)+'</strong>'+(first.sku?'<span>SKU: '+esc(first.sku)+'</span>':'')+'</h3></header>'+
       '<div class="market-card-body">'+
         '<section class="market-card-left">'+
           '<div class="market-image-wrap">'+
