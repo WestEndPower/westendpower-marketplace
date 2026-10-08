@@ -1876,7 +1876,7 @@
     const equipmentMode=state.shopMode==='equipment';
     const optionsUrl='product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+(['BILLYGOAT','TORO','HONDA','REDMAX','GREENWORKS','MITM'].includes(f.brand)?'&brand='+encodeURIComponent(f.brand):'');
     // WEP_TORO_BUILD_LINK_V1: the configurator owns compatibility and pricing.
-    const buildUrl=f.brand==='TORO'?'https://toro-equipment-configurator.westendpower-nm.workers.dev/?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+'&from=marketplace':'';
+    const buildUrl=f.brand==='TORO'?optionsUrl:''; // WEP_MARKET_OPTIONS_V1
     const runtimeUrl='index.html?category='+encodeURIComponent(f.category)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';
     return '<article class="market-card" data-key="'+esc(f.key)+'">'+
       '<header class="market-card-head"><h3><strong>'+esc(f.model)+'</strong>'+(description?'<span>'+esc(description)+'</span>':'')+'</h3></header>'+

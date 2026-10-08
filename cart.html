@@ -338,6 +338,7 @@ function drawCart(){
   );
 
   $("review-order").disabled=!cart.length;
+  $("review-order").textContent=cart.some(row=>row.brandId==='TORO')?'Review Package & Quote':'Review Order';
 
   document.querySelectorAll("[data-cart-qty]").forEach(input=>{
     input.onchange=function(){
@@ -504,6 +505,7 @@ async function submitCart(event){
 
   event.preventDefault();
 
+  if(reviewToroCart())return;
   if(checkoutBusy || !cart.length)return;
 
   const form=$("checkout-form");
@@ -684,7 +686,22 @@ $("confirm-secure-checkout").onclick=function(){
 
   $("checkout-form").requestSubmit();
 };
+// WEP_MARKET_CART_V1
+function reviewToroCart(){
+ const toro=cart.filter(row=>row.brandId==='TORO');
+ if(!toro.length)return false;
+ if(toro.length!==cart.length){alert('Review Toro equipment separately from other brands. Your cart has been kept.');return true;}
+ const groups=[...new Set(toro.map(row=>row.packageId))];
+ if(groups.length!==1||!groups[0]){alert('Review one Toro equipment package at a time. Your cart has been kept.');return true;}
+ const main=toro.filter(row=>row.type==='tool');
+ if(main.length!==1){alert('Add the equipment to this package before reviewing a quote.');return true;}
+ const items=toro.map(row=>({type:row.type,sku:String(row.sku),qty:Number(row.quantity)}));
+ if(items.some(row=>!Number.isInteger(row.qty)||row.qty<1||row.qty>20)){alert('Quote quantities must be whole numbers from 1 to 20.');return true;}
+ const url=new URL('https://toro-equipment-configurator.westendpower-nm.workers.dev/');
+ url.searchParams.set('sku',main[0].sku);url.searchParams.set('from','marketplace');url.searchParams.set('package',JSON.stringify({brandId:'TORO',sku:main[0].sku,items}));location.assign(url.href);return true;
+}
 $("review-order").onclick=function(){
+ if(reviewToroCart())return;
 
   const form=$("checkout-form");
 
