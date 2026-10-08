@@ -933,6 +933,7 @@
     }
 
     if(
+      !options.ignoreSubcategory &&
       state.subcategory &&
       clean(row.SubCategory)!==state.subcategory
     ){
@@ -940,13 +941,14 @@
     }
 
     if(
+      !options.ignorePower &&
       state.power &&
       clean(row.PowerType)!==state.power
     ){
       return false;
     }
 
-    if(state.seriesOrEngine){
+    if(state.seriesOrEngine && !options.ignoreContext){
       const contextGroup=marketplacePowerContextGroup();
       if(
         !contextGroup ||
@@ -957,6 +959,7 @@
     }
 
     if(
+      !options.ignoreSeries &&
       state.seriesFilter &&
       clean(row.Series)!==state.seriesFilter
     ){
@@ -964,6 +967,7 @@
     }
 
     if(
+      !options.ignoreModel &&
       state.modelFilter &&
       clean(row.Model)!==state.modelFilter
     ){
@@ -1116,7 +1120,7 @@
       (DATA.products||[]).some(row=>
         marketplaceRowMatches(
           row,
-          {ignoreField:group.field}
+          {ignoreField:group.field,ignoreContext:true}
         ) &&
         clean(row.PowerType)===state.power &&
         clean(row[group.field])
@@ -1189,40 +1193,23 @@
 
     const seriesValues = distinct(
       DATA.products
-        .filter(p =>
-          truthy(p.Active) &&
-          clean(p.Category)===state.category &&
-          (!state.subcategory || clean(p.SubCategory)===state.subcategory) &&
-          (!state.power || clean(p.PowerType)===state.power)
-        )
+        .filter(p => marketplaceRowMatches(p,{ignoreSeries:true,ignoreModel:true}))
         .map(p => clean(p.Series))
         .filter(Boolean)
     ).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
 
     const modelValues = distinct(
       DATA.products
-        .filter(p =>
-          truthy(p.Active) &&
-          clean(p.Category)===state.category &&
-          (!state.subcategory || clean(p.SubCategory)===state.subcategory) &&
-          (!state.power || clean(p.PowerType)===state.power) &&
-          (!state.seriesFilter || clean(p.Series)===state.seriesFilter)
-        )
+        .filter(p => marketplaceRowMatches(p,{ignoreModel:true}))
         .map(p => clean(p.Model))
         .filter(Boolean)
     ).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
-
     const powerValues = distinct(
       DATA.products
-        .filter(p=>
-          truthy(p.Active) &&
-          clean(p.Category)===state.category &&
-          (!state.subcategory || clean(p.SubCategory)===state.subcategory)
-        )
-        .map(p=>clean(p.PowerType))
+        .filter(p => marketplaceRowMatches(p,{ignorePower:true}))
+        .map(p => clean(p.PowerType))
         .filter(Boolean)
     );
-
     const powerContextGroup=marketplacePowerContextGroup();
 
     const powerContextValues =
@@ -1254,9 +1241,10 @@
     );
 
     const subcategoryValues = distinct(
-      DATA.products.filter(p=>
-        truthy(p.Active) && clean(p.Category)===state.category
-      ).map(p=>clean(p.SubCategory)).filter(Boolean)
+      DATA.products
+        .filter(p => marketplaceRowMatches(p,{ignoreSubcategory:true}))
+        .map(p => clean(p.SubCategory))
+        .filter(Boolean)
     );
     const subcategoryHtml = state.category && subcategoryValues.length
       ? '<div class="market-compact-group market-subcategory-nav" style="width:100%;margin-bottom:10px">' +
@@ -1387,20 +1375,18 @@
           )
         );
 
-    const powerButtons = state.power
-      ? [
-          button('All Power Types','','power',false),
-          button(state.power,state.power,'power',true)
-        ].join('')
-      : powerValues.map(value=>
-          button(
-            value,
-            value,
-            'power',
-            false
-          )
-        ).join('');
-
+    const powerButtons =
+      (state.power
+        ? button('All Power Types','','power',false)
+        : '') +
+      powerValues.map(value=>
+        button(
+          value,
+          value,
+          'power',
+          state.power===value
+        )
+      ).join('');
     const powerTypeHtml =
       '<div class="market-compact-group market-power-type">' +
         '<div class="market-compact-heading">POWER TYPE</div>' +
@@ -1573,7 +1559,6 @@
 
       '</div>' +
 
-      powerContextHtml +
       subcategoryHtml +
       seriesModelDetailHtml +
 
@@ -2200,15 +2185,19 @@
       const c=e.target.closest('[data-category]');
       if(c){ state.category=c.dataset.category||''; state.subcategory=''; state.power=''; resetContext(); renderTopFilters(); renderSidebar(); filterFamilies(); track('marketplace_category',{category:state.category||'all'}); return; }
       const s=e.target.closest('[data-subcategory]');
-      if(s){ const v=s.dataset.subcategory||''; state.subcategory=state.subcategory===v?'':v; state.power='';state.seriesFilter='';state.modelFilter='';state.seriesModelView='';state.seriesModelOpen=false;state.hpRanges.clear();state.packageFilter='';state.packageComponents.clear();state.openBFilter='';state.seriesOrEngine='';state.width='';state.specFilters.clear(); renderTopFilters(); renderSidebar(); filterFamilies(); track('marketplace_subcategory',{subcategory:state.subcategory||'all'}); return; }
+      if(s){
+        const v=s.dataset.subcategory||'';
+        state.subcategory=state.subcategory===v?'':v;
+        renderTopFilters();
+        renderSidebar();
+        filterFamilies();
+        track('marketplace_subcategory',{subcategory:state.subcategory||'all'});
+        return;
+      }
       const p=e.target.closest('[data-power]');
       if(p){
         const v=p.dataset.power||'';
         state.power=state.power===v?'':v;
-        state.seriesOrEngine='';
-        state.seriesFilter='';
-        state.modelFilter='';
-        state.seriesModelView='';
         renderTopFilters();
         renderSidebar();
         filterFamilies();
@@ -2268,7 +2257,7 @@
         state.seriesFilter=
           state.seriesFilter===value ? '' : value;
 
-        state.modelFilter='';
+
 
         renderTopFilters();
         renderSidebar();
