@@ -4,7 +4,7 @@
 <meta name="description" content="Equipment information and a direct link to contact West End Power Equipment about a specific product.">
 <style>
 :root{font-family:Arial,Helvetica,sans-serif;color:#1b242b}*{box-sizing:border-box}body{margin:0;background:#f5f7f8}a{color:#176c34}button{font:inherit;cursor:pointer}.wrap{max-width:1100px;margin:auto;padding:20px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:white;padding:16px 20px;border-radius:12px;border:1px solid #d9dee3}.top h1{font-size:22px;margin:0}.top a{text-decoration:none;font-weight:700}.product{background:white;border:1px solid #d9dee3;border-radius:12px;padding:22px;margin-top:18px}.eyebrow{color:#58636d;font-size:13px;font-weight:700;letter-spacing:.04em}.product h2{font-size:clamp(24px,4vw,36px);margin:9px 0}.body{display:grid;grid-template-columns:minmax(220px,1fr) minmax(270px,1.1fr);gap:28px}.photo{display:flex;align-items:center;justify-content:center;min-height:250px;background:#fff}.photo img{max-width:100%;max-height:350px;object-fit:contain}.price{border:1px solid #cbd4da;background:#f7f9f9;padding:14px;border-radius:9px;margin:14px 0}.price strong{font-size:24px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}.btn{border:1px solid #176c34;background:#176c34;color:white;border-radius:8px;padding:12px 16px;font-weight:700;text-decoration:none}.btn.secondary{background:white;color:#176c34}.specs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:16px}.spec{padding:11px;border-bottom:1px solid #e4e7e9}.spec small{display:block;color:#626c75;margin-bottom:5px}.note{font-size:13px;color:#5e6870;line-height:1.5}.contact{border-top:1px solid #e1e5e8;margin-top:22px;padding-top:20px}.contact textarea{display:block;width:100%;min-height:100px;padding:12px;border:1px solid #b8c1c7;border-radius:8px;font:inherit}.methods{display:flex;gap:25px;flex-wrap:wrap;margin:14px 0}.methods label{display:flex;flex-direction:column;gap:6px}.methods span{display:flex;gap:6px;align-items:center}.contact-buttons{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:14px}.error{color:#9b1c1c}#product[hidden]{display:none}@media(max-width:700px){.body{grid-template-columns:1fr}.specs{grid-template-columns:1fr}.wrap{padding:10px}.product{padding:15px}}
-</style></head><body><div class="wrap">
+</style></head><body><nav id="we-shared-nav"></nav><div class="wrap">
 <header class="top"><h1>West End Marketplace</h1><a href="marketplace.html">← Back to Marketplace</a></header>
 <main id="product" class="product" hidden>
 <div class="eyebrow" id="brand"></div><h2 id="title"></h2>
@@ -73,9 +73,10 @@ function init(source,rows){
 fetch('data/marketplace-catalog.json').then(r=>{if(!r.ok)throw Error('Catalog unavailable');return r.json()}).then(data=>{
  if(!brand||(!model&&!sku))throw Error('Missing product identifier');
  const source=(data.productSources||[]).find(x=>x.brand.toUpperCase()===brand);if(!source)throw Error('Brand not found');
- const rows=source.rows.filter(row=>sku?norm(cell(row,source.headers,'SKU'))===norm(sku):norm(cell(row,source.headers,'Model'))===norm(model));
+ const productRows=source.encoding==='sparse'?source.rows.map(row=>{const dense=Array(source.headers.length).fill('');for(let i=0;i<row.length;i+=2)dense[row[i]]=row[i+1];return dense}):source.rows;
+ const rows=productRows.filter(row=>sku?norm(cell(row,source.headers,'SKU'))===norm(sku):norm(cell(row,source.headers,'Model'))===norm(model));
  if(!rows.length)throw Error('Product not found in current catalog');
  init(source,rows);
 }).catch(e=>{$('status').className='error';$('status').textContent=e.message+'. Please return to the Marketplace and select a product.'});
 })();
-</script></body></html>
+</script><script src="brand-settings.js"></script><script src="universal/shared-navigation.js"></script></body></html>

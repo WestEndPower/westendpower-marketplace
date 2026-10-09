@@ -2005,7 +2005,33 @@
     if(offset<families.length) setTimeout(appendBatch,16);
   }
 
+  // Universal category view is a separate, catalog-driven page. Keep existing Marketplace filters intact.
+  function updateUniversalCategoryLink(){
+    const actions=$('.market-results-actions');
+    if(!actions) return;
+    let link=$('#market-universal-category-link');
+    if(!link){
+      link=document.createElement('a');
+      link.id='market-universal-category-link';
+      link.className='market-chip';
+      link.target='_blank';
+      link.rel='noopener noreferrer';
+      link.style.cssText='display:inline-flex;align-items:center;text-decoration:none;white-space:nowrap';
+      link.textContent='Open Category Page ↗';
+      actions.prepend(link);
+    }
+    const brand=state.brand.size===1 ? Array.from(state.brand)[0] : '';
+    const category=clean(state.category);
+    const hasActive=brand&&category&&DATA.products.some(p=>
+      truthy(p.Active)&&clean(p.BrandID||p.BrandName).toLowerCase()===brand.toLowerCase()&&clean(p.Category)===category
+    );
+    link.hidden=!hasActive;
+    if(hasActive)link.href='equipment.html?'+new URLSearchParams({brand,category}).toString();
+    else link.removeAttribute('href');
+  }
+
   function renderResultMeta(){
+    updateUniversalCategoryLink();
     const showProducts=marketplaceHasSelection();
     $('#market-result-count').parentElement.hidden=!showProducts;
     $('#market-compare-float').style.display=showProducts ? '' : 'none';
