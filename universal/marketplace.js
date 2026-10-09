@@ -1881,7 +1881,13 @@
       }
     });
     if(!rows.length && f.variants[0]) rows.push(pricePanel('Price',f.variants[0],false,f));
-    return '<div class="market-price-lines">'+rows.join('')+'</div>';
+    const first=f.variants[0]||{};
+    const productParams=new URLSearchParams({brand:f.brand});
+    if(clean(f.model)||clean(first.model)) productParams.set('model',clean(f.model)||clean(first.model));
+    else productParams.set('sku',clean(first.sku));
+    const productLink='product.html?'+productParams.toString();
+    return '<div class="market-price-lines">'+rows.join('')+
+      '<a class="market-product-page-link" href="'+esc(productLink)+'" target="_blank" rel="noopener" style="display:block;text-align:center;margin:8px 0;padding:10px;border:1px solid #176c34;border-radius:8px;font-weight:800;color:#176c34;text-decoration:none">Open Product Page ↗</a></div>';
   }
 
   function offerOverlay(f){
@@ -1925,6 +1931,10 @@
     // WEP_TORO_BUILD_LINK_V1: the configurator owns compatibility and pricing.
     const buildUrl=f.brand==='TORO'?optionsUrl:''; // WEP_MARKET_OPTIONS_V1
     const runtimeUrl='index.html?category='+encodeURIComponent(f.category)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';
+    const productParams=new URLSearchParams({brand:f.brand});
+    if(clean(f.model)||clean(first.model)) productParams.set('model',clean(f.model)||clean(first.model));
+    else productParams.set('sku',clean(first.sku));
+    const productPageUrl='product.html?'+productParams.toString();
     return '<article class="market-card" data-key="'+esc(f.key)+'">'+
       '<header class="market-card-head"><h3><strong>'+esc(heading)+'</strong>'+(first.sku?'<div style="display:block;width:100%;font-size:0.8em;font-weight:400;clear:both">SKU: '+esc(first.sku)+'</div>':'')+'</h3></header>'+
       '<div class="market-card-body">'+
@@ -1934,7 +1944,7 @@
             (
               (first.productUrl||f.productUrl)
                 ? (
-                  '<a class="market-image" href="'+esc(first.productUrl||f.productUrl)+'" target="_blank" rel="noopener">'+
+                  '<a class="market-image" href="'+esc(productPageUrl)+'" target="_blank" rel="noopener">'+
                   (f.image?'<img src="'+esc(f.image)+'" alt="'+esc(f.brand+' '+f.model)+'" loading="lazy">':'<span>Image Coming Soon</span>')+
                   '</a>'
                 )
