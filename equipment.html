@@ -7,19 +7,21 @@
 <header><a class="back" href="marketplace.html?category=Blowers&brand=STIHL">← Back to Marketplace</a>
 <h1 id="page-title">Equipment</h1>
 <p class="note">Browse available models, filter by equipment and power type, and open a product to review its configurations. Product information is supplied by the shared Marketplace catalog.</p></header>
-<div class="filter-row"><div class="filter-group equipment-group"><p class="filter-label">Equipment Type</p><nav id="equipment-filters" class="filters" aria-label="Equipment type filters"></nav></div><div class="filter-group power-group"><p class="filter-label">Power Type</p><nav class="filters" aria-label="Blower filters"><button type="button" data-type="all" aria-pressed="true">All Blowers</button><button type="button" data-type="electric" aria-pressed="false">Electric</button><button type="button" data-type="battery" aria-pressed="false">Battery</button><button type="button" data-type="gas" aria-pressed="false">Gas</button><button type="button" data-type="diesel" aria-pressed="false">Diesel</button></nav></div></div>
+<div class="filter-row"><div class="filter-group equipment-group"><p class="filter-label">Equipment Type</p><nav id="equipment-filters" class="filters" aria-label="Equipment type filters"></nav></div><div class="filter-group power-group"><p class="filter-label">Power Type</p><nav id="power-filters" class="filters" aria-label="Power type filters"></nav></div></div>
 <p id="count" class="count" role="status">Loading models…</p><section id="grid" class="grid"></section>
 </main><script>
 (async()=>{
 const params=new URLSearchParams(location.search),selectedBrand=(params.get('brand')||'STIHL').trim(),selectedCategory=(params.get('category')||'Blowers').trim();
 document.getElementById('page-title').textContent=selectedBrand+' '+selectedCategory;
 document.title=selectedBrand+' '+selectedCategory+' | West End Marketplace';
-const grid=document.getElementById('grid'),count=document.getElementById('count'),buttons=[...document.querySelectorAll('[data-type]')];let models=[],filter='all',equipmentFilter='all';const equipmentNav=document.getElementById('equipment-filters');
+const grid=document.getElementById('grid'),count=document.getElementById('count'),powerNav=document.getElementById('power-filters');let buttons=[];let models=[],filter='all',equipmentFilter='all';const equipmentNav=document.getElementById('equipment-filters');
 const clean=v=>String(v??'').trim(),norm=v=>clean(v).toLowerCase();
 function renderPowerFilters(){
 const eligible=models.filter(m=>equipmentFilter==='all'||m.type===equipmentFilter);
 if(filter!=='all'&&!eligible.some(m=>m.power===filter))filter='all';
-for(const b of buttons){b.hidden=b.dataset.type!=='all'&&!eligible.some(m=>m.power===b.dataset.type);b.setAttribute('aria-pressed',String(b.dataset.type===filter));}
+powerNav.replaceChildren();
+const types=[...new Set(eligible.map(m=>m.power).filter(Boolean))].sort((a,b)=>({electric:0,battery:1,gas:2,diesel:3}[a]??9)-({electric:0,battery:1,gas:2,diesel:3}[b]??9)||a.localeCompare(b));
+for(const type of ['all',...types]){const b=document.createElement('button');b.type='button';b.dataset.type=type;b.textContent=type==='all'?'All Power Types':type.charAt(0).toUpperCase()+type.slice(1);b.setAttribute('aria-pressed',String(type===filter));b.addEventListener('click',()=>{filter=type;renderEquipmentFilters();renderPowerFilters();render()});powerNav.appendChild(b)}
 }
 function renderEquipmentFilters(){
 const available=[...new Set(models.filter(m=>filter==='all'||m.power===filter).map(m=>m.type).filter(Boolean))];
@@ -54,7 +56,7 @@ const a=document.createElement('a');a.className='primary';a.textContent='View Pr
 card.append(main,price,actions);grid.appendChild(card);
 }
 }
-buttons.forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.type;buttons.forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderEquipmentFilters();renderPowerFilters();render()}));
+
 try{
 const res=await fetch('data/marketplace-catalog.json',{cache:'no-cache'});if(!res.ok)throw Error('Catalog unavailable');
 const data=await res.json(),sources=(data.productSources||[]).filter(s=>norm(s.brand)===norm(selectedBrand));if(!sources.length)throw Error('Brand not found in catalog');const groups=new Map();
@@ -64,7 +66,7 @@ if(norm(row[ix('Category')])!==norm(selectedCategory))continue;
 const sub=clean(row[ix('SubCategory')]),description=norm(row[ix('Description')]);
 const model=clean(row[ix('Model')]);if(!model)continue;
 
-const key=norm(selectedBrand)+'|'+norm(model);if(!groups.has(key))groups.set(key,{model,rows:[],power:'gas',type:'',minPrice:null,specs:[],imageUrl:''});
+const key=norm(selectedBrand)+'|'+norm(model);if(!groups.has(key))groups.set(key,{model,rows:[],power:'',type:'',minPrice:null,specs:[],imageUrl:''});
 const g=groups.get(key);g.rows.push(row);
 if(!g.imageUrl)g.imageUrl=clean(row[imageIx]);
 for(let i=1;i<=10;i++){const label=clean(row[ix('SpecLabel'+i)]),value=clean(row[ix('SpecValue'+i)]);if(label&&value&&!g.specs.some(pair=>pair[0]===label))g.specs.push([label,value]);}
@@ -74,9 +76,9 @@ const price=Number(clean(row[ix('MSRP')]).replace(/[$,]/g,''));if(price>0&&(g.mi
 }
 }
 models=[...groups.values()];
-if(!models.length)throw Error('No models in this category');
-for(const m of models)if(!m.type)m.type='Other';
+
+for(const m of models){if(!m.type)m.type='Other';if(!m.power)m.power='Unspecified';}
 renderEquipmentFilters();renderPowerFilters();render();
-}catch(e){count.textContent='Unable to load blower catalog: '+e.message}
+}catch(e){count.textContent='Unable to load equipment catalog: '+e.message}
 })();
 </script></body></html>
