@@ -6,7 +6,7 @@
 </style></head><body><main>
 <header><a class="back" href="marketplace.html?category=Blowers&brand=STIHL">← Back to Marketplace</a>
 <h1>STIHL Blowers</h1>
-<p class="note">Choose a blower, then review its product page and available configurations. This is the first-stage test of the self-service builder. Package compatibility, payment selection and quote creation will be connected to the existing configurator before launch.</p></header>
+<p class="note">Models are sorted by lowest starting MSRP. Choose a blower, then review its product page and available configurations. This is the first-stage test of the self-service builder. Package compatibility, payment selection and quote creation will be connected to the existing configurator before launch.</p></header>
 <nav class="filters" aria-label="Blower filters"><button type="button" data-type="all" aria-pressed="true">All Blowers</button><button type="button" data-type="battery" aria-pressed="false">Battery</button><button type="button" data-type="gas" aria-pressed="false">Gas</button></nav>
 <p id="count" class="count" role="status">Loading models…</p><section id="grid" class="grid"></section>
 </main><script>
@@ -14,7 +14,7 @@
 const grid=document.getElementById('grid'),count=document.getElementById('count'),buttons=[...document.querySelectorAll('[data-type]')];let models=[],filter='all';
 const clean=v=>String(v??'').trim(),norm=v=>clean(v).toLowerCase();
 function render(){
-const shown=models.filter(m=>filter==='all'||m.power===filter);
+const shown=models.filter(m=>filter==='all'||m.power===filter).sort((a,b)=>(a.minPrice??Infinity)-(b.minPrice??Infinity)||a.model.localeCompare(b.model,undefined,{numeric:true}));
 count.textContent=shown.length+' blower models';
 grid.replaceChildren();
 for(const m of shown){
@@ -33,11 +33,13 @@ try{
 const res=await fetch('data/marketplace-catalog.json',{cache:'no-cache'});if(!res.ok)throw Error('Catalog unavailable');
 const data=await res.json(),src=data.productSources.find(s=>s.brand==='STIHL'),h=src.headers,ix=n=>h.indexOf(n),groups=new Map();
 for(const row of src.rows){
-if(!/blower/i.test(clean(row[ix('Category')])))continue;
+if(norm(row[ix('Category')])!=='blowers')continue;
+const sub=norm(row[ix('SubCategory')]),description=norm(row[ix('Description')]);
+if(/vac|shredder|snow/.test(sub)||/vacuum|shredder|snow blower/.test(description))continue;
 const model=clean(row[ix('Model')]);if(!model)continue;
 const key=norm(model);if(!groups.has(key))groups.set(key,{model,rows:[],power:'gas',minPrice:null});
 const g=groups.get(key);g.rows.push(row);
-const power=norm(row[ix('PowerType')]);if(/battery|electric/.test(power))g.power='battery';
+const power=norm(row[ix('PowerType')]);if(/battery|electric/.test(power)||/^(bga|bra|bge)\b/i.test(model))g.power='battery';
 const price=Number(clean(row[ix('MSRP')]).replace(/[$,]/g,''));if(price>0&&(g.minPrice===null||price<g.minPrice))g.minPrice=price;
 }
 models=[...groups.values()].sort((a,b)=>a.model.localeCompare(b.model,undefined,{numeric:true}));render();
