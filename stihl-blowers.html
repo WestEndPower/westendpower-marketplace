@@ -22,7 +22,7 @@ let previousPower='';
 for(const m of shown){
 if(m.power!==previousPower){const heading=document.createElement('h2');heading.className='power-heading';heading.textContent=m.power.charAt(0).toUpperCase()+m.power.slice(1)+' Blowers';grid.appendChild(heading);previousPower=m.power;}
 const card=document.createElement('article');card.className='card';
-const eyebrow=document.createElement('div');eyebrow.className='muted';eyebrow.textContent=m.power.charAt(0).toUpperCase()+m.power.slice(1);
+const eyebrow=document.createElement('div');eyebrow.className='muted';eyebrow.textContent=m.type;
 const heading=document.createElement('h2');heading.textContent=m.model;
 const detail=document.createElement('p');detail.className='muted';detail.textContent=m.rows.length+' catalog configuration'+(m.rows.length===1?'':'s');
 const price=document.createElement('div');price.className='price';price.textContent=m.minPrice?'From $'+m.minPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'See pricing';
@@ -40,8 +40,11 @@ if(norm(row[ix('Category')])!=='blowers')continue;
 const sub=norm(row[ix('SubCategory')]),description=norm(row[ix('Description')]);
 const model=clean(row[ix('Model')]);if(!model)continue;
 if(/vacuum|wet\s*\/?\s*dry/.test(description)||/^sea\b/i.test(model)||/snow blower/.test(description))continue;
-const key=norm(model);if(!groups.has(key))groups.set(key,{model,rows:[],power:'gas',minPrice:null});
+const key=norm(model);if(!groups.has(key))groups.set(key,{model,rows:[],power:'gas',type:'Blower',minPrice:null});
 const g=groups.get(key);g.rows.push(row);
+if(/shredder|vac/.test(sub))g.type='Shredder / Vac';
+else if(/backpack|back.pack/.test(sub))g.type='Backpack';
+else if(/handheld|hand.held/.test(sub))g.type='Handheld';
 const power=norm(row[ix('PowerType')]);if(power==='electric'||/^bge\b/i.test(model))g.power='electric';
 else if(power==='battery'||/^(bga|bra)\b/i.test(model))g.power='battery';
 else if(power==='diesel')g.power='diesel';
