@@ -63,8 +63,11 @@ const data=await res.json(),sources=(data.productSources||[]).filter(s=>norm(s.b
 for(const src of sources){const h=src.headers,ix=n=>h.indexOf(n),imageIx=ix('ImageURL');
 for(const row of src.rows){
 if(norm(row[ix('Category')])!==norm(selectedCategory))continue;
+if(norm(row[ix('Active')])==='f'||norm(row[ix('Active')])==='false'||norm(row[ix('Active')])==='0')continue;
 const sub=clean(row[ix('SubCategory')]),description=norm(row[ix('Description')]);
 const model=clean(row[ix('Model')]);if(!model)continue;
+// Temporary data-quality safeguard: SEA models are vacuums, not blowers.
+if(norm(selectedBrand)==='stihl'&&norm(selectedCategory)==='blowers'&&/^SEA\b/i.test(model))continue;
 
 const key=norm(selectedBrand)+'|'+norm(model);if(!groups.has(key))groups.set(key,{model,rows:[],power:'',type:'',minPrice:null,specs:[],imageUrl:''});
 const g=groups.get(key);g.rows.push(row);
