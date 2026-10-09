@@ -77,7 +77,8 @@ if(!g.imageUrl)g.imageUrl=clean(cell(src,row,'ImageURL'));
 for(let i=1;i<=10;i++){const label=clean(cell(src,row,'SpecLabel'+i)),value=clean(cell(src,row,'SpecValue'+i));if(label&&value&&!/^\d+(?:\.\d+)?$/.test(label)&&!/^\d+(?:\.\d+)?$/.test(value)&&!/^images\//i.test(label)&&!/^images\//i.test(value)&&!/^https?:\/\//i.test(label)&&!g.specs.some(pair=>pair[0]===label))g.specs.push([label,value]);}
 if(sub&&!g.type)g.type=sub;
 const power=norm(cell(src,row,'PowerType'));if(power)g.power=power;
-// The exported workbook may have shifted headers; do not infer prices from other columns.\nconst price=Number(clean(cell(src,row,'MSRP')).replace(/[$,]/g,''));if(price>0&&(g.minPrice===null||price<g.minPrice))g.minPrice=price;
+// Read prices from the same MSRP field as Marketplace.
+const price=Number(clean(cell(src,row,'MSRP')).replace(/[$,]/g,''));if(price>0&&(g.minPrice===null||price<g.minPrice))g.minPrice=price;
 }
 }
 models=[...groups.values()];
