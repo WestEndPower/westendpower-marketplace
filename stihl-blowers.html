@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>STIHL Blowers | West End Marketplace</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f7f8;color:#20272c;font:16px Arial,sans-serif}main{max-width:1120px;margin:auto;padding:20px}header{background:#fff;border:1px solid #d9dee2;border-radius:12px;padding:20px}h1{margin:0 0 8px}.note{color:#53616c;font-size:14px;line-height:1.5}.filters{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.filters button,.actions a{border:1px solid #176c34;background:#fff;color:#176c34;border-radius:8px;padding:11px 15px;font-weight:700;cursor:pointer;text-decoration:none}.filters button[aria-pressed=true],.actions a.primary{background:#176c34;color:white}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:14px}.card{background:white;border:1px solid #d9dee2;border-radius:12px;padding:17px}.card h2{font-size:19px;margin:8px 0}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}.actions a{font-size:14px}.muted{color:#66737c;font-size:13px}.price{font-size:20px;font-weight:700}.back{color:#176c34;font-weight:700}.count{margin-bottom:15px}@media(max-width:500px){main{padding:10px}}
+</style></head><body><main>
+<header><a class="back" href="marketplace.html?category=Blowers&brand=STIHL">← Back to Marketplace</a>
+<h1>STIHL Blowers</h1>
+<p class="note">Choose a blower, then review its product page and available configurations. This is the first-stage test of the self-service builder. Package compatibility, payment selection and quote creation will be connected to the existing configurator before launch.</p></header>
+<nav class="filters" aria-label="Blower filters"><button type="button" data-type="all" aria-pressed="true">All Blowers</button><button type="button" data-type="battery" aria-pressed="false">Battery</button><button type="button" data-type="gas" aria-pressed="false">Gas</button></nav>
+<p id="count" class="count" role="status">Loading models…</p><section id="grid" class="grid"></section>
+</main><script>
+(async()=>{
+const grid=document.getElementById('grid'),count=document.getElementById('count'),buttons=[...document.querySelectorAll('[data-type]')];let models=[],filter='all';
+const clean=v=>String(v??'').trim(),norm=v=>clean(v).toLowerCase();
+function render(){
+const shown=models.filter(m=>filter==='all'||m.power===filter);
+count.textContent=shown.length+' blower models';
+grid.replaceChildren();
+for(const m of shown){
+const card=document.createElement('article');card.className='card';
+const eyebrow=document.createElement('div');eyebrow.className='muted';eyebrow.textContent=m.power==='battery'?'Battery':'Gas';
+const heading=document.createElement('h2');heading.textContent=m.model;
+const detail=document.createElement('p');detail.className='muted';detail.textContent=m.rows.length+' catalog configuration'+(m.rows.length===1?'':'s');
+const price=document.createElement('div');price.className='price';price.textContent=m.minPrice?'From $'+m.minPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'See pricing';
+const actions=document.createElement('div');actions.className='actions';
+const a=document.createElement('a');a.className='primary';a.textContent='View Product';a.href='product.html?'+new URLSearchParams({brand:'STIHL',model:m.model}).toString();a.target='_blank';a.rel='noopener';actions.appendChild(a);
+card.append(eyebrow,heading,detail,price,actions);grid.appendChild(card);
+}
+}
+buttons.forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.type;buttons.forEach(x=>x.setAttribute('aria-pressed',String(x===b)));render()}));
+try{
+const res=await fetch('data/marketplace-catalog.json',{cache:'no-cache'});if(!res.ok)throw Error('Catalog unavailable');
+const data=await res.json(),src=data.productSources.find(s=>s.brand==='STIHL'),h=src.headers,ix=n=>h.indexOf(n),groups=new Map();
+for(const row of src.rows){
+if(!/blower/i.test(clean(row[ix('Category')])))continue;
+const model=clean(row[ix('Model')]);if(!model)continue;
+const key=norm(model);if(!groups.has(key))groups.set(key,{model,rows:[],power:'gas',minPrice:null});
+const g=groups.get(key);g.rows.push(row);
+const power=norm(row[ix('PowerType')]);if(/battery|electric/.test(power))g.power='battery';
+const price=Number(clean(row[ix('MSRP')]).replace(/[$,]/g,''));if(price>0&&(g.minPrice===null||price<g.minPrice))g.minPrice=price;
+}
+models=[...groups.values()].sort((a,b)=>a.model.localeCompare(b.model,undefined,{numeric:true}));render();
+}catch(e){count.textContent='Unable to load blower catalog: '+e.message}
+})();
+</script></body></html>
