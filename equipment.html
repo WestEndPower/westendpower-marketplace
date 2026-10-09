@@ -16,6 +16,7 @@ const params=new URLSearchParams(location.search),selectedBrand=(params.get('bra
 document.getElementById('page-title').textContent=selectedBrand+' '+selectedCategory;
 document.title=selectedBrand+' '+selectedCategory+' | West End Marketplace';
 const grid=document.getElementById('grid'),count=document.getElementById('count'),powerNav=document.getElementById('power-filters');let buttons=[];let models=[],filter='all',equipmentFilter='all';const equipmentNav=document.getElementById('equipment-filters');
+const cell=(src,row,name)=>{const ix=src.headers.indexOf(name);if(ix<0)return '';if(src.encoding==='sparse'){for(let i=0;i<row.length;i+=2)if(row[i]===ix)return row[i+1];return ''}return row[ix]??''};
 const clean=v=>String(v??'').trim(),norm=v=>clean(v).toLowerCase();
 function renderPowerFilters(){
 const eligible=models.filter(m=>equipmentFilter==='all'||m.type===equipmentFilter);
@@ -63,20 +64,20 @@ const res=await fetch('data/marketplace-catalog.json',{cache:'no-cache'});if(!re
 const data=await res.json();const sources=(data.productSources||[]).filter(s=>norm(s.brand)===norm(selectedBrand));if(!sources.length)throw Error('Brand not found in catalog');const groups=new Map();
 for(const src of sources){const h=src.headers,ix=n=>h.indexOf(n),imageIx=ix('ImageURL');
 for(const row of src.rows){
-const rawCategory=clean(row[ix('Category')]),rawSub=clean(row[ix('SubCategory')]);const effectiveCategory=rawCategory&&rawCategory!=='0'?rawCategory:(rawSub||rawCategory||'(blank)');if(norm(effectiveCategory)!==norm(selectedCategory))continue;
-if(norm(row[ix('Active')])==='f'||norm(row[ix('Active')])==='false'||norm(row[ix('Active')])==='0')continue;
-const sub=clean(row[ix('SubCategory')]),description=norm(row[ix('Description')]);
-const rawModel=clean(row[ix('Model')]);const rawSku=clean(row[ix('SKU')]);const rawDescription=clean(row[ix('Description')]);const invalidModel=!rawModel||/^\d+(?:\.\d+)?$/.test(rawModel);const model=invalidModel?(rawSku&&!/^\d+(?:\.\d+)?$/.test(rawSku)?rawSku:rawDescription||rawSku||'Unidentified model'):rawModel;
+const rawCategory=clean(cell(src,row,'Category')),rawSub=clean(cell(src,row,'SubCategory'));const effectiveCategory=rawCategory&&rawCategory!=='0'?rawCategory:(rawSub||rawCategory||'(blank)');if(norm(effectiveCategory)!==norm(selectedCategory))continue;
+if(norm(cell(src,row,'Active'))==='f'||norm(cell(src,row,'Active'))==='false'||norm(cell(src,row,'Active'))==='0')continue;
+const sub=clean(cell(src,row,'SubCategory')),description=norm(cell(src,row,'Description'));
+const rawModel=clean(cell(src,row,'Model'));const rawSku=clean(cell(src,row,'SKU'));const rawDescription=clean(cell(src,row,'Description'));const invalidModel=!rawModel||/^\d+(?:\.\d+)?$/.test(rawModel);const model=invalidModel?(rawSku&&!/^\d+(?:\.\d+)?$/.test(rawSku)?rawSku:rawDescription||rawSku||'Unidentified model'):rawModel;
 // Temporary data-quality safeguard: SEA models are vacuums, not blowers.
 if(norm(selectedBrand)==='stihl'&&norm(selectedCategory)==='blowers'&&/^SEA\b/i.test(model))continue;
 
 const key=norm(selectedBrand)+'|'+norm(model);if(!groups.has(key))groups.set(key,{model,rows:[],power:'',type:'',minPrice:null,specs:[],imageUrl:''});
 const g=groups.get(key);g.rows.push(row);
-if(!g.imageUrl)g.imageUrl=clean(row[imageIx]);
+if(!g.imageUrl)g.imageUrl=clean(cell(src,row,'ImageURL'));
 for(let i=1;i<=10;i++){const label=clean(row[ix('SpecLabel'+i)]),value=clean(row[ix('SpecValue'+i)]);if(label&&value&&!/^\d+(?:\.\d+)?$/.test(label)&&!/^\d+(?:\.\d+)?$/.test(value)&&!/^images\//i.test(label)&&!/^images\//i.test(value)&&!/^https?:\/\//i.test(label)&&!g.specs.some(pair=>pair[0]===label))g.specs.push([label,value]);}
 if(sub&&!g.type)g.type=sub;
-const power=norm(row[ix('PowerType')]);if(power)g.power=power;
-// The exported workbook may have shifted headers; do not infer prices from other columns.\nconst price=Number(clean(row[ix('MSRP')]).replace(/[$,]/g,''));if(price>0&&(g.minPrice===null||price<g.minPrice))g.minPrice=price;
+const power=norm(cell(src,row,'PowerType'));if(power)g.power=power;
+// The exported workbook may have shifted headers; do not infer prices from other columns.\nconst price=Number(clean(cell(src,row,'MSRP')).replace(/[$,]/g,''));if(price>0&&(g.minPrice===null||price<g.minPrice))g.minPrice=price;
 }
 }
 models=[...groups.values()];
