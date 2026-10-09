@@ -73,10 +73,10 @@ if(norm(selectedBrand)==='stihl'&&norm(selectedCategory)==='blowers'&&/^SEA\b/i.
 const key=norm(selectedBrand)+'|'+norm(model);if(!groups.has(key))groups.set(key,{model,rows:[],power:'',type:'',minPrice:null,specs:[],imageUrl:''});
 const g=groups.get(key);g.rows.push(row);
 if(!g.imageUrl)g.imageUrl=clean(row[imageIx]);
-for(let i=1;i<=10;i++){const label=clean(row[ix('SpecLabel'+i)]),value=clean(row[ix('SpecValue'+i)]);if(label&&value&&!/^\d+$/.test(label)&&!/^images\//i.test(value)&&!g.specs.some(pair=>pair[0]===label))g.specs.push([label,value]);}
+for(let i=1;i<=10;i++){const label=clean(row[ix('SpecLabel'+i)]),value=clean(row[ix('SpecValue'+i)]);if(label&&value&&!/^\d+(?:\.\d+)?$/.test(label)&&!/^\d+(?:\.\d+)?$/.test(value)&&!/^images\//i.test(label)&&!/^images\//i.test(value)&&!/^https?:\/\//i.test(label)&&!g.specs.some(pair=>pair[0]===label))g.specs.push([label,value]);}
 if(sub&&!g.type)g.type=sub;
 const power=norm(row[ix('PowerType')]);if(power)g.power=power;
-const price=Number(clean(row[ix('MSRP')]).replace(/[$,]/g,''));if(price>0&&(g.minPrice===null||price<g.minPrice))g.minPrice=price;
+// The exported workbook may have shifted headers; do not infer prices from other columns.\nconst price=Number(clean(row[ix('MSRP')]).replace(/[$,]/g,''));if(price>0&&(g.minPrice===null||price<g.minPrice))g.minPrice=price;
 }
 }
 models=[...groups.values()];
