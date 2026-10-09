@@ -128,7 +128,7 @@ button,input,select{font:inherit}button{cursor:pointer}button,a,input,select,sum
 
 .market-brand-text{min-width:0}.market-construction{max-width:650px!important;font-size:12px!important;line-height:1.4!important;color:#59636c!important;margin-top:5px!important}
 .market-contact-launch{position:fixed;right:20px;bottom:20px;z-index:1000;width:58px;height:58px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:#176c34;color:#fff;box-shadow:0 4px 18px #0003}.market-contact-launch[hidden]{display:none!important}
-.market-contact-dialog{width:min(94vw,480px);max-height:90vh;border:1px solid #ccd3d8;border-radius:14px;padding:0;box-shadow:0 16px 48px #0004;color:#171a1d}.market-contact-dialog::backdrop{background:#0007}.market-contact-inner{padding:22px}.market-contact-head{display:flex;align-items:flex-start;gap:12px;justify-content:space-between}.market-contact-head h2{font-size:21px;line-height:1.25;margin:0}.market-contact-head button{border:0;background:transparent;font-size:28px;line-height:1;padding:0 4px}.market-contact-inner p{line-height:1.45}.market-contact-method{display:flex;gap:22px;flex-wrap:wrap;border:0;padding:10px 0;margin:12px 0}.market-contact-method legend{font-weight:700}.market-contact-method label{display:flex;gap:7px;align-items:center}.market-contact-inner>label{display:block;font-weight:700;margin-bottom:7px}.market-contact-inner textarea{width:100%;box-sizing:border-box;padding:11px;border:1px solid #aeb6bf;border-radius:8px;font:inherit;resize:vertical}.market-contact-hint,.market-contact-destination{font-size:13px;color:#59636c}.market-contact-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.market-contact-actions button{border:0;background:#176c34;color:white;padding:12px 16px;border-radius:8px;font-weight:700}.market-contact-actions a{color:#176c34;font-weight:700}
+.market-contact-dialog{width:min(94vw,480px);max-height:90vh;border:1px solid #ccd3d8;border-radius:14px;padding:0;box-shadow:0 16px 48px #0004;color:#171a1d}.market-contact-dialog::backdrop{background:#0007}.market-contact-inner{padding:22px}.market-contact-head{display:flex;align-items:flex-start;gap:12px;justify-content:space-between}.market-contact-head h2{font-size:21px;line-height:1.25;margin:0}.market-contact-head button{border:0;background:transparent;font-size:28px;line-height:1;padding:0 4px}.market-contact-inner p{line-height:1.45}.market-contact-method{display:flex;gap:22px;flex-wrap:wrap;border:0;padding:10px 0;margin:12px 0}.market-contact-method legend{font-weight:700}.market-contact-method label{display:flex;gap:7px;align-items:center}.market-contact-method .market-contact-choice{display:flex;flex-direction:column;align-items:flex-start;gap:5px}.market-contact-choice span{display:flex;align-items:center;gap:7px;font-weight:700}.market-contact-choice a{font-size:13px;color:#176c34;text-decoration:underline;overflow-wrap:anywhere}.market-contact-inner>label{display:block;font-weight:700;margin-bottom:7px}.market-contact-inner textarea{width:100%;box-sizing:border-box;padding:11px;border:1px solid #aeb6bf;border-radius:8px;font:inherit;resize:vertical}.market-contact-hint,.market-contact-destination{font-size:13px;color:#59636c}.market-contact-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.market-contact-actions button{border:0;background:#176c34;color:white;padding:12px 16px;border-radius:8px;font-weight:700}.market-contact-actions a{color:#176c34;font-weight:700}
 @media(max-width:760px){.market-construction{font-size:11px!important}.market-contact-launch{right:14px;bottom:14px;width:52px;height:52px}}
 </style>
 
@@ -491,14 +491,13 @@ button,input,select{font:inherit}button{cursor:pointer}button,a,input,select,sum
     <div class="market-contact-head"><h2 id="market-contact-title">Contact West End Power - New Milford</h2><button id="market-contact-close" type="button" aria-label="Close contact window">&times;</button></div>
     <p>Have a question about equipment, availability, parts or service? We're happy to help.</p>
     <fieldset class="market-contact-method"><legend>How would you like to contact us?</legend>
-      <label><input type="radio" name="market-contact-method" value="text"> Text</label>
-      <label><input type="radio" name="market-contact-method" value="email"> Email</label>
+      <label class="market-contact-choice"><span><input type="radio" name="market-contact-method" value="text"> Text</span><a href="sms:+18603558722">860-355-8722</a></label>
+      <label class="market-contact-choice"><span><input type="radio" name="market-contact-method" value="email"> Email</span><a href="mailto:sales@westendpower.com">sales@westendpower.com</a></label>
     </fieldset>
     <label for="market-contact-question">Your question</label>
     <textarea id="market-contact-question" rows="4" placeholder="How can we help?"></textarea>
     <p class="market-contact-hint">Your phone or email application will open with your message ready. Press Send there to deliver it.</p>
-    <div class="market-contact-actions"><button id="market-contact-send" type="button">Open Text Message</button><a href="tel:+18603558722">Call (860) 355-8722</a></div>
-    <p class="market-contact-destination" id="market-contact-destination"></p>
+    <div class="market-contact-actions"><button id="market-contact-send" type="button">Send Question</button></div>
   </div>
 </dialog>
 <script>
@@ -508,7 +507,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const close = document.getElementById('market-contact-close');
   const send = document.getElementById('market-contact-send');
   const question = document.getElementById('market-contact-question');
-  const destination = document.getElementById('market-contact-destination');
   const radios = Array.from(document.querySelectorAll('input[name="market-contact-method"]'));
   const key = 'westend-market-contact-dismissed';
   const phoneLike = window.matchMedia('(pointer: coarse) and (max-width: 800px)').matches || /Android|iPhone|iPod/i.test(navigator.userAgent);
@@ -518,8 +516,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function method() { return (radios.find(r => r.checked) || {}).value || initial; }
   function update() {
     const isText = method() === 'text';
-    send.textContent = isText ? 'Open Text Message' : 'Open Email';
-    destination.textContent = isText ? 'Text: (860) 355-8722' : 'Email: sales@westendpower.com';
+    send.textContent = 'Send Question';
   }
   function dismiss() {
     try { sessionStorage.setItem(key, '1'); } catch (_) {}
