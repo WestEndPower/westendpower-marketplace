@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Product | West End Marketplace</title>
+<meta name="description" content="Equipment information and a direct link to contact West End Power Equipment about a specific product.">
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#1b242b}*{box-sizing:border-box}body{margin:0;background:#f5f7f8}a{color:#176c34}button{font:inherit;cursor:pointer}.wrap{max-width:1100px;margin:auto;padding:20px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:white;padding:16px 20px;border-radius:12px;border:1px solid #d9dee3}.top h1{font-size:22px;margin:0}.top a{text-decoration:none;font-weight:700}.product{background:white;border:1px solid #d9dee3;border-radius:12px;padding:22px;margin-top:18px}.eyebrow{color:#58636d;font-size:13px;font-weight:700;letter-spacing:.04em}.product h2{font-size:clamp(24px,4vw,36px);margin:9px 0}.body{display:grid;grid-template-columns:minmax(220px,1fr) minmax(270px,1.1fr);gap:28px}.photo{display:flex;align-items:center;justify-content:center;min-height:250px;background:#fff}.photo img{max-width:100%;max-height:350px;object-fit:contain}.price{border:1px solid #cbd4da;background:#f7f9f9;padding:14px;border-radius:9px;margin:14px 0}.price strong{font-size:24px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}.btn{border:1px solid #176c34;background:#176c34;color:white;border-radius:8px;padding:12px 16px;font-weight:700;text-decoration:none}.btn.secondary{background:white;color:#176c34}.specs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:16px}.spec{padding:11px;border-bottom:1px solid #e4e7e9}.spec small{display:block;color:#626c75;margin-bottom:5px}.note{font-size:13px;color:#5e6870;line-height:1.5}.contact{border-top:1px solid #e1e5e8;margin-top:22px;padding-top:20px}.contact textarea{display:block;width:100%;min-height:100px;padding:12px;border:1px solid #b8c1c7;border-radius:8px;font:inherit}.methods{display:flex;gap:25px;flex-wrap:wrap;margin:14px 0}.methods label{display:flex;flex-direction:column;gap:6px}.methods span{display:flex;gap:6px;align-items:center}.contact-buttons{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:14px}.error{color:#9b1c1c}#product[hidden]{display:none}@media(max-width:700px){.body{grid-template-columns:1fr}.specs{grid-template-columns:1fr}.wrap{padding:10px}.product{padding:15px}}
+</style></head><body><div class="wrap">
+<header class="top"><h1>West End Marketplace</h1><a href="marketplace.html">← Back to Marketplace</a></header>
+<main id="product" class="product" hidden>
+<div class="eyebrow" id="brand"></div><h2 id="title"></h2>
+<div class="body"><div class="photo" id="photo"></div><div>
+<div id="price" class="price"></div>
+<p id="summary"></p><div class="actions">
+<button class="btn" id="share" type="button">Copy Product Link</button>
+<a class="btn secondary" id="market-link" href="marketplace.html">See Marketplace Pricing & Options</a>
+<a class="btn secondary" id="manufacturer-link" target="_blank" rel="noopener" hidden>Manufacturer Details</a>
+</div><p class="note">Marketplace pricing, availability, financing, rebates and discounts must be confirmed before ordering.</p></div></div>
+<h3>Product specifications</h3><div class="specs" id="specs"></div>
+<section class="contact"><h3>Ask New Milford about this product</h3>
+<p id="context"></p><div class="methods">
+<label><span><input type="radio" name="method" value="text"> Text</span><a href="sms:+18603558722">860-355-8722</a></label>
+<label><span><input type="radio" name="method" value="email"> Email</span><a href="mailto:sales@westendpower.com">sales@westendpower.com</a></label>
+</div><label for="question"><strong>Your question</strong></label>
+<textarea id="question" placeholder="How can we help?"></textarea>
+<div class="contact-buttons"><button class="btn" id="send" type="button">Send Question</button><a href="tel:+18603558722">Call Us: 860-355-8722</a></div>
+<p class="note">Your messaging application opens with the product information and question ready. You must press Send there.</p>
+</section></main><p id="status" role="status">Loading product information…</p>
+</div><script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const params=new URLSearchParams(location.search);
+const brand=(params.get('brand')||'').trim().toUpperCase();
+const model=(params.get('model')||'').trim();
+const sku=(params.get('sku')||'').trim();
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+function absolute(url){try{return new URL(url,location.href).href}catch(_){return ''}}
+function makeLink(b,m){const p=new URLSearchParams({brand:b,model:m});return 'product.html?'+p.toString()}
+function cell(row,headers,name){const i=headers.indexOf(name);return i<0?'':String(row[i]??'').trim()}
+function numeric(v){const n=Number(String(v||'').replace(/[$,]/g,''));return Number.isFinite(n)&&n>0?n:null}
+function init(source,rows){
+ const h=source.headers;const first=rows[0];const b=source.brand;const m=cell(first,h,'Model')||model||cell(first,h,'Description');
+ const desc=cell(first,h,'Description')||b+' '+m;
+ const canonical=new URL(makeLink(b,m),location.href);history.replaceState(null,'',canonical.pathname+canonical.search);
+ document.title=b+' '+m+' | West End Marketplace';
+ $('brand').textContent=b+' / '+cell(first,h,'Category');
+ $('title').textContent=desc;
+ const img=cell(first,h,'ImageURL');if(img){const image=document.createElement('img');image.src=absolute(img);image.alt=desc;image.onerror=()=>{$('photo').textContent='Image coming soon'};$('photo').appendChild(image)}else $('photo').textContent='Image coming soon';
+ const amounts=rows.map(r=>numeric(cell(r,h,'MAP /'))||numeric(cell(r,h,'MAP'))||numeric(cell(r,h,'MSRP'))).filter(Boolean);
+ $('price').innerHTML='<small>Reference list price'+(amounts.length?' (from manufacturer data)':'')+'</small><div><strong>'+(amounts.length?'$'+Math.min(...amounts).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'See Marketplace for pricing')+'</strong></div><small>For actual dealer price, promotions and financing, use Marketplace Pricing & Options.</small>';
+ $('summary').textContent=cell(first,h,'SubCategory')||cell(first,h,'ProductType')||'';
+ const specNames=new Set();let html='';
+ function add(label,value){if(!value||specNames.has(label.toLowerCase()))return;specNames.add(label.toLowerCase());html+='<div class="spec"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>'}
+ add('Model',m);add('Category',cell(first,h,'Category'));add('Power type',cell(first,h,'PowerType'));add('Series',cell(first,h,'Series'));
+ for(let i=1;i<=10;i++)add(cell(first,h,'SpecLabel'+i),cell(first,h,'SpecValue'+i));
+ $('specs').innerHTML=html||'<p>Specifications are being added.</p>';
+ const manufacturer=cell(first,h,'ProductURL');if(/^https?:\/\//i.test(manufacturer)){$('manufacturer-link').href=manufacturer;$('manufacturer-link').hidden=false}
+ $('market-link').href='marketplace.html?'+new URLSearchParams({brand:b,model:m}).toString();
+ const productLabel=b+' '+m;
+ $('context').textContent='Regarding: '+productLabel;
+ $('share').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(location.href);$('share').textContent='Link Copied!'}catch(_){prompt('Copy this product link:',location.href)}});
+ const defaultMethod=/Android|iPhone|iPod/i.test(navigator.userAgent)||matchMedia('(max-width:700px) and (pointer:coarse)').matches?'text':'email';
+ document.querySelector('input[name="method"][value="'+defaultMethod+'"]').checked=true;
+ $('send').addEventListener('click',()=>{
+ const q=$('question').value.trim();if(!q){$('question').focus();return}
+ const body='Product: '+productLabel+'\n'+desc+'\nProduct link: '+location.href+'\n\nQuestion: '+q;
+ const method=document.querySelector('input[name="method"]:checked').value;
+ location.href=method==='text'?'sms:+18603558722?body='+encodeURIComponent(body):'mailto:sales@westendpower.com?subject='+encodeURIComponent('Question about '+productLabel)+'&body='+encodeURIComponent(body);
+ });
+ $('product').hidden=false;$('status').hidden=true;
+}
+fetch('data/marketplace-catalog.json').then(r=>{if(!r.ok)throw Error('Catalog unavailable');return r.json()}).then(data=>{
+ if(!brand||(!model&&!sku))throw Error('Missing product identifier');
+ const source=(data.productSources||[]).find(x=>x.brand.toUpperCase()===brand);if(!source)throw Error('Brand not found');
+ const rows=source.rows.filter(row=>sku?norm(cell(row,source.headers,'SKU'))===norm(sku):norm(cell(row,source.headers,'Model'))===norm(model));
+ if(!rows.length)throw Error('Product not found in current catalog');
+ init(source,rows);
+}).catch(e=>{$('status').className='error';$('status').textContent=e.message+'. Please return to the Marketplace and select a product.'});
+})();
+</script></body></html>
