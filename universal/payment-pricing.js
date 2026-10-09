@@ -43,11 +43,36 @@ const num=v=>{const n=Number(clean(v).replace(/[$,%]/g,''));return Number.isFini
   }
 
 
-async function post(path,body){
+// PAYMENT_PRICING_REQUEST_PACING_V1
+let pricingQueue=Promise.resolve();
+let lastPricingRequest=-Infinity;
+const paymentDelay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function sendPaymentRequest(path,body){
+ for(let attempt=0;attempt<2;attempt++){
   const response=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});
   const data=await response.json().catch(()=>({}));
+  if(response.status===429&&path==='/customer-pricing'&&attempt===0){
+   const retry=response.headers.get('Retry-After');
+   const seconds=Number(retry);
+   const wait=retry&&Number.isFinite(seconds)?seconds*1000:Date.parse(retry)-Date.now();
+   await paymentDelay(Math.max(Number.isFinite(wait)?wait:60000,1000)+1000);
+   lastPricingRequest=Date.now();
+   continue;
+  }
   if(!response.ok || data.ok===false || data.error) throw new Error(data.error||'Payment options are temporarily unavailable.');
   return data;
+ }
+}
+async function post(path,body){
+ if(path!=='/customer-pricing')return sendPaymentRequest(path,body);
+ const pending=pricingQueue.then(async()=>{
+  const wait=1500-(Date.now()-lastPricingRequest);
+  if(wait>0)await paymentDelay(wait);
+  lastPricingRequest=Date.now();
+  return sendPaymentRequest(path,body);
+ });
+ pricingQueue=pending.catch(()=>{});
+ return pending;
 }
 const inventoryCache=new Map();
 async function inventory(brandId,sku){

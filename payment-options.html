@@ -114,14 +114,50 @@ async function render(row){
  const columns=[];let failure=false;
  if(cashResult.status==='fulfilled')columns.push({title:'Cash / Bank Check',kind:'cash',q:cashResult.value});else failure=true;
  if(creditResult.status==='fulfilled')columns.push({title:'Credit Card',kind:'credit',q:creditResult.value});else failure=true;
- if(programResult.status==='fulfilled'){
-   const programs=programResult.value;
-   const results=await Promise.allSettled(programs.map(p=>payments.quote(brand,selectedSku,row,'finance',p,selectedInventoryId,selectedQuantity)));
-   if(version!==requestVersion)return;
-   results.forEach((r,i)=>{if(r.status==='fulfilled'){const q=r.value;columns.push({title:q.aprLabel+' APR • '+q.termMonths+' Months',kind:'finance',q,program:programs[i]});}else failure=true;});
- }else failure=true;
- $('options').innerHTML=(columns.length?comparisonMarkup(columns,row):'')+(failure?'<p class="error">Some payment options could not be loaded. <button id="retry" type="button">Try Again</button> or call us for current pricing.</p>':'');
- if($('retry'))$('retry').addEventListener('click',()=>render(row));
+ // PAYMENT_OPTIONS_PRIORITY_LOAD_MORE_V1
+ const programs=programResult.status==='fulfilled'?programResult.value:[];
+ if(programResult.status!=='fulfilled')failure=true;
+ const attemptedPrograms=new Set();
+ let financeLoading=false;
+ function remainingPrograms(){
+  return programs.filter(p=>!attemptedPrograms.has(clean(p.ProgramID)));
+ }
+ function showLoadedOptions(){
+  if(version!==requestVersion)return;
+  const remaining=remainingPrograms();
+  $('options').innerHTML=(columns.length?comparisonMarkup(columns,row):'')+
+   (financeLoading?'<p class="note">Loading financing options…</p>':'')+
+   (remaining.length?'<p><button id="load-more-finance" type="button" '+(financeLoading?'disabled':'')+'>Load More Options ('+remaining.length+' remaining)</button></p>':'')+
+   (failure?'<p class="error">Some payment options could not be loaded. <button id="retry" type="button">Try Again</button> or call us for current pricing.</p>':'');
+  if($('load-more-finance'))$('load-more-finance').addEventListener('click',()=>loadFinanceBatch(remainingPrograms().slice(0,4)));
+  if($('retry'))$('retry').addEventListener('click',()=>render(row));
+ }
+ async function loadFinanceBatch(batch){
+  if(financeLoading||version!==requestVersion||!batch.length)return;
+  financeLoading=true;showLoadedOptions();
+  try{
+   for(const program of batch){
+    if(version!==requestVersion)return;
+    if(attemptedPrograms.has(clean(program.ProgramID)))continue;
+    attemptedPrograms.add(clean(program.ProgramID));
+    try{
+     const q=await payments.quote(brand,selectedSku,row,'finance',program,selectedInventoryId,selectedQuantity);
+     if(version!==requestVersion)return;
+     columns.push({title:q.aprLabel+' APR • '+q.termMonths+' Months',kind:'finance',q,program});
+    }catch(error){
+     if(version!==requestVersion)return;
+     failure=true;console.warn('Payment quote unavailable',error);
+    }
+    showLoadedOptions();
+   }
+  }finally{
+   financeLoading=false;showLoadedOptions();
+  }
+ }
+ const zeroOffers=programs.filter(p=>clean(p.APR)!==''&&num(p.APR)===0).slice().sort((a,b)=>num(b.TermMonths)-num(a.TermMonths));
+ const best=zeroOffers.length?null:payments.bestMarketplaceFinanceProgram(programs);
+ showLoadedOptions();
+ await loadFinanceBatch(zeroOffers.length?zeroOffers:(best?[best]:[]));
 }
 async function load(){
  const settings=window.WESTEND_BRANDS&&window.WESTEND_BRANDS[brand];

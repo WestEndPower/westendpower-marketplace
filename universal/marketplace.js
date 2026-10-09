@@ -602,14 +602,27 @@
     };
   }
 
+  // YANMAR_SELECTED_CONFIGURATION_V1
+  function isYanmarTractor(f){
+    return clean(f.brand).toUpperCase()==='YANMAR'&&clean(f.category)==='Compact Tractors';
+  }
+  function yanmarSelectedVariant(f){
+    const candidates=relevantVariants(f);
+    return candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>Number(a.price)-Number(b.price))[0]||candidates[0]||(f.variants||[])[0]||{};
+  }
+  function marketplaceFinanceVariant(f){
+    if(isYanmarTractor(f)) return yanmarSelectedVariant(f);
+    return (f.variants||[]).find(v=>!/kit|package/i.test(v.type)) || f.variants[0] || {};
+  }
+
   function financeSummaryKey(f){
-    const variant=(f.variants||[]).find(v=>!/kit|package/i.test(v.type)) || f.variants[0] || {};
+    const variant=marketplaceFinanceVariant(f);
     return clean(f.brand).toUpperCase()+'|'+skuKey(variant.sku);
   }
 
   function cardFinanceMarkup(f){
     const key=financeSummaryKey(f);
-    const variant=(f.variants||[]).find(v=>!/kit|package/i.test(v.type)) || f.variants[0] || {};
+    const variant=marketplaceFinanceVariant(f);
     const url='payment-options.html?brand='+encodeURIComponent(clean(f.brand).toUpperCase())+'&sku='+encodeURIComponent(clean(variant.sku));
     const button='<a class="market-payment-options" href="'+esc(url)+'" target="_blank" rel="noopener">View Payment Options</a>';
     if(!key || /\|$/.test(key)) return '<div class="market-payment-options-only">'+button+'</div>';
@@ -632,7 +645,7 @@
       return;
     }
 
-    const variant=(f.variants||[]).find(v=>!/kit|package/i.test(v.type)) || f.variants[0] || {};
+    const variant=marketplaceFinanceVariant(f);
     const sku=clean(variant.sku);
     const brandId=clean(f.brand).toUpperCase();
 
@@ -1858,10 +1871,10 @@
     if(clean(f.brand).toUpperCase()==='YANMAR' && clean(f.category)==='Compact Tractors'){
       const candidates=relevantVariants(f);
       const priced=candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>Number(a.price)-Number(b.price));
-      const representative=priced[0]||candidates[0];
+      const representative=yanmarSelectedVariant(f);
       const p=new URLSearchParams({brand:f.brand});
-      if(clean(f.model))p.set('model',clean(f.model));
-      else if(representative)p.set('sku',clean(representative.sku));
+      if(clean(representative.sku))p.set('sku',clean(representative.sku));
+      else if(clean(f.model))p.set('model',clean(f.model));
       return '<div class="market-price-lines">'+pricePanel('Starting at',representative,false,f,candidates)+
         '<a class="market-product-page-link" href="'+esc('product.html?'+p.toString())+'" target="_blank" rel="noopener" style="display:block;text-align:center;margin:8px 0;padding:10px;border:1px solid #176c34;border-radius:8px;font-weight:800;color:#176c34;text-decoration:none">Open Product Page ↗</a></div>';
     }
@@ -1894,7 +1907,8 @@
     if(!rows.length && f.variants[0]) rows.push(pricePanel('Price',f.variants[0],false,f));
     const first=f.variants[0]||{};
     const productParams=new URLSearchParams({brand:f.brand});
-    if(clean(f.model)||clean(first.model)) productParams.set('model',clean(f.model)||clean(first.model));
+    if(isYanmarTractor(f)&&clean(first.sku)) productParams.set('sku',clean(first.sku));
+    else if(clean(f.model)||clean(first.model)) productParams.set('model',clean(f.model)||clean(first.model));
     else productParams.set('sku',clean(first.sku));
     const productLink='product.html?'+productParams.toString();
     return '<div class="market-price-lines">'+rows.join('')+
@@ -1934,14 +1948,14 @@
   }
 
     function card(f){
-    const first=f.variants[0]||{};
+    const first=isYanmarTractor(f)?yanmarSelectedVariant(f):(f.variants[0]||{});
     const specs=familySpecs(f).slice(0,4);
     const heading=clean(first.description)||clean(f.model)||clean(first.sku);
     const equipmentMode=state.shopMode==='equipment';
     const yanmarOptions=clean(f.brand).toUpperCase()==='YANMAR'&&clean(f.category)==='Compact Tractors';
     // YANMAR_CONFIGURATOR_LINK_V1
     const optionsVariant=yanmarOptions
-      ? relevantVariants(f).filter(v=>Number(v.price)>0).slice().sort((a,b)=>Number(a.price)-Number(b.price))[0]||first
+      ? yanmarSelectedVariant(f)
       : first;
     const optionsUrl=yanmarOptions
       ? 'https://westendpower.github.io/yanmar-equipment-configurator/?'+new URLSearchParams({category:f.category,sku:optionsVariant.sku||''}).toString()
@@ -1950,7 +1964,8 @@
     const buildUrl=f.brand==='TORO'?optionsUrl:''; // WEP_MARKET_OPTIONS_V1
     const runtimeUrl='index.html?category='+encodeURIComponent(f.category)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';
     const productParams=new URLSearchParams({brand:f.brand});
-    if(clean(f.model)||clean(first.model)) productParams.set('model',clean(f.model)||clean(first.model));
+    if(isYanmarTractor(f)&&clean(first.sku)) productParams.set('sku',clean(first.sku));
+    else if(clean(f.model)||clean(first.model)) productParams.set('model',clean(f.model)||clean(first.model));
     else productParams.set('sku',clean(first.sku));
     const productPageUrl='product.html?'+productParams.toString();
     return '<article class="market-card" data-key="'+esc(f.key)+'">'+
@@ -1958,7 +1973,7 @@
       '<div class="market-card-body">'+
         '<section class="market-card-left">'+
           '<div class="market-image-wrap">'+
-            offerOverlay(f)+
+            offerOverlay(isYanmarTractor(f)?Object.assign({},f,{variants:[first],price:first.price,series:first.series||f.series}):f)+
             (
               (first.productUrl||f.productUrl)
                 ? (
