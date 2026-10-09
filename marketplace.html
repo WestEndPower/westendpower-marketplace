@@ -412,6 +412,25 @@ button,input,select{font:inherit}button{cursor:pointer}button,a,input,select,sum
 .market-price-pair{gap:12px}
 .market-price-pair del{font-weight:800;color:#555}
 </style>
+<style id="market-price-fit-fix">
+.market-price-lines,.market-price-choice{min-width:0}
+.market-price-heading{flex-wrap:wrap;white-space:normal}
+.market-price-heading>span:first-child{
+  flex:1 1 100%;
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+.market-price-pair{
+  flex:1 1 100%;
+  min-width:0;
+  max-width:100%;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.market-price-pair del,.market-price-pair strong{
+  white-space:nowrap;
+}
+</style>
 </head>
 <body>
 <div id="market-loading">Loading product catalogâ€¦</div>

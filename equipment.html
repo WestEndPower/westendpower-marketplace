@@ -16,6 +16,10 @@
 </main><script src="brand-settings.js"></script><script src="universal/shared-navigation.js"></script><script>
 (async()=>{
 const params=new URLSearchParams(location.search),selectedBrand=(params.get('brand')||'STIHL').trim(),selectedCategory=(params.get('category')||'').trim();
+// YANMAR_TRACTOR_FILTER_ROUTE_V1
+if(selectedBrand.toUpperCase()==='YANMAR'&&(!selectedCategory||selectedCategory.toLowerCase()==='compact tractors')){
+location.replace('marketplace.html?'+params.toString());return;
+}
 document.getElementById('page-title').textContent=selectedBrand+' '+(selectedCategory||'Equipment');
 document.title=selectedBrand+' '+(selectedCategory||'Equipment')+' | West End Marketplace';
 const grid=document.getElementById('grid'),count=document.getElementById('count'),powerNav=document.getElementById('power-filters');let buttons=[];let models=[],filter='all',equipmentFilter='all';const equipmentNav=document.getElementById('equipment-filters');

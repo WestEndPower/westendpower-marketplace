@@ -1854,6 +1854,17 @@
   }
 
   function familyPriceMarkup(f){
+    // YANMAR_MODEL_STARTING_PRICE_V1
+    if(clean(f.brand).toUpperCase()==='YANMAR' && clean(f.category)==='Compact Tractors'){
+      const candidates=relevantVariants(f);
+      const priced=candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>Number(a.price)-Number(b.price));
+      const representative=priced[0]||candidates[0];
+      const p=new URLSearchParams({brand:f.brand});
+      if(clean(f.model))p.set('model',clean(f.model));
+      else if(representative)p.set('sku',clean(representative.sku));
+      return '<div class="market-price-lines">'+pricePanel('Starting at',representative,false,f,candidates)+
+        '<a class="market-product-page-link" href="'+esc('product.html?'+p.toString())+'" target="_blank" rel="noopener" style="display:block;text-align:center;margin:8px 0;padding:10px;border:1px solid #176c34;border-radius:8px;font-weight:800;color:#176c34;text-decoration:none">Open Product Page ↗</a></div>';
+    }
     const groups=new Map();
     (f.variants||[]).forEach(v=>{
       const raw=clean(v.type);
@@ -1927,7 +1938,14 @@
     const specs=familySpecs(f).slice(0,4);
     const heading=clean(first.description)||clean(f.model)||clean(first.sku);
     const equipmentMode=state.shopMode==='equipment';
-    const optionsUrl='product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+(['BILLYGOAT','TORO','HONDA','REDMAX','GREENWORKS','MITM'].includes(f.brand)?'&brand='+encodeURIComponent(f.brand):'');
+    const yanmarOptions=clean(f.brand).toUpperCase()==='YANMAR'&&clean(f.category)==='Compact Tractors';
+    // YANMAR_CONFIGURATOR_LINK_V1
+    const optionsVariant=yanmarOptions
+      ? relevantVariants(f).filter(v=>Number(v.price)>0).slice().sort((a,b)=>Number(a.price)-Number(b.price))[0]||first
+      : first;
+    const optionsUrl=yanmarOptions
+      ? 'https://westendpower.github.io/yanmar-equipment-configurator/?'+new URLSearchParams({category:f.category,sku:optionsVariant.sku||''}).toString()
+      : 'product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+(['BILLYGOAT','TORO','HONDA','REDMAX','GREENWORKS','MITM'].includes(f.brand)?'&brand='+encodeURIComponent(f.brand):'');
     // WEP_TORO_BUILD_LINK_V1: the configurator owns compatibility and pricing.
     const buildUrl=f.brand==='TORO'?optionsUrl:''; // WEP_MARKET_OPTIONS_V1
     const runtimeUrl='index.html?category='+encodeURIComponent(f.category)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';

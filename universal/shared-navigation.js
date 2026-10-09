@@ -13,10 +13,14 @@ let mode='',step='',selected='';
 const cell=(src,row,name)=>{const ix=src.headers.indexOf(name);if(ix<0)return '';if(src.encoding==='sparse'){for(let i=0;i<row.length;i+=2)if(row[i]===ix)return row[i+1];return ''}return row[ix]??''};
 const clean=v=>String(v??'').trim(),norm=v=>clean(v).toLowerCase(),active=v=>!['f','false','0'].includes(norm(v));
 const map=new Map(),byCategory=new Map();
-function link(text,brand,category){const a=make('a',text,'we-link');a.href='equipment.html?'+new URLSearchParams({brand,category});return a}
+function equipmentBrowseUrl(brand,category=''){
+const tractorView=norm(brand)==='yanmar'&&(!clean(category)||norm(category)==='compact tractors');
+return (tractorView?'marketplace.html?':'equipment.html?')+new URLSearchParams({brand,...(category?{category}:{})}).toString()
+}
+function link(text,brand,category){const a=make('a',text,'we-link');a.href=equipmentBrowseUrl(brand,category);return a}
 function clear(){panel.replaceChildren();panel.hidden=false}
 function showChoices(){clear();step='root';selected='';
- if(mode==='brand'){panel.append(make('strong','Manufacturers'));for(const item of [...map.values()].sort((a,b)=>a.brand.localeCompare(b.brand))){const b=make('button',item.brand);b.type='button';const profile=window.WESTEND_BRANDS?.[item.brand.toUpperCase().replace(/[^A-Z0-9]/g,'')];if(profile?.logoUrl){b.textContent='';const img=document.createElement('img');img.src=profile.logoUrl;img.alt=item.brand;img.className='we-brand-logo';img.onerror=()=>img.replaceWith(document.createTextNode(item.brand));b.append(img)}b.onclick=()=>{location.href='equipment.html?'+new URLSearchParams({brand:item.brand}).toString()};panel.append(b)}}
+ if(mode==='brand'){panel.append(make('strong','Manufacturers'));for(const item of [...map.values()].sort((a,b)=>a.brand.localeCompare(b.brand))){const b=make('button',item.brand);b.type='button';const profile=window.WESTEND_BRANDS?.[item.brand.toUpperCase().replace(/[^A-Z0-9]/g,'')];if(profile?.logoUrl){b.textContent='';const img=document.createElement('img');img.src=profile.logoUrl;img.alt=item.brand;img.className='we-brand-logo';img.onerror=()=>img.replaceWith(document.createTextNode(item.brand));b.append(img)}b.onclick=()=>{location.href=equipmentBrowseUrl(item.brand)};panel.append(b)}}
  else{panel.append(make('strong','Equipment Categories'));for(const item of [...byCategory.values()].sort((a,b)=>a.category.localeCompare(b.category))){const b=make('button',item.category);b.type='button';b.onclick=()=>showCategory(item);panel.append(b)}}}
 function back(){showChoices()}
 function showBrand(item){clear();step='detail';selected=item.brand;const b=make('button','← All Brands');b.onclick=back;panel.append(b,make('strong',item.brand));if(!item.categories.size)panel.append(make('span','No category values in current export.'));for(const c of [...item.categories].sort((a,b)=>a.localeCompare(b)))panel.append(link(c,item.brand,c))}
