@@ -35,7 +35,7 @@ const data=await res.json(),src=data.productSources.find(s=>s.brand==='STIHL'),h
 for(const row of src.rows){
 if(norm(row[ix('Category')])!=='blowers')continue;
 const sub=norm(row[ix('SubCategory')]),description=norm(row[ix('Description')]);
-if(/vac|shredder|snow/.test(sub)||/vacuum|shredder|snow blower/.test(description))continue;
+if(/vacuum|wet\s*\/?\s*dry/.test(description)||/^sea\b/i.test(model)||/snow blower/.test(description))continue;
 const model=clean(row[ix('Model')]);if(!model)continue;
 const key=norm(model);if(!groups.has(key))groups.set(key,{model,rows:[],power:'gas',minPrice:null});
 const g=groups.get(key);g.rows.push(row);
