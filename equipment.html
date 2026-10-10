@@ -6,6 +6,7 @@
 .site-nav{background:#fff;border:1px solid #d9dee2;border-radius:12px;padding:12px 16px;margin-bottom:12px}.site-nav-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}.site-nav-top a{color:#176c34;font-weight:700;text-decoration:none}.site-nav-links{display:flex;gap:8px;flex-wrap:wrap}.site-nav-links a{border:1px solid #176c34;border-radius:7px;padding:9px 12px}.brand-nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.brand-nav button{flex:0 1 155px;min-height:48px;border:1px solid #aeb8c0;border-radius:9px;background:#fff;padding:8px;cursor:pointer;font-weight:700}.brand-nav button[aria-expanded=true]{background:#e5f0e9;border-color:#176c34}.brand-nav button img{max-height:32px;max-width:130px;object-fit:contain}.brand-categories{display:flex;gap:8px;flex-wrap:wrap;padding:12px;margin-top:8px;background:#f2f6f3;border-radius:9px}.brand-categories[hidden]{display:none}.brand-categories a{display:inline-block;border:1px solid #a7b9ad;border-radius:7px;padding:9px 12px;background:#fff;color:#176c34;font-weight:700;text-decoration:none}@media(max-width:600px){.brand-nav button{flex:1 1 125px}.site-nav-top{align-items:flex-start}}.site-nav-links button{border:1px solid #176c34;border-radius:7px;padding:9px 12px;background:#fff;color:#176c34;font-weight:700;cursor:pointer}.brand-categories button{border:1px solid #a7b9ad;border-radius:7px;padding:9px 12px;background:#fff;color:#176c34;font-weight:700;cursor:pointer}.brand-categories button[aria-pressed=true]{background:#dcebe0}.brand-categories[hidden]{display:none}.site-nav-links button[aria-expanded=true],.brand-nav button[aria-expanded=true],.brand-categories button[aria-pressed=true]{background:#171a1d!important;color:#fff!important;border-color:#171a1d!important}.site-nav-links a:active{background:#171a1d;color:#fff}.brand-nav[hidden]{display:none}.site-nav-links button[aria-expanded=true]{background:#171a1d!important;color:#fff!important;border-color:#171a1d!important}/* builder-filter-theme */
 .filters button{background:#fff;color:#20272c;border-color:#777}
 .filters button[aria-pressed=true]{background:#171a1d;color:#fff;border-color:#171a1d}
+.card-image-link{display:block;border-radius:8px;text-decoration:none;color:inherit}.card-image-link:focus-visible{outline:3px solid #171a1d;outline-offset:3px}
 </style></head><body><main>
 <div id="we-shared-nav"></div>
 <header><a class="back" href="marketplace.html">← Marketplace</a>
@@ -51,6 +52,7 @@ const eyebrow=document.createElement('div');eyebrow.className='muted';eyebrow.te
 const heading=document.createElement('h2');heading.textContent=m.model;
 const detail=document.createElement('p');detail.className='muted';detail.textContent=m.rows.length+' catalog configuration'+(m.rows.length===1?'':'s');
 const main=document.createElement('div');main.className='card-main';
+const productUrl='product.html?'+new URLSearchParams({brand:selectedBrand,model:m.model}).toString();
 const imgUrl=m.imageUrl||'';
 const photo=imgUrl?document.createElement('img'):document.createElement('div');photo.className=imgUrl?'card-image':'card-image card-image-placeholder';
 if(imgUrl){photo.src=imgUrl;photo.alt=m.model+' product';photo.loading='lazy';photo.onerror=()=>{photo.replaceWith(Object.assign(document.createElement('div'),{className:'card-image card-image-placeholder',textContent:'Image unavailable'}));}}else photo.textContent='Image unavailable';
@@ -58,10 +60,11 @@ const info=document.createElement('div');info.append(eyebrow,heading,detail);
 const specs=document.createElement('div');specs.className='specs';
 for(const [label,value] of m.specs){const line=document.createElement('div');line.className='spec-row';const l=document.createElement('span');l.textContent=label;const v=document.createElement('strong');v.textContent=value;line.append(l,v);specs.appendChild(line)}
 if(m.specs.length){info.appendChild(specs);if(m.specs.length>5){const hint=document.createElement('p');hint.className='scroll-hint';hint.textContent='Scroll for more specifications ↓';info.appendChild(hint)}}
-main.append(photo,info);
+const imageLink=document.createElement('a');imageLink.href=productUrl;imageLink.className='card-image-link';imageLink.setAttribute('aria-label','View '+selectedBrand+' '+m.model+' product');imageLink.title='View '+m.model;imageLink.appendChild(photo);
+main.append(imageLink,info);
 const price=document.createElement('div');price.className='price';price.textContent=m.minPrice?'From $'+m.minPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'See pricing';
 const actions=document.createElement('div');actions.className='actions';
-const a=document.createElement('a');a.className='primary';a.textContent='View Product';a.href='product.html?'+new URLSearchParams({brand:selectedBrand,model:m.model}).toString();actions.appendChild(a);
+const a=document.createElement('a');a.className='primary';a.textContent='View Product';a.href=productUrl;actions.appendChild(a);
 card.append(main,price,actions);grid.appendChild(card);
 }
 }
@@ -97,3 +100,5 @@ renderEquipmentFilters();renderPowerFilters();render();
 })();
 </script></body></html>
 <!-- WEP_NAVIGATION_REPAIR_V1 -->
+
+<!-- WEP_EQUIPMENT_IMAGE_LINK_V1 -->
