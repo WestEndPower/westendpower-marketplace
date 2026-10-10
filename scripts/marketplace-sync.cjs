@@ -25,7 +25,7 @@ function parse(text){
   return {headers,rows};
 }
 function encode(headers,rows){const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';return '\uFEFF'+[headers.map(q).join(','),...rows.map(r=>headers.map(h=>q(r[h])).join(','))].join('\r\n')+'\r\n';}
-function merge(source,current,{preferWorkbookImage=false}={}){
+function merge(source,current,{preferWorkbookImage=false,workbookImageAuthoritative=false}={}){
   for(const h of ['SKU','Category','Model','Series'])if(!source.headers.includes(h))throw Error('Public products export missing '+h);
   const headers=source.headers.filter(h=>!isPrivate(h));
   for(const h of [...LINKS,'MarketplaceFamily'])if(current.headers.includes(h)&&!headers.includes(h))headers.push(h);
@@ -38,7 +38,7 @@ function merge(source,current,{preferWorkbookImage=false}={}){
     const old=oldBySKU.get(sku.toUpperCase())||{};
     const out=Object.fromEntries(headers.map(h=>[h,r[h]??'']));
     // Marketplace's curated image and external links survive data refreshes.
-    for(const h of LINKS)if(String(old[h]||'').trim()){if(h==='ImageURL'&&preferWorkbookImage&&String(r[h]||'').trim())continue;out[h]=old[h];}
+    for(const h of LINKS){if(h==='ImageURL'&&workbookImageAuthoritative&&source.headers.includes('ImageURL'))continue;if(String(old[h]||'').trim()){if(h==='ImageURL'&&preferWorkbookImage&&String(r[h]||'').trim())continue;out[h]=old[h];}}
     if(!String(out.MarketplaceFamily||'').trim()&&old.MarketplaceFamily)out.MarketplaceFamily=old.MarketplaceFamily;
     rows.push(out);
   }
@@ -98,11 +98,11 @@ function sync({brand,sourceFile,root=path.resolve(__dirname,'..'),backupRoot}){
   const target=path.join(root,'brands',brand,'data','products.csv');
   if(!fs.existsSync(target))throw Error('Marketplace brand products file not found: '+target);
   const old=fs.readFileSync(target,'utf8');
-  const result=merge(parse(fs.readFileSync(sourceFile,'utf8')),parse(old),{preferWorkbookImage:brand==='billygoat'});
+  const result=merge(parse(fs.readFileSync(sourceFile,'utf8')),parse(old),{preferWorkbookImage:brand==='billygoat',workbookImageAuthoritative:brand==='stihl'});
 
   const directory=backupRoot||path.join(process.env.USERPROFILE||os.homedir(),'Desktop','Marketplace-Brand-Backups','automatic-product-sync');
   fs.mkdirSync(directory,{recursive:true});
-  const imageCount=brand==='billygoat'?copyBillyGoatImages(result.rows,sourceFile,root,directory):0;
+  const imageCount=brand==='stihl'?require('./stihl-marketplace-images.cjs').syncStihlImages(result.rows,sourceFile,root,directory):(brand==='billygoat'?copyBillyGoatImages(result.rows,sourceFile,root,directory):0);
   const data=encode(result.headers,result.rows);
   if(data===old)return {changed:false,rows:result.rows.length,imageCount};
   const stamp=new Date().toISOString().replace(/[:.]/g,'-');
@@ -117,3 +117,5 @@ if(require.main===module){
   try{const result=sync({brand,sourceFile});const catalog=require('./build-marketplace-catalog.cjs').buildCatalog();console.log(`${brand}: ${result.changed?'updated':'unchanged'}, ${result.rows} product rows; catalog ${catalog.version}`);}
   catch(e){const message=new Date().toISOString()+' '+String(brand)+' '+e.message+'\r\n';try{const logDir=path.join(process.env.LOCALAPPDATA||os.tmpdir(),'WestEndPower');fs.mkdirSync(logDir,{recursive:true});fs.appendFileSync(path.join(logDir,'marketplace-sync.log'),message);}catch{}console.error(message);process.exitCode=1;}
 }
+
+// STIHL-WORKBOOK-MARKETPLACE-IMAGES-V1
