@@ -13,7 +13,7 @@
 <p id="summary"></p><div class="actions">
 <button class="btn" id="share" type="button">Copy Product Link</button>
 <a class="btn secondary" id="market-link" href="marketplace.html">See Marketplace Pricing & Options</a>
-<a class="btn secondary" id="manufacturer-link" target="_blank" rel="noopener" hidden>Manufacturer Details</a>
+<a class="btn secondary" id="manufacturer-link" hidden>Manufacturer Details</a>
 </div><p class="note">Marketplace pricing, availability, financing, rebates and discounts must be confirmed before ordering.</p></div></div>
 <h3>Product specifications</h3><div class="specs" id="specs"></div>
 <section class="contact"><h3>Ask New Milford about this product</h3>
@@ -80,3 +80,4 @@ fetch('data/marketplace-catalog.json').then(r=>{if(!r.ok)throw Error('Catalog un
 }).catch(e=>{$('status').className='error';$('status').textContent=e.message+'. Please return to the Marketplace and select a product.'});
 })();
 </script><script src="brand-settings.js"></script><script src="universal/shared-navigation.js"></script></body></html>
+<!-- WEP_NAVIGATION_REPAIR_V1 -->

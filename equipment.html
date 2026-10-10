@@ -61,7 +61,7 @@ if(m.specs.length){info.appendChild(specs);if(m.specs.length>5){const hint=docum
 main.append(photo,info);
 const price=document.createElement('div');price.className='price';price.textContent=m.minPrice?'From $'+m.minPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'See pricing';
 const actions=document.createElement('div');actions.className='actions';
-const a=document.createElement('a');a.className='primary';a.textContent='View Product';a.href='product.html?'+new URLSearchParams({brand:selectedBrand,model:m.model}).toString();a.target='_blank';a.rel='noopener';actions.appendChild(a);
+const a=document.createElement('a');a.className='primary';a.textContent='View Product';a.href='product.html?'+new URLSearchParams({brand:selectedBrand,model:m.model}).toString();actions.appendChild(a);
 card.append(main,price,actions);grid.appendChild(card);
 }
 }
@@ -96,3 +96,4 @@ renderEquipmentFilters();renderPowerFilters();render();
 }catch(e){count.textContent='Unable to load equipment catalog: '+e.message}
 })();
 </script></body></html>
+<!-- WEP_NAVIGATION_REPAIR_V1 -->

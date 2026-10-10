@@ -563,10 +563,7 @@ document.addEventListener('DOMContentLoaded', function () {
     window.location.href = url;
   });
   update();
-  let dismissed = false;
-  try { dismissed = sessionStorage.getItem(key) === '1'; } catch (_) {}
-  if (dismissed) launcher.hidden = false;
-  else show();
+  launcher.hidden = false;
 });
 </script>
 <script src="brand-settings.js"></script>
@@ -575,3 +572,5 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="universal/marketplace.js?v=editable-build-1"></script>
 </body>
 </html>
+
+<!-- WEP_NAVIGATION_REPAIR_V1 -->

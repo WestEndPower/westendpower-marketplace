@@ -624,7 +624,7 @@
     const key=financeSummaryKey(f);
     const variant=marketplaceFinanceVariant(f);
     const url='payment-options.html?brand='+encodeURIComponent(clean(f.brand).toUpperCase())+'&sku='+encodeURIComponent(clean(variant.sku));
-    const button='<a class="market-payment-options" href="'+esc(url)+'" target="_blank" rel="noopener">View Payment Options</a>';
+    const button='<a class="market-payment-options" href="'+esc(url)+'">View Payment Options</a>';
     if(!key || /\|$/.test(key)) return '<div class="market-payment-options-only">'+button+'</div>';
     const summary=DATA.financeSummaryCache.get(key);
     if(!summary) requestMarketplaceFinanceSummary(f);
@@ -1876,7 +1876,7 @@
       if(clean(representative.sku))p.set('sku',clean(representative.sku));
       else if(clean(f.model))p.set('model',clean(f.model));
       return '<div class="market-price-lines">'+pricePanel('Starting at',representative,false,f,candidates)+
-        '<a class="market-product-page-link" href="'+esc('product.html?'+p.toString())+'" target="_blank" rel="noopener" style="display:block;text-align:center;margin:8px 0;padding:10px;border:1px solid #176c34;border-radius:8px;font-weight:800;color:#176c34;text-decoration:none">Open Product Page ↗</a></div>';
+        '<a class="market-product-page-link" href="'+esc('product.html?'+p.toString())+'" style="display:block;text-align:center;margin:8px 0;padding:10px;border:1px solid #176c34;border-radius:8px;font-weight:800;color:#176c34;text-decoration:none">Open Product Page ↗</a></div>';
     }
     const groups=new Map();
     (f.variants||[]).forEach(v=>{
@@ -1912,7 +1912,7 @@
     else productParams.set('sku',clean(first.sku));
     const productLink='product.html?'+productParams.toString();
     return '<div class="market-price-lines">'+rows.join('')+
-      '<a class="market-product-page-link" href="'+esc(productLink)+'" target="_blank" rel="noopener" style="display:block;text-align:center;margin:8px 0;padding:10px;border:1px solid #176c34;border-radius:8px;font-weight:800;color:#176c34;text-decoration:none">Open Product Page ↗</a></div>';
+      '<a class="market-product-page-link" href="'+esc(productLink)+'" style="display:block;text-align:center;margin:8px 0;padding:10px;border:1px solid #176c34;border-radius:8px;font-weight:800;color:#176c34;text-decoration:none">Open Product Page ↗</a></div>';
   }
 
   function offerOverlay(f){
@@ -1959,7 +1959,7 @@
       : first;
     const optionsUrl=yanmarOptions
       ? 'https://westendpower.github.io/yanmar-equipment-configurator/?'+new URLSearchParams({category:f.category,sku:optionsVariant.sku||''}).toString()
-      : 'product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+(['BILLYGOAT','TORO','HONDA','REDMAX','GREENWORKS','MITM'].includes(f.brand)?'&brand='+encodeURIComponent(f.brand):'');
+      : 'product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+'&brand='+encodeURIComponent(f.brand)+'&return='+encodeURIComponent(location.pathname+location.search+location.hash);
     // WEP_TORO_BUILD_LINK_V1: the configurator owns compatibility and pricing.
     const buildUrl=f.brand==='TORO'?optionsUrl:''; // WEP_MARKET_OPTIONS_V1
     const runtimeUrl='index.html?category='+encodeURIComponent(f.category)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';
@@ -1977,7 +1977,7 @@
             (
               (first.productUrl||f.productUrl)
                 ? (
-                  '<a class="market-image" href="'+esc(productPageUrl)+'" target="_blank" rel="noopener">'+
+                  '<a class="market-image" href="'+esc(productPageUrl)+'">'+
                   (f.image?'<img src="'+esc(f.image)+'" alt="'+esc(f.brand+' '+f.model)+'" loading="lazy">':'<span>Image Coming Soon</span>')+
                   '</a>'
                 )
@@ -1989,7 +1989,7 @@
             )+
           '</div>'+
           '<div class="market-detail-actions">'+
-            ((first.productUrl||f.productUrl)?'<a class="market-product-details" href="'+esc(first.productUrl||f.productUrl)+'" target="_blank" rel="noopener">View Details</a>':'')+
+            ((first.productUrl||f.productUrl)?'<a class="market-product-details" href="'+esc(first.productUrl||f.productUrl)+'">View Details</a>':'')+
             '<label class="market-product-details market-compare-detail"><input type="checkbox" data-compare="'+esc(f.key)+'" '+(state.compare.has(f.key)?'checked':'')+'> <span>Compare</span></label>'+
           '</div>'+
           cardFinanceMarkup(f)+
@@ -1999,7 +1999,7 @@
           (equipmentMode
             ? '<div class="market-actions"><a href="'+optionsUrl+'">'+(/battery/i.test(f.power)?'View Accessories':'View Options')+'</a>'+
                 (buildUrl?'<a href="'+esc(buildUrl)+'">Build Your Own</a>':'')+
-                (/battery/i.test(f.power)?'<a href="'+runtimeUrl+'" target="_blank">Run/Charge Times</a>':'')+
+                (/battery/i.test(f.power)?'<a href="'+runtimeUrl+'">Run/Charge Times</a>':'')+
               '</div>'
             : '')+
           cartMarkup(f)+
@@ -2047,7 +2047,7 @@
       link=document.createElement('a');
       link.id='market-universal-category-link';
       link.className='market-chip';
-      link.target='_blank';
+      
       link.rel='noopener noreferrer';
       link.style.cssText='display:inline-flex;align-items:center;text-decoration:none;white-space:nowrap';
       link.textContent='Open Category Page ↗';
@@ -2738,3 +2738,5 @@
 
   document.addEventListener('DOMContentLoaded',init);
 })();
+
+// WEP_NAVIGATION_REPAIR_V1
