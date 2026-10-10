@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="preload" href="data/marketplace-catalog.json?v=52515a9c02360eca" as="fetch" crossorigin="anonymous" data-marketplace-catalog>
+<link rel="preload" href="data/marketplace-catalog.json?v=f317e3384dc840eb" as="fetch" crossorigin="anonymous" data-marketplace-catalog>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>West End Power Marketplace</title>
@@ -21,7 +21,7 @@ button,input,select{font:inherit}button{cursor:pointer}button,a,input,select,sum
 .market-layout{display:grid;grid-template-columns:245px minmax(0,1fr);gap:18px;align-items:start}
 .market-sidebar{position:sticky;top:10px;border:1px solid var(--line);border-radius:11px;background:#fff;overflow:hidden}.market-mobile-filter-head{display:flex;align-items:center;justify-content:space-between}.market-sidebar h2{font-size:17px;margin:0;padding:14px 14px 10px}.market-mobile-filter-close,.market-mobile-filter-toggle,.market-mobile-filter-backdrop{display:none}.market-sidebar details{border-top:1px solid var(--line)}.market-sidebar summary{list-style:none;min-height:44px;padding:12px 14px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:space-between}.market-sidebar summary:after{content:'+'}.market-sidebar details[open] summary:after{content:'-'}.market-sidebar summary::-webkit-details-marker{display:none}.market-checks{padding:0 14px 12px;display:grid;gap:8px}.market-checks label{display:flex;gap:8px;align-items:center;min-height:36px;font-size:14px}.market-checks input{width:20px;height:20px;margin:0}
 .market-main{min-width:0}.market-results{position:sticky;top:8px;z-index:30;display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 10px;padding:8px 10px;border:1px solid #cbd1d6;border-radius:10px;background:rgba(255,255,255,.97);color:var(--muted);box-shadow:0 4px 14px rgba(0,0,0,.09);backdrop-filter:blur(4px)}.market-results strong{color:var(--ink)}.market-results-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
-.market-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:stretch}.market-card{position:relative;display:flex;flex-direction:column;min-width:0;overflow:visible;border:2px solid #bcc3ca;border-radius:11px;background:linear-gradient(145deg,#fff 0%,#fbfcfd 42%,#f1f3f5 100%);box-shadow:0 3px 10px rgba(0,0,0,.09);padding:8px}.market-card:has(.market-inventory-button[aria-expanded="true"]){z-index:50}.market-card-head{position:relative;display:flex;align-items:center;min-height:42px;margin-bottom:6px;padding:6px 8px;border:1px solid #196b34;border-radius:7px;background:#238b45;color:#fff}.market-card-head h3{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;margin:0;flex-wrap:nowrap}.market-card-head h3 strong{white-space:normal;overflow-wrap:anywhere}.market-card-head h3 strong{font-size:20px;line-height:1;font-weight:900;white-space:nowrap}.market-card-head h3 span{font-size:13px;line-height:1.15;font-weight:700;color:#eef5f0;white-space:normal}.market-card-head-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}.market-inventory-wrap{position:relative}.market-inventory-button{min-height:30px;padding:4px 9px;border:1px solid #dfe5e1;border-radius:999px;background:#fff;color:#235c37;font:inherit;font-size:10px;font-weight:900;white-space:nowrap;cursor:pointer}.market-inventory-button:hover,.market-inventory-button[aria-expanded="true"]{background:#eef7f1}.market-inventory-popover{position:absolute;z-index:30;right:0;top:calc(100% + 7px);min-width:245px;max-width:min(320px,82vw);max-height:min(360px,70vh);overflow:auto;padding:10px;border:1px solid #b9c2bc;border-radius:9px;background:#fff;color:#202622;box-shadow:0 8px 24px rgba(0,0,0,.2);text-align:left}.market-inventory-line{padding:5px 2px;font-size:12px;font-weight:800;line-height:1.25}.market-inventory-line span{color:#238b45;font-weight:900}.market-inventory-order{color:#47514b}.market-inventory-contact{display:block;margin-top:7px;padding-top:8px;border-top:1px solid #e0e5e2;color:#176b35;font-size:12px;font-weight:900;text-decoration:none}.market-inventory-contact:hover{text-decoration:underline}.market-compare-pick{display:flex;align-items:center;gap:4px;flex:0 0 auto;padding:4px 8px;border:1px solid #e2e5e8;border-radius:999px;background:#fff;color:#252a2e;font-size:10px;font-weight:900;white-space:nowrap}.market-compare-pick input{width:20px;height:20px;margin:0}
+.market-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:stretch}.market-card{position:relative;display:flex;flex-direction:column;min-width:0;overflow:visible;border:2px solid #bcc3ca;border-radius:11px;background:linear-gradient(145deg,#fff 0%,#fbfcfd 42%,#f1f3f5 100%);box-shadow:0 3px 10px rgba(0,0,0,.09);padding:8px}.market-card:has(.market-inventory-button[aria-expanded="true"]){z-index:50}.market-card-head{position:relative;display:flex;align-items:center;min-height:42px;margin-bottom:6px;padding:6px 8px;border:1px solid #196b34;border-radius:7px;background:#238b45;color:#fff}.market-card-head h3{display:flex;align-items:baseline;gap:7px;min-width:0;margin:0;flex-wrap:wrap}.market-card-head h3 strong{font-size:20px;line-height:1;font-weight:900;white-space:nowrap}.market-card-head h3 span{font-size:13px;line-height:1.15;font-weight:700;color:#eef5f0;white-space:normal}.market-card-head-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}.market-inventory-wrap{position:relative}.market-inventory-button{min-height:30px;padding:4px 9px;border:1px solid #dfe5e1;border-radius:999px;background:#fff;color:#235c37;font:inherit;font-size:10px;font-weight:900;white-space:nowrap;cursor:pointer}.market-inventory-button:hover,.market-inventory-button[aria-expanded="true"]{background:#eef7f1}.market-inventory-popover{position:absolute;z-index:30;right:0;top:calc(100% + 7px);min-width:245px;max-width:min(320px,82vw);max-height:min(360px,70vh);overflow:auto;padding:10px;border:1px solid #b9c2bc;border-radius:9px;background:#fff;color:#202622;box-shadow:0 8px 24px rgba(0,0,0,.2);text-align:left}.market-inventory-line{padding:5px 2px;font-size:12px;font-weight:800;line-height:1.25}.market-inventory-line span{color:#238b45;font-weight:900}.market-inventory-order{color:#47514b}.market-inventory-contact{display:block;margin-top:7px;padding-top:8px;border-top:1px solid #e0e5e2;color:#176b35;font-size:12px;font-weight:900;text-decoration:none}.market-inventory-contact:hover{text-decoration:underline}.market-compare-pick{display:flex;align-items:center;gap:4px;flex:0 0 auto;padding:4px 8px;border:1px solid #e2e5e8;border-radius:999px;background:#fff;color:#252a2e;font-size:10px;font-weight:900;white-space:nowrap}.market-compare-pick input{width:20px;height:20px;margin:0}
 .market-card-body{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:8px;align-items:stretch}.market-card-left{display:flex;flex-direction:column;min-width:0}.market-image-wrap{position:relative}.market-image{display:flex;align-items:center;justify-content:center;width:100%;min-height:205px;overflow:hidden;border:2px solid #bcc3ca;border-radius:7px;background:linear-gradient(180deg,#fff,#f8fafb);color:var(--muted);text-decoration:none}.market-image img{display:block;width:100%;height:205px;object-fit:contain;padding:50px 8px 6px}.market-offer-row{position:absolute;z-index:5;left:7px;right:7px;top:6px;display:grid;grid-template-columns:1fr;align-items:center;gap:7px;min-height:42px;padding:6px 9px;border:2px solid #d6b53a;border-radius:5px;background:linear-gradient(90deg,#990000,#d72128 35%,#c4161d 70%,#8e0000);color:#fff3a3;text-align:center;box-shadow:0 2px 4px rgba(0,0,0,.18);pointer-events:none}.market-offer-row-both{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}.market-offer-promo,.market-offer-finance{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0}.market-offer-promo strong,.market-offer-finance strong{font-size:12px;line-height:1.05;font-weight:900;color:#fff3a3;white-space:nowrap}.market-offer-promo small,.market-offer-finance small{margin-top:3px;font-size:9px;line-height:1;font-weight:900;color:#fff;white-space:nowrap}.market-offer-joiner{display:flex;align-items:center;justify-content:center;min-width:32px;font-size:11px;font-weight:900;color:#fff3a3}.market-detail-actions{display:flex;align-items:center;justify-content:center;gap:6px;margin:5px auto 0;flex-wrap:wrap}.market-product-details{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:32px;margin:0;padding:5px 9px;border:1px solid #9fa7af;border-radius:6px;background:#fff;max-width:100%;font-size:12px;font-weight:800;color:#235c37;text-decoration:none;text-align:center;cursor:pointer}.market-product-details:hover{background:#f4f7f5;text-decoration:none}.market-compare-detail input{width:18px;height:18px;margin:0}.market-card-finance{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:3px;width:100%;max-width:100%;margin:8px 0 0;padding:0 0 7px;border:2px solid #1f5f35;border-radius:8px;background:#fffbea;color:#333;font-size:11px;font-weight:800;text-align:center;line-height:1.15;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.12)}.market-card-finance-loading{min-width:150px;padding:8px 12px;color:#666;border-color:#d6b53a}.market-card-finance-head{margin-bottom:2px;padding:6px 10px;background:#1f5f35;color:#fff;font-size:12px;font-weight:900;letter-spacing:.35px}.market-card-finance-payment{display:flex;align-items:baseline;justify-content:center;gap:5px;padding:2px 8px 0}.market-card-finance-aslow{font-size:9px;font-weight:900;color:#555;letter-spacing:.25px}.market-card-finance-payment strong{font-size:21px;font-weight:900;color:#a10f1d;line-height:1}.market-card-finance-apr{font-size:12px;font-weight:900;color:#1f5f35}.market-card-finance-dot{padding:0 2px;color:#777}.market-card-finance-note{padding:0 8px;font-size:10px;font-weight:800;color:#6a5a19}
 .market-buy{display:flex;flex-direction:column;gap:5px;min-width:0;height:100%}.market-price-lines{display:flex;flex-direction:column;gap:5px}.market-price-choice{display:flex;flex-direction:column;justify-content:flex-start;min-height:96px;padding:7px 9px;border:2px solid #bcc3ca;border-radius:7px;background:linear-gradient(180deg,#fff,#fafbfc);box-shadow:0 1px 3px rgba(0,0,0,.04)}.market-price-inventory{display:flex;justify-content:center;margin-top:auto;padding-top:4px}.market-price-inventory .market-inventory-button{min-width:120px}.market-price-choice.market-package-choice{border-color:#bcc3ca;background:linear-gradient(180deg,#fff,#fafbfc)}.market-price-heading{display:flex;align-items:baseline;justify-content:space-between;gap:7px;white-space:nowrap}.market-price-heading>span:first-child{font-size:18px;font-weight:900}.market-price-pair{display:flex;align-items:baseline;justify-content:flex-end;gap:5px}.market-price-pair del{font-size:12px;color:#666}.market-price-pair strong{font-size:21px;font-weight:900;color:#c8102e}.market-price-choice small{display:block;margin-top:4px;text-align:center;font-size:12px;line-height:1.15;color:#6f7881;font-weight:800}.market-sold-separate,.market-package-includes,.market-package-savings{white-space:nowrap}.market-package-includes{color:#6f7881!important}.market-package-savings{color:#2f6f3d!important;font-weight:900!important}.market-promo-price-note{color:#b20d22!important;font-weight:900!important}.market-series{font-size:12px;font-weight:800;color:var(--muted);text-align:center}.market-availability{font-size:12px;font-weight:900;color:#1e6f39;text-align:center}.market-cart-controls{display:grid;grid-template-columns:minmax(0,1fr) 52px;gap:6px}.market-cart-controls select,.market-cart-controls input{min-width:0;width:100%;height:44px;padding:7px 9px;border:2px solid #bcc3ca;border-radius:6px;background:#fff;font-size:14px;font-weight:700}.market-cart-controls input{text-align:center}.market-cart-controls button{grid-column:1/3;min-height:44px;border:1px solid #8d0b19;border-radius:6px;background:#c8102e;color:#fff;font-weight:900}.market-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.market-actions a{display:flex;align-items:center;justify-content:center;min-height:44px;padding:5px 6px;border:2px solid #9fa7af;border-radius:6px;background:#fff;color:#202832;text-decoration:none;font-size:12px;font-weight:900}.market-actions a:only-child{grid-column:1/3}
 .market-specs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:5px 0 0}.market-specs div{display:flex;flex-direction:column;justify-content:center;min-height:44px;padding:5px 6px;border:2px solid #aeb5bc;border-radius:7px;background:#d4d8dc}.market-specs dt{font-size:10px;color:#6a727a;text-align:center}.market-specs dd{margin:2px 0 0;font-size:12px;font-weight:900;text-align:center}
@@ -125,11 +125,6 @@ button,input,select{font:inherit}button{cursor:pointer}button,a,input,select,sum
 }
 
 .market-card-finance{padding-bottom:0;gap:4px}.market-card-finance-payment{padding:0 5px 4px}.market-card-finance-payment strong span{font-size:12px;white-space:nowrap}.market-payment-options{display:flex;align-items:center;justify-content:center;min-height:34px;width:100%;padding:7px 6px;background:#1f5f35;color:#fff;border-top:1px solid #1f5f35;font-size:12px;font-weight:900;text-decoration:none;line-height:1.2}.market-payment-options:hover{background:#174a28}.market-payment-options:focus-visible{outline:3px solid #d6b53a;outline-offset:-3px}.market-payment-options-only{width:100%;margin-top:8px;border:2px solid #1f5f35;border-radius:7px;overflow:hidden}
-
-.market-brand-text{min-width:0}.market-construction{max-width:650px!important;font-size:12px!important;line-height:1.4!important;color:#59636c!important;margin-top:5px!important}
-.market-contact-launch{position:fixed;right:20px;bottom:20px;z-index:1000;width:58px;height:58px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:#176c34;color:#fff;box-shadow:0 4px 18px #0003}.market-contact-launch[hidden]{display:none!important}
-.market-contact-dialog{width:min(94vw,480px);max-height:90vh;border:1px solid #ccd3d8;border-radius:14px;padding:0;box-shadow:0 16px 48px #0004;color:#171a1d}.market-contact-dialog::backdrop{background:#0007}.market-contact-inner{padding:22px}.market-contact-head{display:flex;align-items:flex-start;gap:12px;justify-content:space-between}.market-contact-head h2{font-size:21px;line-height:1.25;margin:0}.market-contact-head button{border:0;background:transparent;font-size:28px;line-height:1;padding:0 4px}.market-contact-inner p{line-height:1.45}.market-contact-method{display:flex;gap:22px;flex-wrap:wrap;border:0;padding:10px 0;margin:12px 0}.market-contact-method legend{font-weight:700}.market-contact-method label{display:flex;gap:7px;align-items:center}.market-contact-method .market-contact-choice{display:flex;flex-direction:column;align-items:flex-start;gap:5px}.market-contact-choice span{display:flex;align-items:center;gap:7px;font-weight:700}.market-contact-choice a{font-size:13px;color:#176c34;text-decoration:underline;overflow-wrap:anywhere}.market-contact-inner>label{display:block;font-weight:700;margin-bottom:7px}.market-contact-inner textarea{width:100%;box-sizing:border-box;padding:11px;border:1px solid #aeb6bf;border-radius:8px;font:inherit;resize:vertical}.market-contact-hint,.market-contact-destination{font-size:13px;color:#59636c}.market-contact-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.market-contact-actions button{border:0;background:#176c34;color:white;padding:12px 16px;border-radius:8px;font-weight:700}.market-contact-actions a{color:#176c34;font-weight:700}.market-contact-call{display:inline-flex;align-items:center;min-height:44px;text-decoration:underline;text-underline-offset:3px}
-@media(max-width:760px){.market-construction{font-size:11px!important}.market-contact-launch{right:14px;bottom:14px;width:52px;height:52px}}
 </style>
 
 <style id="compact-tractor-filter-spacing-fix">
@@ -412,25 +407,6 @@ button,input,select{font:inherit}button{cursor:pointer}button,a,input,select,sum
 .market-price-pair{gap:12px}
 .market-price-pair del{font-weight:800;color:#555}
 </style>
-<style id="market-price-fit-fix">
-.market-price-lines,.market-price-choice{min-width:0}
-.market-price-heading{flex-wrap:wrap;white-space:normal}
-.market-price-heading>span:first-child{
-  flex:1 1 100%;
-  min-width:0;
-  overflow-wrap:anywhere;
-}
-.market-price-pair{
-  flex:1 1 100%;
-  min-width:0;
-  max-width:100%;
-  flex-wrap:wrap;
-  justify-content:flex-end;
-}
-.market-price-pair del,.market-price-pair strong{
-  white-space:nowrap;
-}
-</style>
 </head>
 <body>
 <div id="market-loading">Loading product catalogâ€¦</div>
@@ -440,14 +416,13 @@ button,input,select{font:inherit}button{cursor:pointer}button,a,input,select,sum
       <a class="market-home-link" href="https://www.westendpower.com/" aria-label="West End Power home">
         <img id="market-dealer-logo" hidden alt="">
       </a>
-      <div class="market-brand-text"><h1>West End Marketplace</h1><p id="market-dealer-name" hidden></p><p class="market-construction"><strong>Marketplace Under Construction.</strong> We are continuing to add products and improve the Marketplace. Please confirm pricing, availability and financing before ordering.</p></div>
+      <div><h1>West End Marketplace</h1><p id="market-dealer-name" hidden></p></div>
     </div>
     <div class="market-searchbox">
       <input id="market-search" type="search" placeholder="Search model, category, specificationâ€¦">
       <button id="market-clear" class="market-clear" type="button">Clear</button>
     </div>
   </header>
-<div id="we-shared-nav"></div>
 
   <section class="market-shop-nav" aria-label="Shop type and power type">
     <div id="market-shop-tabs" class="market-shop-tabs"></div>
@@ -503,74 +478,28 @@ button,input,select{font:inherit}button{cursor:pointer}button,a,input,select,sum
   </dialog>
 </div>
 
-<button id="market-contact-launch" class="market-contact-launch" type="button" aria-label="Contact New Milford" title="Contact New Milford" hidden>
-  <svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z"/></svg>
-</button>
-<dialog id="market-contact-dialog" class="market-contact-dialog" aria-labelledby="market-contact-title">
-  <div class="market-contact-inner">
-    <div class="market-contact-head"><h2 id="market-contact-title">Contact West End Power - New Milford</h2><button id="market-contact-close" type="button" aria-label="Close contact window">&times;</button></div>
-    <p>Have a question about equipment, availability, parts or service? We're happy to help.</p>
-    <fieldset class="market-contact-method"><legend>How would you like to contact us?</legend>
-      <label class="market-contact-choice"><span><input type="radio" name="market-contact-method" value="text"> Text</span><a href="sms:+18603558722">860-355-8722</a></label>
-      <label class="market-contact-choice"><span><input type="radio" name="market-contact-method" value="email"> Email</span><a href="mailto:sales@westendpower.com">sales@westendpower.com</a></label>
-    </fieldset>
-    <label for="market-contact-question">Your question</label>
-    <textarea id="market-contact-question" rows="4" placeholder="How can we help?"></textarea>
-    <p class="market-contact-hint">Your phone or email application will open with your message ready. Press Send there to deliver it.</p>
-    <div class="market-contact-actions"><button id="market-contact-send" type="button">Send Question</button><a class="market-contact-call" href="tel:+18603558722" aria-label="Call New Milford at 860-355-8722">Call Us: 860-355-8722</a></div>
+<dialog id="market-notice" class="market-notice" aria-labelledby="market-notice-title" aria-describedby="market-notice-text">
+  <div class="market-notice-inner">
+    <h2 id="market-notice-title">Marketplace Under Construction</h2>
+    <p id="market-notice-text">We are building a simpler way to explore and purchase equipment. Product details, pricing, availability and financing offers may still need confirmation before ordering.</p>
+    <p>Spot an issue or have an idea that would make this easier to use? Email <a href="mailto:sales@westendpower.com?subject=Marketplace%20feedback">sales@westendpower.com</a> anytime. Your input helps us improve the Marketplace.</p>
+    <button id="market-notice-continue" type="button">Continue to Marketplace</button>
   </div>
 </dialog>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const dialog = document.getElementById('market-contact-dialog');
-  const launcher = document.getElementById('market-contact-launch');
-  const close = document.getElementById('market-contact-close');
-  const send = document.getElementById('market-contact-send');
-  const question = document.getElementById('market-contact-question');
-  const radios = Array.from(document.querySelectorAll('input[name="market-contact-method"]'));
-  const key = 'westend-market-contact-dismissed';
-  const phoneLike = window.matchMedia('(pointer: coarse) and (max-width: 800px)').matches || /Android|iPhone|iPod/i.test(navigator.userAgent);
-  const initial = phoneLike ? 'text' : 'email';
-  const selected = radios.find(r => r.value === initial);
-  if (selected) selected.checked = true;
-  function method() { return (radios.find(r => r.checked) || {}).value || initial; }
-  function update() {
-    const isText = method() === 'text';
-    send.textContent = 'Send Question';
-  }
-  function dismiss() {
-    try { sessionStorage.setItem(key, '1'); } catch (_) {}
-    if (dialog.open) dialog.close();
-    launcher.hidden = false;
-  }
-  function show() {
-    launcher.hidden = true;
-    if (typeof dialog.showModal === 'function') dialog.showModal();
-    else { dialog.setAttribute('open', ''); }
-  }
-  radios.forEach(r => r.addEventListener('change', update));
-  close.addEventListener('click', dismiss);
-  dialog.addEventListener('cancel', function (event) { event.preventDefault(); dismiss(); });
-  dialog.addEventListener('click', function (event) { if (event.target === dialog) dismiss(); });
-  launcher.addEventListener('click', show);
-  send.addEventListener('click', function () {
-    const message = question.value.trim();
-    if (!message) { question.focus(); return; }
-    const body = message + '\n\nMarketplace page: ' + window.location.href;
-    const url = method() === 'text'
-      ? 'sms:+18603558722?body=' + encodeURIComponent(body)
-      : 'mailto:sales@westendpower.com?subject=' + encodeURIComponent('West End Marketplace question') + '&body=' + encodeURIComponent(body);
-    window.location.href = url;
+  const notice = document.getElementById('market-notice');
+  const continueButton = document.getElementById('market-notice-continue');
+  let seen = false;
+  try { seen = sessionStorage.getItem('westend-marketplace-notice-seen') === '1'; } catch (_) {}
+  if (!seen && typeof notice.showModal === 'function') notice.showModal();
+  continueButton.addEventListener('click', function () {
+    try { sessionStorage.setItem('westend-marketplace-notice-seen', '1'); } catch (_) {}
+    notice.close();
   });
-  update();
-  let dismissed = false;
-  try { dismissed = sessionStorage.getItem(key) === '1'; } catch (_) {}
-  if (dismissed) launcher.hidden = false;
-  else show();
 });
 </script>
 <script src="brand-settings.js"></script>
-<script src="universal/shared-navigation.js"></script>
 <script src="universal/payment-pricing.js"></script>
 <script src="universal/marketplace.js?v=editable-build-1"></script>
 </body>
