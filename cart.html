@@ -77,7 +77,7 @@ h1 svg{width:30px;height:30px;color:#c8102e}
 
   <div class="summary">
     <div>
-      <div class="note">Subtotal</div>
+      <div class="note">Subtotal including selected installation / assembly</div>
       <div class="subtotal" id="cart-total">$0.00</div>
       <p class="note">Prices and availability are confirmed during checkout.</p>
     </div>
@@ -308,6 +308,8 @@ function saveCart(){
   }catch(e){}
 }
 
+function cartSetup(x){const code=String(x.assemblyOption||'').trim().toUpperCase();const amount=Number(x.assemblyAmount??x.setupAmount);if(code==='T'&&!x.setupSelected)return 0;return Number.isFinite(amount)&&amount>0?amount:0}
+function cartLineTotal(x){return (Number(x.itemPrice)+cartSetup(x))*Number(x.quantity)}
 function drawCart(){
 
   const lines=$("cart-lines");
@@ -321,6 +323,8 @@ function drawCart(){
           <strong>${esc(x.productName)}</strong>
           ${x.description?`<p class="line-description">${esc(x.description)}</p>`:""}
           <small>SKU ${esc(x.sku)}</small>
+          ${isEquipmentPackageRow(x)&&x.type==='tool'&&x.packageId?`<a href="product-options.html?brand=${encodeURIComponent(x.brandId)}&amp;sku=${encodeURIComponent(x.equipmentSku||x.sku)}">Edit Package</a>`:''}
+          ${String(x.assemblyOption||'').trim().toUpperCase()==='T'&&Number(x.assemblyAmount)>0?`<label><input type="checkbox" data-cart-install="${i}" ${x.setupSelected?'checked':''}> Optional Dealer Installation: ${money(Number(x.assemblyAmount))} per item</label>`:cartSetup(x)>0?`<small>Required Set-Up / Assembly: ${money(cartSetup(x))} per item</small>`:''}
           <label class="qty-row">
             Qty
             <input type="number" class="qty-input" min="1" max="99"
@@ -328,18 +332,19 @@ function drawCart(){
           </label>
           <button type="button" class="remove" data-remove="${i}">Remove</button>
         </div>
-        <div class="price">${money(Number(x.itemPrice)*Number(x.quantity))}</div>
+        <div class="price">${money(cartLineTotal(x))}</div>
       </div>
     `).join("");
   }
 
   $("cart-total").textContent=money(
-    cart.reduce((n,x)=>n+(Number(x.itemPrice)*Number(x.quantity)),0)
+    cart.reduce((n,x)=>n+cartLineTotal(x),0)
   );
 
   $("review-order").disabled=!cart.length;
-  $("review-order").textContent=cart.some(row=>row.brandId==='TORO')?'Review Package & Quote':'Review Order';
+  $("review-order").textContent=cart.some(isEquipmentPackageRow)?'Review Quote':'Review Order';
 
+  document.querySelectorAll('[data-cart-install]').forEach(input=>{input.onchange=()=>{const row=cart[Number(input.dataset.cartInstall)];if(String(row.assemblyOption||'').trim().toUpperCase()!=='T')return;row.setupSelected=input.checked;row.setupAmount=input.checked?Number(row.assemblyAmount)||0:0;saveCart();resetShipping();drawCart();};});
   document.querySelectorAll("[data-cart-qty]").forEach(input=>{
     input.onchange=function(){
 
@@ -505,7 +510,7 @@ async function submitCart(event){
 
   event.preventDefault();
 
-  if(reviewToroCart())return;
+  if(reviewEquipmentPackage())return;
   if(checkoutBusy || !cart.length)return;
 
   const form=$("checkout-form");
@@ -687,21 +692,17 @@ $("confirm-secure-checkout").onclick=function(){
   $("checkout-form").requestSubmit();
 };
 // WEP_MARKET_CART_V1
-function reviewToroCart(){
- const toro=cart.filter(row=>row.brandId==='TORO');
- if(!toro.length)return false;
- if(toro.length!==cart.length){alert('Review Toro equipment separately from other brands. Your cart has been kept.');return true;}
- const groups=[...new Set(toro.map(row=>row.packageId))];
- if(groups.length!==1||!groups[0]){alert('Review one Toro equipment package at a time. Your cart has been kept.');return true;}
- const main=toro.filter(row=>row.type==='tool');
- if(main.length!==1){alert('Add the equipment to this package before reviewing a quote.');return true;}
- const items=toro.map(row=>({type:row.type,sku:String(row.sku),qty:Number(row.quantity)}));
- if(items.some(row=>!Number.isInteger(row.qty)||row.qty<1||row.qty>20)){alert('Quote quantities must be whole numbers from 1 to 20.');return true;}
- const url=new URL('https://toro-equipment-configurator.westendpower-nm.workers.dev/');
- url.searchParams.set('sku',main[0].sku);url.searchParams.set('from','marketplace');url.searchParams.set('package',JSON.stringify({brandId:'TORO',sku:main[0].sku,items}));location.assign(url.href);return true;
+function isEquipmentPackageRow(row){
+ const brand=String(row.brandId||'').toUpperCase();
+ return brand==='TORO'||(brand==='STIHL'&&String(row.packageId||'').startsWith('STIHL:'));
+}
+function reviewEquipmentPackage(){
+ if(!cart.some(isEquipmentPackageRow))return false;
+ location.assign("checkout.html"+(["127.0.0.1","localhost","[::1]"].includes(location.hostname)?"?api=local":""));
+ return true;
 }
 $("review-order").onclick=function(){
- if(reviewToroCart())return;
+ if(reviewEquipmentPackage())return;
 
   const form=$("checkout-form");
 
@@ -735,3 +736,10 @@ updateShippingChoice();
 </script>
 </body>
 </html>
+<!-- WEP_REQUIRED_SETUP_V1 -->
+
+<!-- WEP_ASSEMBLY_T_OPTIONAL_F_REQUIRED_V1 -->
+
+<!-- WEP_STIHL_PACKAGE_CART_V1 -->
+
+<!-- WEP_MARKETPLACE_CUSTOMER_REVIEW_V1 -->
