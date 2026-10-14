@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head>
+<html lang="en"><head><meta charset="utf-8">
 <base href="https://westendpower.github.io/westendpower-marketplace/"><link rel="preload" href="https://westendpower.github.io/westendpower-marketplace/data/marketplace-catalog.json" as="fetch" crossorigin="anonymous" data-marketplace-catalog="">
 
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -704,7 +704,12 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .shop-brand-card .shop-brand-powers button:hover{background:#edf4e9;border-color:#176A14}
 .shop-brand-card .shop-carousel-window{display:block;padding-top:7px}
 .shop-brand-card .shop-carousel-controls{margin-top:4px}
-</style></head>
+</style><style>
+/* WEP_NAVIGATION_TRIANGLES_V1: encoding-independent dropdown indicators. */
+.wep-nav summary::after{content:''!important;display:inline-block!important;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor;border-bottom:0;margin-left:7px;vertical-align:middle}
+.wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
+</style>
+</head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -2188,12 +2193,12 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
           const images=matching.map(p=>clean(p.ImageURL)).filter(Boolean);
           const image=images.length?images[Math.floor(Math.random()*images.length)]:'';
           const order=['Manual','Electric','Battery','Gas','Diesel'];
-          const powers=distinct(matching.map(p=>clean(p.PowerType)).filter(Boolean)).sort((a,b)=>{
+          const powers=distinct(matching.map(p=>clean(p.PowerType)).filter(value=>order.some(power=>power.toLowerCase()===value.toLowerCase()))).sort((a,b)=>{
             const rank=v=>{const i=order.findIndex(x=>x.toLowerCase()===v.toLowerCase());return i<0?99:i};return rank(a)-rank(b)||a.localeCompare(b);
           }).slice(0,3);
           return '<div class="shop-slide"'+(index?' hidden':'')+'><button type="button" class="shop-subtile"'+attr+' data-brand-category="'+esc(category)+'"><span class="shop-subimage">'+(image?'<img loading="lazy" src="'+esc(image)+'" alt="" onerror="this.hidden=true;this.parentElement.textContent=\'View equipment\'">':'<span>View equipment</span>')+'</span><span class="shop-sublabel">Shop '+esc(category||name)+'</span></button><div class="shop-brand-powers">'+powers.map(power=>'<button type="button"'+attr+' data-brand-category="'+esc(category)+'" data-brand-power="'+esc(power)+'">'+esc(power)+'</button>').join('')+'</div></div>';
 
-        }).join('')+'</div><div class="shop-carousel-controls"><button type="button" data-slide-direction="-1" aria-label="'+esc('Previous '+name+' category')+'">‹</button><span class="shop-slide-position">1 / '+choices.length+'</span><button type="button" data-slide-direction="1" aria-label="'+esc('Next '+name+' category')+'">›</button></div></article>';
+        }).join('')+'</div><div class="shop-carousel-controls"><button type="button" data-slide-direction="-1" aria-label="'+esc('Previous '+name+' category')+'">&lsaquo;</button><span class="shop-slide-position">1 / '+choices.length+'</span><button type="button" data-slide-direction="1" aria-label="'+esc('Next '+name+' category')+'">&rsaquo;</button></div></article>';
       }).join('');
     }
 
