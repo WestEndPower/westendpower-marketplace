@@ -92,6 +92,10 @@
     return parseCsv(await r.text());
   }
 
+
+
+function powerRank(v){const types=['manual','electric','battery','gas','diesel','hybrid','kerosene','natural gas','propane','tow-behind'];const rank=types.indexOf(String(v??'').trim().toLowerCase());return rank<0?types.length:rank}
+function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!==''&&Number.isFinite(n)?n:Infinity}
   function groupFamilies(rows){
     const map=new Map();
 
@@ -121,8 +125,10 @@
           : model) ||
         clean(p.SKU);
 
-      const key=(brand+'|'+familyModel+'|'+clean(p.PowerType)).toUpperCase();
-      const rowSort=num(p.SortOrder)||999999;
+      const productSku=clean(p.SKU);
+      if(!productSku||['STOP','REFERENCE_ONLY'].includes(productSku.toUpperCase()))return;
+      const key=(/^compact tractors?$/i.test(category) ? brand+'|'+familyModel+'|'+clean(p.PowerType) : /^chainsaws?$/i.test(category) ? brand+'|SAW|'+familyModel+'|'+clean(p.PowerType) : brand+'|'+productSku).toUpperCase();
+      const rowSort=sortOrderValue(p.SortOrder);
 
       if(!map.has(key)){
         map.set(key,{
@@ -198,6 +204,7 @@
       });
 
       f.variants.push({
+        workbookSort:clean(p.SortOrder)==='' || !Number.isFinite(Number(p.SortOrder)) ? Infinity : Number(p.SortOrder),
         sku:clean(p.SKU),
         description:clean(p.Description),
         series:clean(p.Series),
@@ -229,6 +236,10 @@
       });
 
       f.variants.sort((a,b)=>{
+        if(isChainsawFamily(f)){
+          const order=a.workbookSort-b.workbookSort;
+          return Number.isNaN(order) ? 0 : order;
+        }
         const ap=Number(a.price||0);
         const bp=Number(b.price||0);
 
@@ -253,6 +264,8 @@
           ? Math.min(...positivePrices)
           : 0;
 
+      if(isChainsawFamily(f)) f.price=Number(f.variants[0]?.price)||0;
+
       f.stock=
         f.variants.reduce(
           (n,v)=>n+v.qtyDanbury+v.qtyNewMilford,
@@ -268,46 +281,7 @@
         );
 
       return f;
-    }).sort((a,b)=>{
-      const categoryCompare=
-        clean(a.category).localeCompare(
-          clean(b.category),
-          undefined,
-          {numeric:true,sensitivity:'base'}
-        );
-
-      if(categoryCompare) return categoryCompare;
-
-      const ap=Number(a.price||0);
-      const bp=Number(b.price||0);
-
-      if((ap>0)!==(bp>0)){
-        return ap>0 ? -1 : 1;
-      }
-
-      if(ap>0 && bp>0 && ap!==bp){
-        return ap-bp;
-      }
-
-      const brandCompare=
-        clean(a.brand).localeCompare(
-          clean(b.brand),
-          undefined,
-          {numeric:true,sensitivity:'base'}
-        );
-
-      if(brandCompare) return brandCompare;
-
-      if(a.sort!==b.sort){
-        return a.sort-b.sort;
-      }
-
-      return clean(a.model).localeCompare(
-        clean(b.model),
-        undefined,
-        {numeric:true,sensitivity:'base'}
-      );
-    });
+    }).sort((a,b)=>powerRank(a.power)-powerRank(b.power)||(a.sort===b.sort?0:a.sort-b.sort));
   }
   function groupComponents(rows,kind){
     return rows.filter(x=>truthy(x.Active)).map((p,index)=>{
@@ -332,7 +306,7 @@
         system:clean(p.System),
         image:clean(p.ImageURL),
         productUrl:clean(p.ProductURL),
-        sort:num(p.SortOrder)||index+1,
+        sort:sortOrderValue(p.SortOrder),
         variants:[{
           sku:clean(p.SKU),description:clean(p.Description)||model,type:kind==='battery'?'Battery':'Charger',
           msrp:num(p.MSRP),sale:num(p.SalePrice),price,
@@ -346,25 +320,7 @@
         financingEligible:truthy(p.FinancingEligible),
         setup:false
       };
-    }).sort((a,b)=>
-      a.category.localeCompare(
-        b.category,
-        undefined,
-        {numeric:true,sensitivity:'base'}
-      ) ||
-      a.price-b.price ||
-      a.brand.localeCompare(
-        b.brand,
-        undefined,
-        {numeric:true,sensitivity:'base'}
-      ) ||
-      a.sort-b.sort ||
-      a.model.localeCompare(
-        b.model,
-        undefined,
-        {numeric:true,sensitivity:'base'}
-      )
-    );
+    }).sort((a,b)=>powerRank(a.power)-powerRank(b.power)||(a.sort===b.sort?0:a.sort-b.sort));
   }
 
   function activeFamilies(){
@@ -421,8 +377,7 @@
     const distinct = a => Array.from(new Set(a.map(clean).filter(Boolean))).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
 
   function currentPrice(row){
-    const sale=num(row && row.SalePrice), msrp=num(row && row.MSRP);
-    return sale>0 ? sale : msrp;
+    return effectivePrice({msrp:num(row?.MSRP),sale:num(row?.SalePrice),saleStart:clean(row?.SaleStartDate),saleEnd:clean(row?.SaleEndDate),rebate:num(row?.RebateToCustomer),rebateStart:clean(row?.RebateStartDate),rebateEnd:clean(row?.RebateEndDate)});
   }
 
   function componentName(row){
@@ -431,58 +386,35 @@
   }
 
   function enrichRecommendedPackages(families){
-    const compatBySku=new Map(DATA.compatibility.map(x=>[clean(x.ToolSKU).toUpperCase(),x]));
-    const batteryById=new Map(DATA.batteries.map(x=>[clean(x.BatteryID).toUpperCase(),x]));
-    const chargerById=new Map(DATA.chargers.map(x=>[clean(x.ChargerID).toUpperCase(),x]));
-
+    const key=v=>clean(v).toUpperCase().replace(/[^A-Z0-9]/g,'');
+    const active=row=>clean(row.Active)===''||truthy(row.Active);
+    const compatBySku=new Map(DATA.compatibility.filter(active).map(x=>[key(x.ToolSKU),x]));
+    const batteryById=new Map(DATA.batteries.filter(active).map(x=>[key(x.BatteryID),x]));
+    const chargerById=new Map(DATA.chargers.filter(active).map(x=>[key(x.ChargerID),x]));
     families.forEach(f=>{
-      if(!/battery/i.test(f.power)) return;
-      const hasKit=f.variants.some(v=>/kit|package/i.test(v.type));
-      if(hasKit) return;
-      const tool=f.variants.find(v=>!/kit|package/i.test(v.type));
-      if(!tool || !(tool.price>0)) return;
-      const compat=compatBySku.get(clean(tool.sku).toUpperCase());
-      if(!compat) return;
-
-      const batteryId=clean(compat.RecommendedBatteryID1).toUpperCase();
-      const chargerId=clean(compat.RecommendedChargerID1).toUpperCase();
-      const battery=batteryById.get(batteryId);
-      const charger=chargerById.get(chargerId);
-      if(!battery || !charger) return;
-
-      const batteryPrice=currentPrice(battery), chargerPrice=currentPrice(charger);
-      if(!(batteryPrice>0 && chargerPrice>0)) return;
-
-      const batteryQty=Math.max(1,num(compat.RecommendedBatteryQty1)||1);
-      const chargerQty=Math.max(1,num(compat.RecommendedChargerQty1)||1);
-      const batteryLabel=(clean(battery.BatteryID)||componentName(battery))+' '+(batteryQty>1?'Batteries':'Battery');
-      const chargerLabel=(clean(charger.ChargerID)||componentName(charger))+' '+(chargerQty>1?'Chargers':'Charger');
-
-      f.variants.push({
-        sku:tool.sku,
-        description:tool.description,
-        type:'Package',
-        msrp:0,
-        sale:0,
-        price:tool.price+(batteryPrice*batteryQty)+(chargerPrice*chargerQty),
-        qtyDanbury:tool.qtyDanbury,
-        qtyNewMilford:tool.qtyNewMilford,
-        buyOnline:tool.buyOnline,
-        localDelivery:tool.localDelivery,
-        assembly:tool.assembly,
-        productUrl:tool.productUrl,
-        recommendedPackage:true,
-        packageItems:[
-          {sku:clean(battery.SKU),name:batteryLabel,quantity:batteryQty,price:batteryPrice},
-          {sku:clean(charger.SKU),name:chargerLabel,quantity:chargerQty,price:chargerPrice}
-        ],
-        packageIncludes:[
-          (batteryQty>1?batteryQty+' ':'')+batteryLabel,
-          (chargerQty>1?chargerQty+' ':'')+chargerLabel
-        ].join(' and ')+' included'
-      });
-    });
-    return families;
+      if(clean(f.brand).toUpperCase()!=='STIHL'||!/battery/i.test(f.power)||f.variants.some(v=>/kit|package/i.test(v.type)))return;
+      for(const tool of f.variants.slice()){
+        if(!(tool.price>0))continue;
+        let compat=compatBySku.get(key(tool.sku));
+        if(!compat){
+          const matches=DATA.compatibility.filter(row=>active(row)&&key(row.Model)&&key(row.Model)===key(tool.model));
+          const signatures=new Set(matches.map(row=>[key(row.RecommendedBatteryID1),row.RecommendedBatteryQty1||1,key(row.RecommendedChargerID1),row.RecommendedChargerQty1||1].join('|')));
+          if(signatures.size===1)compat=matches[0];
+        }
+        if(!compat)continue;
+        const battery=batteryById.get(key(compat.RecommendedBatteryID1)),charger=chargerById.get(key(compat.RecommendedChargerID1));
+        if(!battery||!charger||!clean(battery.SKU)||!clean(charger.SKU))continue;
+        const batteryPrice=currentPrice(battery),chargerPrice=currentPrice(charger);
+        if(!(batteryPrice>0&&chargerPrice>0))continue;
+        const batteryQty=Math.max(1,num(compat.RecommendedBatteryQty1)||1),chargerQty=Math.max(1,num(compat.RecommendedChargerQty1)||1);
+        if(!Number.isInteger(batteryQty)||!Number.isInteger(chargerQty))continue;
+        const batteryLabel=(batteryQty>1?batteryQty+' ':'')+clean(battery.BatteryID)+' Battery',chargerLabel=(chargerQty>1?chargerQty+' ':'')+clean(charger.ChargerID)+' Charger';
+        f.variants.push({...tool,description:tool.description+' + '+batteryLabel+' + '+chargerLabel,type:'Package',msrp:0,sale:0,rebate:0,
+          price:tool.price+batteryPrice*batteryQty+chargerPrice*chargerQty,recommendedPackage:true,
+          packageItems:[{sku:clean(battery.SKU),name:batteryLabel,quantity:batteryQty,price:batteryPrice},{sku:clean(charger.SKU),name:chargerLabel,quantity:chargerQty,price:chargerPrice}],
+          packageIncludes:batteryLabel+' and '+chargerLabel+' included'});
+      }
+    });return families;
   }
 
   function enrichFactoryPackageSavings(families){
@@ -608,29 +540,293 @@
   }
   function yanmarSelectedVariant(f){
     const candidates=relevantVariants(f);
-    return candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>Number(a.price)-Number(b.price))[0]||candidates[0]||(f.variants||[])[0]||{};
+    return candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>(isCompactTractor(f)?Number(compactTire(a)!=='R-4')-Number(compactTire(b)!=='R-4'):0)||(a.workbookSort===b.workbookSort?0:a.workbookSort-b.workbookSort)||Number(a.price)-Number(b.price))[0]||candidates[0]||(f.variants||[])[0]||{};
   }
-  function marketplaceFinanceVariant(f){
-    if(isYanmarTractor(f)) return yanmarSelectedVariant(f);
-    return (f.variants||[]).find(v=>!/kit|package/i.test(v.type)) || f.variants[0] || {};
+  // WEP_COMPACT_CARD_OPTIONS_V1: select complete catalog SKUs, never add guessed option prices.
+  function isCompactTractor(f){return /^compact tractors?$/i.test(clean(f.category));}
+  const compactFields=[['Loader','P1-Loader'],['Backhoe','P2-Backhoe'],['Mower','P3-Mower'],['Cab','P4-Cab']];
+  const compactTires=[['R-1','Ag','Agricultural'],['R-3','Turf','Turf'],['R-4','Industrial','Industrial'],['Hybrid','Hybrid','Hybrid']];
+  function compactVariants(f){
+    // These cab versions are separate workbook models of the same YT platform.
+    const model=clean(f.model),match=model.match(/^(YT235|YT347|YT359)C?$/i);
+    if(!isYanmarTractor(f)||!match)return f.variants||[];
+    const base=match[1].toUpperCase();
+    const peers=(DATA.equipmentFamilies||[]).filter(peer=>isYanmarTractor(peer)&&clean(peer.brand).toUpperCase()===clean(f.brand).toUpperCase()&&[base,base+'C'].includes(clean(peer.model).toUpperCase()));
+    return [...new Set([...(f.variants||[]),...peers.flatMap(peer=>peer.variants||[])])];
   }
+  function selectCompactVariant(f,v){
+    if(selectedStock(f))return false;
+    f.financePriority=Date.now();
+    if(!compactVariants(f).includes(v))return false;
+    const selection=cardSelectionFor(f),index=f.variants.indexOf(v);
+    cardSelections.set(f.key,{...selection,index:index>=0?index:selection.index,compactVariant:v});
+    return true;
+  }
+  function compactFlags(v){return compactFields.map(([,field])=>truthy((v.marketplaceRow||{})[field]));}
+  function compactTire(v){
+    const row=v.marketplaceRow||{},value=clean(row['B2-Tires']||row.Tires||v.specs?.Tires).toLowerCase().replace(/[\s-]/g,'');
+    if(/^(ag|agricultural|r1)$/.test(value))return 'R-1';
+    if(/^(turf|r3)$/.test(value))return 'R-3';
+    if(/^(industrial|r4)$/.test(value))return 'R-4';
+    if(/hybrid|^r14/.test(value))return 'Hybrid';
+    return clean(row['B2-Tires']||row.Tires||v.specs?.Tires);
+  }
+  function compactFilterKey(){
+    return JSON.stringify([state.shopMode,[...state.packageComponents].sort(),state.promoOnly,[...state.specFilters].map(([k,v])=>[k,[...v].sort()]).sort(),state.seriesFilter,state.modelFilter]);
+  }
+  function compactOptionCandidate(f,fieldIndex){
+    if(selectedStock(f))return null;
+    const current=selectedPriceVariant(f),flags=compactFlags(current),wanted=!flags[fieldIndex],tire=compactTire(current);
+    return compactVariants(f).filter(v=>v.price>0&&compactTire(v)===tire&&compactFlags(v)[fieldIndex]===wanted&&(!wanted||flags.every((on,i)=>i===fieldIndex||!on||compactFlags(v)[i])))
+      .sort((a,b)=>{
+        const distance=v=>compactFlags(v).reduce((total,on,i)=>total+(i!==fieldIndex&&on!==flags[i]?1:0),0);
+        return distance(a)-distance(b)||a.price-b.price||a.workbookSort-b.workbookSort;
+      })[0]||null;
+  }
+  function compactTireCandidate(f,tire){
+    if(selectedStock(f))return null;
+    const flags=compactFlags(selectedPriceVariant(f));
+    return compactVariants(f).filter(v=>v.price>0&&compactTire(v)===tire&&compactFlags(v).every((on,i)=>on===flags[i]))
+      .sort((a,b)=>a.price-b.price||a.workbookSort-b.workbookSort)[0]||null;
+  }
+  function compactButtonStyle(active,disabled,header){
+    return 'padding:4px 7px;min-height:28px;border:1px solid '+(header?'#d4e8d9':'#9ebda7')+';border-radius:5px;font:inherit;font-size:11px;font-weight:800;white-space:nowrap;background:'+(active?'#d5efdc':header?'#fff':'#f7faf8')+';color:#155d2d;cursor:'+(disabled?'default':'pointer')+';opacity:'+(disabled&&!active?'.45':'1');
+  }
+  function compactHeaderOptions(f){
+    if(!isCompactTractor(f))return '';
+    const flags=compactFlags(selectedPriceVariant(f));
+    return '<div class="market-factory-options" style="text-align:center;margin:8px 0"><div class="market-compact-heading">Factory Installed Options</div><span role="group" aria-label="Factory-installed options" style="display:inline-flex;gap:4px;justify-content:center;flex-wrap:wrap">'+compactFields.map(([label],i)=>{
+      const offered=compactVariants(f).some(v=>compactFlags(v)[i]);if(!offered||(selectedStock(f)&&!flags[i]))return '';
+      const candidate=compactOptionCandidate(f,i),disabled=!candidate;
+      if(!flags[i]&&!candidate)return '';
+      const title=disabled?(flags[i]?label+' included on this model':label+' is not listed with these tires'):(flags[i]?'Remove ':'Select ')+label;
+      return '<button type="button" data-compact-family="'+esc(f.key)+'" data-compact-option="'+i+'" aria-pressed="'+flags[i]+'" title="'+esc(title)+'" '+(disabled?'disabled ':'')+'style="'+compactButtonStyle(flags[i],disabled,true)+'">'+label+'</button>';
+    }).join('')+'</span></div>';
+  }
+  function compactTreadSvg(type){
+    let tread='';
+    for(let y=13;y<78;y+=type==='R-3'?12:19){
+      if(type==='R-3')for(let x=16;x<65;x+=15)tread+='<rect x="'+x+'" y="'+y+'" width="10" height="7" rx="2" fill="#727a75"/>';
+      else{
+        tread+='<path d="M15 '+y+' L36 '+(y+12)+' M65 '+y+' L44 '+(y+12)+'" stroke="#727a75" stroke-width="'+(type==='R-1'?6:9)+'" fill="none"/>';
+        if(type==='Hybrid')tread+='<rect x="35" y="'+(y+8)+'" width="10" height="9" rx="2" fill="#919b95"/>';
+      }
+    }
+    return '<svg width="53" height="62" viewBox="0 0 80 94" role="img" aria-label="'+esc(type)+' illustrative tread"><rect x="10" y="3" width="60" height="88" rx="17" fill="#252c28"/>'+tread+'</svg>';
+  }
+  function compactTireGuide(f){
+    const descriptions={'R-1':'Agricultural tire','R-3':'Turf tire','R-4':'Industrial tire','Hybrid':'Mixed tread design'};
+    return '<details class="market-tire-guide" style="position:relative;text-align:left;font-size:11px"><summary style="cursor:pointer;text-align:center;color:#176c34;font-weight:800;padding:5px">Tire guide</summary><div style="position:absolute;z-index:40;right:0;top:100%;width:300px;max-width:75vw;padding:12px;border:1px solid #9ebda7;border-radius:8px;background:white;color:#24342a;box-shadow:0 5px 20px #0003"><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;text-align:center">'+compactTires.map(([code])=>'<div>'+compactTreadSvg(code)+'<div style="font-weight:900">'+code+'</div><div>'+descriptions[code]+'</div></div>').join('')+'</div><p style="font-size:10px;line-height:1.4;margin:9px 0 0">Illustrative tread patterns. Actual tires vary by model. Selectable choices match the listed tractor configuration.</p><a href="https://www.yanmar.com/eu/agri/wp-content/uploads/sites/12/2023/02/EN_SA221_424_OPERATORS-MANUAL_WEB_LR.pdf" target="_blank" rel="noopener" style="font-size:10px;color:#176c34">YANMAR tire terminology</a> · <a href="https://www.titan-intl.com/r14t" target="_blank" rel="noopener" style="font-size:10px;color:#176c34">Hybrid tire example</a></div></details>';
+  }
+  function compactTireMarkup(f){
+    if(!isCompactTractor(f))return '';
+    const selected=selectedPriceVariant(f),tire=compactTire(selected),flags=compactFlags(selected);
+    const offered=compactTires.filter(([code])=>selectedStock(f)?code===tire:compactVariants(f).some(v=>compactTire(v)===code));
+    const extra=tire&&!compactTires.some(([code])=>code===tire)?[[tire]]:[];
+    const note=cardSelectionFor(f).compactNote||'';
+    return '<div class="market-compact-tires" style="margin:7px 0;text-align:center"><div role="group" aria-label="Tire options" style="display:flex;justify-content:center;gap:4px;flex-wrap:wrap">'+offered.concat(extra).map(([code])=>{
+      const active=code===tire,candidate=compactTireCandidate(f,code),disabled=!candidate;
+      return '<button type="button" data-compact-family="'+esc(f.key)+'" data-compact-tire="'+esc(code)+'" aria-pressed="'+active+'" '+(disabled?'disabled ':'')+'title="'+esc(disabled?'Not listed with the selected factory options':'Select '+code+' tires')+'" style="'+compactButtonStyle(active,disabled,false)+'">'+esc(code)+'</button>';
+    }).join('')+'</div>'+compactTireGuide(f)+(note?'<div role="status" style="font-size:11px;line-height:1.3;margin-top:4px;color:#315e3d">'+esc(note)+'</div>':'')+'</div>';
+  }
+  function handleCompactSelection(event){
+    const button=event.target.closest('[data-compact-family]');if(!button)return false;
+    const f=activeFamilies().find(f=>f.key===button.dataset.compactFamily);if(!f||!isCompactTractor(f)||button.disabled)return true;
+    const old=selectedPriceVariant(f),oldFlags=compactFlags(old),option=button.dataset.compactOption;
+    const candidate=option!==undefined?compactOptionCandidate(f,Number(option)):compactTireCandidate(f,button.dataset.compactTire);
+    if(!candidate)return true;
+    const nextFlags=compactFlags(candidate);
+    const notes=compactFields.flatMap(([label],i)=>i!==Number(option)&&nextFlags[i]!==oldFlags[i]?[label+(nextFlags[i]?' included':' removed')]:[]);
+    if(selectCompactVariant(f,candidate)){
+      cardSelectionFor(f).compactNote=notes.length?notes.join('; ')+'.':'';
+      refreshSelectedCard(f);
+      const selector=option!==undefined?'[data-compact-option="'+option+'"]':'[data-compact-tire="'+CSS.escape(button.dataset.compactTire)+'"]';
+      document.querySelector('[data-compact-family="'+CSS.escape(f.key)+'"]'+selector)?.focus({preventScroll:true});
+    }
+    return true;
+  }
+
+  // WEP_SERIALIZED_STOCK_V1: stock is an explicit, immutable inventory selection.
+  function stockChoices(f){
+    const variants=isCompactTractor(f)?compactVariants(f):f.variants||[];
+    const inventory=inventorySkuSet(f.brand),choices=[],seen=new Set();
+    for(const variant of variants){
+      for(const unit of inventory.get(skuKey(variant.sku))?.selections||[]){
+        const id=clean(unit.selectionId);
+        if(unit.serialized!==true||!clean(unit.unitRef)||!id||num(unit.quantity)<=0||/^INCOMING:/i.test(id)||seen.has(id))continue;
+        seen.add(id);choices.push({variant,...unit});
+      }
+    }
+    return choices;
+  }
+  function selectedStock(f){return cardSelectionFor(f).stockUnit||null;}
+  function selectedInventoryId(f){
+    const unit=selectedStock(f);
+    return unit?unit.selectionId:(isCompactTractor(f)||stockChoices(f).length?'':undefined);
+  }
+  function stockChoiceText(f,unit){
+    if(!isCompactTractor(f))return clean(unit.variant.description)||clean(f.model);
+    const names=compactFields.filter((_,i)=>compactFlags(unit.variant)[i]).map(x=>x[0]);
+    const tire=compactTire(unit.variant);if(tire)names.push(tire+' Tires');
+    const description=names.length>1?names.slice(0,-1).join(', ')+' and '+names[names.length-1]:names[0]||'';
+    return (clean(unit.variant.model)||clean(f.model))+(description?' with '+description:'');
+  }
+  function stockHeaderMarkup(f){
+    const choices=stockChoices(f),stock=selectedStock(f);if(!choices.length&&!stock)return '';
+    return '<button type="button" data-stock-toggle="'+esc(f.key)+'" style="margin-left:auto;padding:5px 9px;border:1px solid #9ebda7;border-radius:5px;background:#fff;color:#155d2d;font-size:12px;font-weight:800;cursor:pointer">'+(stock?'Build / Order':'View In-Stock'+(choices.length>1?' ('+choices.length+')':''))+'</button>';
+  }
+  function stockUnitMarkup(f){
+    const unit=selectedStock(f);if(!unit)return '';
+    return '<div class="market-selected-stock" style="text-align:center;margin:7px 0;font-size:12px"><strong>In Stock'+(clean(unit.store)?' — '+esc(unit.store):'')+'</strong>'+
+      (stockChoices(f).length>1?' <button type="button" data-stock-open="'+esc(f.key)+'" style="border:0;background:transparent;padding:3px;color:#176c34;text-decoration:underline;cursor:pointer;font:inherit">Change Unit</button>':'')+'</div>';
+  }
+  function chooseStockUnit(f,id){
+    const unit=stockChoices(f).find(x=>x.selectionId===id);if(!unit)return false;
+    const previous=cardSelectionFor(f),orderSelection=previous.orderSelection||{...previous};
+    cardSelections.set(f.key,{...previous,quantity:1,stockUnit:unit,orderSelection});
+    f.financePriority=Date.now();return true;
+  }
+  function openStockChooser(f,opener){
+    const choices=stockChoices(f);if(!choices.length)return;
+    const previous=document.querySelector('dialog[data-stock-chooser]');if(previous){previous.close();previous.remove();}
+    const dialog=document.createElement('dialog');
+    dialog.className='market-stock-dialog';dialog.dataset.stockChooser=f.key;
+    dialog.setAttribute('aria-labelledby','market-stock-title');
+    dialog.style.cssText='width:min(520px,calc(100vw - 32px));max-height:85vh;box-sizing:border-box;overflow:auto;padding:22px;border:1px solid #9ebda7;border-radius:12px;background:white;color:#173c24;box-shadow:0 12px 50px #0005';
+    dialog.innerHTML='<style>.market-stock-dialog::backdrop{background:#0007}.market-stock-dialog button:disabled{opacity:.45;cursor:default}</style>'+
+      '<h2 id="market-stock-title" style="font-size:21px;margin:0 0 7px">Choose an in-stock '+esc(f.model)+'</h2><p style="font-size:14px;margin:0 0 16px">Select one configuration.</p>'+
+      '<div style="display:grid;gap:10px">'+choices.map((unit,index)=>{
+        const label=stockChoiceText(f,unit),duplicate=choices.filter(other=>stockChoiceText(f,other)===label&&clean(other.store)===clean(unit.store)).length>1;
+        return '<label style="display:flex;align-items:center;gap:11px;padding:14px;border:1px solid #9ebda7;border-radius:8px;background:#f7faf8;cursor:pointer"><input type="radio" name="market-stock-unit" value="'+index+'" style="flex:0 0 auto;width:18px;height:18px;accent-color:#176c34"><span><strong style="display:block;font-size:15px;line-height:1.4">'+esc(label)+'</strong><small style="display:block;margin-top:3px">'+esc(clean(unit.store))+(duplicate?' · Unit '+(index+1):'')+'</small></span></label>';
+      }).join('')+'</div><p data-stock-error role="status" style="font-size:13px;color:#a32622;margin:10px 0"></p>'+
+      '<div style="display:flex;justify-content:flex-end;gap:9px;margin-top:17px"><button type="button" data-stock-cancel style="padding:9px 15px;border:1px solid #9ebda7;border-radius:6px;background:white;color:#176c34;font:inherit;cursor:pointer">Cancel</button><button type="button" data-stock-confirm disabled style="padding:9px 15px;border:1px solid #176c34;border-radius:6px;background:#176c34;color:white;font:inherit;font-weight:800;cursor:pointer">View Selected Unit</button></div>';
+    const confirm=dialog.querySelector('[data-stock-confirm]');
+    dialog.addEventListener('change',()=>{confirm.disabled=!dialog.querySelector('input[name="market-stock-unit"]:checked');});
+    dialog.querySelector('[data-stock-cancel]').addEventListener('click',()=>dialog.close());
+    confirm.addEventListener('click',()=>{
+      const checked=dialog.querySelector('input[name="market-stock-unit"]:checked');if(!checked)return;
+      const unit=choices[Number(checked.value)];
+      if(!unit||!chooseStockUnit(f,unit.selectionId)){
+        dialog.querySelector('[data-stock-error]').textContent='This unit is no longer available. Close this window and refresh the page.';return;
+      }
+      dialog.close();refreshSelectedCard(f);
+    });
+    dialog.addEventListener('close',()=>{
+      dialog.remove();
+      const target=opener?.isConnected?opener:document.querySelector('[data-stock-toggle="'+CSS.escape(f.key)+'"]');
+      target?.focus({preventScroll:true});
+    });
+    document.body.appendChild(dialog);dialog.showModal();
+  }
+  function handleStockToggle(event){
+    const open=event.target.closest('[data-stock-open]');
+    const button=open||event.target.closest('[data-stock-toggle]');if(!button)return false;
+    const f=activeFamilies().find(x=>x.key===(open?open.dataset.stockOpen:button.dataset.stockToggle));if(!f)return true;
+    const selection=cardSelectionFor(f);
+    if(!open&&selection.stockUnit){cardSelections.set(f.key,selection.orderSelection);f.financePriority=Date.now();refreshSelectedCard(f);}
+    else openStockChooser(f,button);
+    return true;
+  }
+
+  // WEP_CARD_SELECTION_V1: one selection controls boxes, dropdown, cart and payment links.
+  const cardSelections=new Map();
+  function priceChoices(f){
+    if(isCompactTractor(f))return [{label:'MSRP:',v:yanmarSelectedVariant(f),variants:compactVariants(f),isPackage:false}];
+    if(isChainsawFamily(f)){
+      const variants=f.variants||[],first=variants[0];if(!first)return [];
+      const kinds=[/kit|package/i.test(first.type)];
+      if(variants.some(v=>/kit|package/i.test(v.type)!==kinds[0]))kinds.push(!kinds[0]);
+      return kinds.map(kind=>{const group=variants.filter(v=>/kit|package/i.test(v.type)===kind);return {label:kind?'Package:':'MSRP:',v:group[0],variants:group,isPackage:kind};});
+    }
+    const groups=new Map();
+    (f.variants||[]).forEach(v=>{
+      const raw=clean(v.type),match=raw.match(/^(.+?)\s*\(([^)]+)\)\s*$/),base=clean(match?match[1]:raw);
+      const label=(/kit|package/i.test(base)?'Package':'MSRP')+(match?' ('+clean(match[2])+')':'');
+      if(!groups.has(label))groups.set(label,[]);groups.get(label).push(v);
+    });
+    const choices=[];
+    const rank=label=>/49-State/i.test(label)?0:/50-State/i.test(label)?1:2;
+    [...groups.entries()].sort((a,b)=>rank(a[0])-rank(b[0])).forEach(([label,variants])=>{
+      const isPackage=/^Package/.test(label),prices=new Set(variants.map(v=>Number(v.price)||0));
+      if(prices.size>1)variants.forEach(v=>choices.push({label:label+' - SKU '+v.sku,v,variants:[v],isPackage}));
+      else choices.push({label,v:variants[0],variants,isPackage});
+    });
+    return choices;
+  }
+  function cardSelectionFor(f){
+    let selection=cardSelections.get(f.key);
+    const filterKey=isCompactTractor(f)?compactFilterKey():null;
+    if(!selection||!f.variants[selection.index]||(isCompactTractor(f)&&selection.compactFilterKey!==filterKey)){
+      const first=priceChoices(f)[0]?.v||f.variants[0];
+      selection={index:Math.max(0,f.variants.indexOf(first)),quantity:1,compactFilterKey:filterKey};cardSelections.set(f.key,selection);
+    }
+    return selection;
+  }
+  function selectedPriceVariant(f){const selection=cardSelectionFor(f);return selection.stockUnit?.variant||selection.compactVariant||f.variants[selection.index]||f.variants[0]||{};}
+  function selectedPriceQuantity(f){return selectedStock(f)?1:cardSelectionFor(f).quantity;}
+  function maximumCardQuantity(v){return Math.max(1,Math.min(99,...(v.recommendedPackage?v.packageItems||[]:[]).map(item=>Math.floor(99/Math.max(1,Number(item.quantity)||1)))));}
+  function selectCardVariant(f,index,quantity){
+    if(selectedStock(f))return false;
+    f.financePriority=Date.now();
+    index=Number(index);if(!Number.isInteger(index)||!f.variants[index])return false;
+    const previous=cardSelectionFor(f),limit=maximumCardQuantity(f.variants[index]),qty=quantity===undefined?Math.min(previous.quantity,limit):Number(quantity);
+    if(!Number.isInteger(qty)||qty<1||qty>limit)return false;
+    cardSelections.set(f.key,{index,quantity:qty,compactFilterKey:previous.compactFilterKey});return true;
+  }
+  function selectedPaymentRow(v){return {...(v.marketplaceRow||{}),__packageItems:v.recommendedPackage?v.packageItems||[]:[]};}
+  function paymentSelectionUrl(f){
+    const v=selectedPriceVariant(f),params=new URLSearchParams({brand:clean(f.brand).toUpperCase(),sku:clean(v.sku),quantity:String(selectedPriceQuantity(f)),return:location.pathname+location.search+location.hash});
+    if(v.recommendedPackage)params.set('package','1');
+    const inventoryId=selectedInventoryId(f),stock=selectedStock(f);
+    if(stock)params.set('unit',stock.unitRef);else if(inventoryId!==undefined)params.set('inventoryId',inventoryId);
+    const currentPage=new URL(location.href);
+    const localPreview=/^(localhost|127\.0\.0\.1|\[::1\]|192\.168\.|10\.)/i.test(currentPage.hostname);
+    const paymentPage=new URL('payment-options.html',localPreview?currentPage.href:(document.baseURI||currentPage.href));
+    paymentPage.search=params.toString();return paymentPage.href;
+  }
+  function refreshSelectedCard(f){
+    const host=document.querySelector('.market-card[data-key="'+CSS.escape(f.key)+'"]');
+    if(host)host.outerHTML=card(f);fitPriceDescriptions();
+  }
+  function handlePriceSelection(event){
+    const control=event.target.closest('[data-price-select]');if(!control)return false;
+    const f=activeFamilies().find(f=>f.key===control.dataset.priceSelect);
+    if(f&&selectCardVariant(f,control.dataset.priceIndex)){
+      const index=cardSelectionFor(f).index;refreshSelectedCard(f);
+      document.querySelector('[data-price-select="'+CSS.escape(f.key)+'"][data-price-index="'+index+'"]')?.focus({preventScroll:true});
+    }
+    return true;
+  }
+  function selectedCartMarkup(f){
+    const selected=selectedPriceVariant(f),quantity=selectedPriceQuantity(f),eligible=f.variants.filter(v=>v.buyOnline&&v.price>0);
+    if(!eligible.length)return '';
+    const canBuy=eligible.includes(selected);
+    const options=eligible.map(v=>'<option value="'+esc(v.sku+'|'+f.variants.indexOf(v))+'" '+(v===selected?'selected':'')+'>'+esc((v.recommendedPackage?'Recommended Package — '+v.description:isChainsawFamily(f)?sawConfigurationLabel(v):(/kit|package/i.test(v.type)?'Package':'Unit')+' — '+v.description)+' — '+money(v.price))+'</option>').join('');
+    return '<div class="market-cart-controls"><select data-cart-variant="'+esc(f.key)+'" aria-label="Choose Purchase Option">'+(!canBuy?'<option value="" selected disabled>Choose Purchase Option</option>':'')+options+'</select>'+
+      '<input data-cart-qty="'+esc(f.key)+'" type="number" min="1" max="'+maximumCardQuantity(selected)+'" value="'+quantity+'" aria-label="Quantity">'+
+      '<button type="button" data-add-cart="'+esc(f.key)+'" '+(!canBuy?'disabled':'')+'>Add to Cart</button></div>';
+  }
+
+  function marketplaceFinanceVariant(f){return selectedPriceVariant(f);}
 
   function financeSummaryKey(f){
     const variant=marketplaceFinanceVariant(f);
-    return clean(f.brand).toUpperCase()+'|'+skuKey(variant.sku);
+    return clean(f.brand).toUpperCase()+'|'+skuKey(variant.sku)+'|'+cardSelectionFor(f).index+'|'+selectedPriceQuantity(f)+'|'+(selectedInventoryId(f)===undefined?'AUTO':selectedInventoryId(f)||'ORDER');
   }
 
   function cardFinanceMarkup(f){
     const key=financeSummaryKey(f);
     const variant=marketplaceFinanceVariant(f);
-    const url='payment-options.html?brand='+encodeURIComponent(clean(f.brand).toUpperCase())+'&sku='+encodeURIComponent(clean(variant.sku));
-    const button='<a class="market-payment-options" href="'+esc(url)+'">View Payment Options</a>';
+    const url=paymentSelectionUrl(f);
+    const button='<a class="market-payment-options" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">Out-the-Door Price</a>';
+    const paymentButton='<a class="market-card-finance-head market-payment-options" style="border-top:0" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">View Payment Options</a>';
     if(!key || /\|$/.test(key)) return '<div class="market-payment-options-only">'+button+'</div>';
     const summary=DATA.financeSummaryCache.get(key);
     if(!summary) requestMarketplaceFinanceSummary(f);
-    if(!summary || summary.none) return '<div class="market-payment-options-only">'+button+'</div>';
+    if(!summary || summary.none) return '<div class="market-payment-options-only">'+paymentButton+
+      (!summary?'<div role="status" style="text-align:center;padding:5px;font-size:11px">Updating financing…</div>':'')+button+'</div>';
     return '<div class="market-card-finance">'+
-      '<div class="market-card-finance-head">FINANCING AVAILABLE</div>'+
+      paymentButton+
       '<div class="market-card-finance-apr">'+esc(summary.aprLabel)+' APR <span class="market-card-finance-dot">•</span> '+esc(summary.termMonths)+' MONTHS</div>'+
       '<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month</span></strong></div>'+
 (summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+
@@ -646,25 +842,44 @@
     }
 
     const variant=marketplaceFinanceVariant(f);
-    const sku=clean(variant.sku);
+    const sku=clean(variant.sku),quantity=selectedPriceQuantity(f),row=selectedPaymentRow(variant),inventoryId=selectedInventoryId(f),stock=selectedStock(f);
     const brandId=clean(f.brand).toUpperCase();
 
     const request=(async()=>{
       try{
-        const programs=await window.WestEndPayments.programs(brandId,sku);
+        const programs=await window.WestEndPayments.programs(brandId,sku,inventoryId,quantity,row.__packageItems);
         const program=bestMarketplaceFinanceProgram(programs);
         if(!program){
           DATA.financeSummaryCache.set(key,{none:true});
           return;
         }
-        const summary=await window.WestEndPayments.quote(brandId,sku,variant.marketplaceRow||{},'finance',program);
-        DATA.financeSummaryCache.set(key,summary.freightConfirmed?summary:{none:true});
+        if(financeSummaryKey(f)!==key)return;
+        const summary=await window.WestEndPayments.quote(brandId,sku,row,'finance',program,inventoryId,quantity,{
+          shouldRun:()=>financeSummaryKey(f)===key,
+          priority:()=>{
+            if(f.financePriority)return f.financePriority;
+            const element=document.querySelector('.market-card[data-key="'+CSS.escape(f.key)+'"]');
+            const bounds=element?.getBoundingClientRect?.();
+            return bounds&&bounds.bottom>0&&bounds.top<(window.innerHeight||800)?1:0;
+          }
+        });
+        // Public card estimates use published manufacturer prices, not private dealer discounts.
+        const publishedUnit=isCompactTractor(f)&&!truthy(program.RebateCompatible)?variant.msrp:variant.price;
+        const publishedSelling=Math.max(0,Number(publishedUnit)||0)*quantity;
+        const publishedSubtotal=publishedSelling+summary.freight;
+        const publishedTax=/^(F|FALSE|N|NO|0)$/i.test(clean(row.Taxable))?0:Math.round((publishedSubtotal*0.0635+Number.EPSILON)*100)/100;
+        const publishedTotal=publishedSubtotal+publishedTax;
+        const publishedDown=window.WestEndPayments.programMinimumDown(program,publishedTotal);
+        const publishedFinanced=Math.max(publishedTotal-publishedDown,0)+summary.applicationFee;
+        const displaySummary={...summary,requiredDown:publishedDown,monthly:window.WestEndPayments.monthlyPayment(publishedFinanced,summary.apr,summary.termMonths)};
+        DATA.financeSummaryCache.set(key,summary.freightConfirmed?(stock?summary:displaySummary):{none:true});
       }catch(error){
+        if(error.name==='AbortError')return;
         console.warn('Marketplace finance summary unavailable for '+key,error);
         DATA.financeSummaryCache.set(key,{none:true});
       }finally{
         DATA.financeSummaryPending.delete(key);
-        renderCards();
+        if(financeSummaryKey(f)===key)refreshSelectedCard(f);
       }
     })();
 
@@ -781,10 +996,11 @@
     const brands=distinct(activeFamilies()
       .filter(f=>marketplaceFamilyMatches(f,true))
       .map(f=>f.brand)).sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
-    const eligible=new Set(brands);
+    // Keep selected brands visible even when another filter has no matches.
     for(const brand of state.brand){
-      if(!eligible.has(brand))state.brand.delete(brand);
+      if(!brands.includes(brand)) brands.push(brand);
     }
+    brands.sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
     $('#filter-brand').innerHTML=brands.map(b=>
       '<label><input type="checkbox" data-brand="'+esc(b)+'"'+
       (state.brand.has(b)?' checked':'')+'> <span>'+esc(b)+'</span></label>'
@@ -802,6 +1018,7 @@
     }
     DATA.families=activeFamilies();
     const out=DATA.families.filter(f=>marketplaceFamilyMatches(f));
+    out.sort((a,b)=>(a.sort===b.sort?0:a.sort-b.sort));
     DATA.filtered=out;
     renderCards();
     renderResultMeta();
@@ -1392,7 +1609,7 @@
       (state.power
         ? button('All Power Types','','power',false)
         : '') +
-      powerValues.map(value=>
+      powerValues.sort((a,b)=>{const order=['manual','electric','battery','gas','diesel'];const rank=v=>{const i=order.indexOf(String(v).toLowerCase());return i<0?99:i};return rank(a)-rank(b)||a.localeCompare(b)}).map(value=>
         button(
           value,
           value,
@@ -1781,24 +1998,19 @@
   }
 
   function cartMarkup(f){
-    const eligible=f.variants.filter(v=>v.buyOnline && v.price>0);
-    if(!eligible.length) return '';
-    const options=eligible.map((v,i)=>'<option value="'+esc(v.sku+'|'+f.variants.indexOf(v))+'">'+esc((/kit|package/i.test(v.type)?'Package':'Unit')+' â€” '+money(v.price))+'</option>').join('');
-    return '<div class="market-cart-controls">'+
-      '<select data-cart-variant="'+esc(f.key)+'" aria-label="Choose Purchase Option"><option value="" selected disabled>Choose Purchase Option</option>'+options+'</select>'+
-      '<input data-cart-qty="'+esc(f.key)+'" type="number" min="1" max="99" value="1" aria-label="Quantity">'+
-      '<button type="button" data-add-cart="'+esc(f.key)+'">Add to Cart</button>'+
-    '</div>';
+    if(selectedStock(f))return '<div class="market-cart-controls"><a class="market-product-details" target="_blank" rel="noopener noreferrer" href="'+esc(paymentSelectionUrl(f))+'">Review In-Stock Unit</a></div>';
+    if(isYanmarTractor(f)){
+      const v=selectedPriceVariant(f),url='https://westendpower.github.io/yanmar-equipment-configurator/?'+new URLSearchParams({category:f.category,sku:v.sku||''});
+      return '<div class="market-cart-controls"><a class="market-product-details" href="'+esc(url)+'">Build &amp; Buy</a></div>';
+    }
+    return selectedCartMarkup(f);
   }
-
   function addFamilyToCart(key,buttonEl){
     const f=activeFamilies().find(x=>x.key===key);
     if(!f) return;
-    const select=document.querySelector('[data-cart-variant="'+CSS.escape(key)+'"]');
-    const qtyInput=document.querySelector('[data-cart-qty="'+CSS.escape(key)+'"]');
-    const selected=select ? select.value : '';
-    const qty=Math.max(1,Math.min(99,parseInt(qtyInput && qtyInput.value,10)||1));
-    const v=f.variants.find((x,i)=>(x.sku+'|'+i)===selected && x.buyOnline && x.price>0);
+    const qty=selectedPriceQuantity(f);
+    const v=selectedPriceVariant(f);
+    if(!v.buyOnline||!(v.price>0))return;
     if(!v) return;
 
     let cart=[];
@@ -1812,7 +2024,7 @@
 
     if(v.recommendedPackage && Array.isArray(v.packageItems)){
       const componentTotal=v.packageItems.reduce((sum,x)=>sum+(Number(x.price)||0)*(Number(x.quantity)||1),0);
-      addLine(v.sku,f.model+' â€” Unit',qty,Math.max(0,v.price-componentTotal));
+      addLine(v.sku,clean(v.marketplaceRow?.Description)||f.model+' — Tool Only',qty,Math.max(0,v.price-componentTotal));
       v.packageItems.forEach(x=>addLine(x.sku,x.name,qty*(Number(x.quantity)||1),Number(x.price)||0));
     }else{
       addLine(v.sku,v.description||f.brand+' '+f.model,qty,v.price);
@@ -1822,7 +2034,7 @@
     updateCartFloat();
     if(buttonEl){
       const old=buttonEl.textContent;
-      buttonEl.textContent='Added âœ“';
+      buttonEl.textContent='Added ✓';
       setTimeout(()=>{buttonEl.textContent=old;},1200);
     }
     track('marketplace_add_to_cart',{sku:v.sku,model:f.model,quantity:qty,value:v.price*qty});
@@ -1846,73 +2058,68 @@
 
   function pricePanel(label,v,isPackage,f,variantGroup){
     if(!v) return '';
-    const promo=promoInfo(v);
+    const selected=selectedPriceVariant(f),group=Array.isArray(variantGroup)?variantGroup:[v];
+    if(group.includes(selected))v=selected;
+    else if(selected.recommendedPackage||group.some(x=>x.recommendedPackage))v=group.find(x=>skuKey(x.sku)===skuKey(selected.sku))||v;
+    const index=f.variants.indexOf(v),active=v===selected;
+    const promo=isCompactTractor(f)?null:promoInfo(v);
     const regular=promo ? promo.regular : (v.msrp>0 ? v.msrp : v.price);
-    const shown=promo ? promo.price : v.price;
-    const include=isPackage ? packageSummary(v) : '';
+    const shown=isCompactTractor(f)?v.msrp:(promo ? promo.price : v.price);
+    if(!isPackage&&promo?.type==='sale')label='Sale:';
+
+    const description=isCompactTractor(f)?'':v.recommendedPackage&&Array.isArray(v.packageItems)
+      ?v.packageItems.map(item=>{
+        const quantity=Number(item.quantity)||1;
+        let name=clean(item.name).replace(/^\d+\s+/,'');
+        if(quantity>1)name=name.replace(/\bBattery\b/g,'Batteries').replace(/\bCharger\b/g,'Chargers');
+        return quantity+' × '+name;
+      }).join(' + ')
+      :clean(v.description);
+    const descriptionChars=Array.from(description);
+    const shownDescription=!v.recommendedPackage&&descriptionChars.length>42?descriptionChars.slice(0,41).join('')+'…':description;
     const savings=isPackage && Number(v.packageSavings||0)>0 && Number(v.packageValue||0)>0
       ? 'Separately '+money(v.packageValue)+' | Save '+money(v.packageSavings)
       : '';
-    return '<div class="market-price-choice'+(isPackage?' market-package-choice':'')+'">'+
-      '<div class="market-price-heading"><span>'+esc(label)+'</span><span class="market-price-pair">'+
+    return '<div class="market-price-choice'+(isPackage?' market-package-choice':'')+'"'+(active?' style="outline:3px solid #238b45;outline-offset:1px"':'')+'>'+
+      '<button type="button" '+(selectedStock(f)?'disabled ':'')+'data-price-select="'+esc(f.key)+'" data-price-index="'+index+'" aria-pressed="'+active+'" style="display:block;width:100%;border:0;background:transparent;color:inherit;padding:0;cursor:pointer;text-align:inherit">'+
+      '<span class="market-price-heading"><span style="flex:0 1 auto">'+esc(label)+'</span><span class="market-price-pair" style="flex:1 1 auto;justify-content:flex-end">'+
         (promo?'<del>'+money(regular)+'</del>':'')+
         '<strong>'+(shown>0?money(shown):'Pricing Coming Soon')+'</strong>'+
-      '</span></div>'+
+      '</span></span>'+
+      (description?'<small class="market-price-description" title="'+esc(description)+'" style="display:block;text-align:center;margin:7px auto;max-width:none;min-width:0;width:100%;font-size:13px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(shownDescription)+'</small>':'')+
       (promo && promo.type==='rebate'?'<small class="market-promo-price-note">After customer rebate</small>':'')+
-      (!isPackage && /battery/i.test(f.power)?'<small class="market-sold-separate">Battery and charger sold separately</small>':'')+
-      (include?'<small class="market-package-includes">'+esc(include)+'</small>':'')+
       (savings?'<small class="market-package-savings">'+esc(savings)+'</small>':'')+
-      '<div class="market-price-inventory">'+inventoryMarkup(f,variantGroup||v,isPackage?'package':'unit')+'</div>'+
+      '</button>'+
+      stockUnitMarkup(f)+
+      compactHeaderOptions(f)+
+      compactTireMarkup(f)+
+      '<div class="market-price-inventory">'+inventoryMarkup(f,v,isPackage?'package':'unit')+'</div>'+
     '</div>';
   }
 
+  // WEP_SAW_WORKBOOK_ORDER_V1
+  function isChainsawFamily(f){return /^chainsaws?$/i.test(clean(f.category));}
+  function sawBarSize(v){
+    const match=clean(v.description).match(/(\d+(?:\.\d+)?)\s*["\u2033\u201d]/);
+    return match ? Number(match[1]) : null;
+  }
+  function sawConfigurationLabel(v){
+    const description=clean(v.description);
+    const match=description.match(/\bw\/\s*(\d+(?:\.\d+)?\s*["\u2033\u201d].*)$/i);
+    return match ? match[1].replace(/^(\d+(?:\.\d+)?)\s*["\u2033\u201d]/,'$1" bar') : description || clean(v.sku);
+  }
+  function sawHeaderBars(f){
+    if(!isChainsawFamily(f))return '';
+    const standardBar=sawBarSize(selectedPriceVariant(f));
+    const sizes=[...new Set((f.variants||[]).map(sawBarSize).filter(v=>v!==null && v!==standardBar))].sort((a,b)=>a-b);
+    return sizes.length ? ' | Optional bars: '+esc(sizes.map(v=>v+'"').join(', '))+' (prices vary)' : '';
+  }
   function familyPriceMarkup(f){
-    // YANMAR_MODEL_STARTING_PRICE_V1
-    if(clean(f.brand).toUpperCase()==='YANMAR' && clean(f.category)==='Compact Tractors'){
-      const candidates=relevantVariants(f);
-      const priced=candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>Number(a.price)-Number(b.price));
-      const representative=yanmarSelectedVariant(f);
-      const p=new URLSearchParams({brand:f.brand});
-      if(clean(representative.sku))p.set('sku',clean(representative.sku));
-      else if(clean(f.model))p.set('model',clean(f.model));
-      return '<div class="market-price-lines">'+pricePanel('Starting at',representative,false,f,candidates)+
-        '<a class="market-product-page-link" href="'+esc('product.html?'+p.toString())+'" style="display:block;text-align:center;margin:8px 0;padding:10px;border:1px solid #176c34;border-radius:8px;font-weight:800;color:#176c34;text-decoration:none">Open Product Page ↗</a></div>';
-    }
-    const groups=new Map();
-    (f.variants||[]).forEach(v=>{
-      const raw=clean(v.type);
-      const match=raw.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
-      const base=clean(match?match[1]:raw);
-      const suffix=match?' ('+clean(match[2])+')':'';
-      const isPackage=/kit|package/i.test(base);
-      const label=(isPackage?'Package':'Unit')+suffix;
-      if(!groups.has(label)) groups.set(label,[]);
-      groups.get(label).push(v);
-    });
-    const rows=[];
-    [...groups.entries()]
-      .sort((a,b)=>{
-        const rank=label=>/49-State/i.test(label)?0:/50-State/i.test(label)?1:2;
-        return rank(a[0])-rank(b[0]);
-      })
-      .forEach(([label,variants])=>{
-      const first=variants[0];
-      const prices=[...new Set(variants.map(v=>Number(v.price)||0))];
-      if(prices.length>1){
-        variants.forEach(v=>rows.push(pricePanel(label+' - SKU '+v.sku,v,/^Package/.test(label),f)));
-      }else{
-        rows.push(pricePanel(label,first,/^Package/.test(label),f,variants));
-      }
-    });
-    if(!rows.length && f.variants[0]) rows.push(pricePanel('Price',f.variants[0],false,f));
-    const first=f.variants[0]||{};
-    const productParams=new URLSearchParams({brand:f.brand});
-    if(isYanmarTractor(f)&&clean(first.sku)) productParams.set('sku',clean(first.sku));
-    else if(clean(f.model)||clean(first.model)) productParams.set('model',clean(f.model)||clean(first.model));
-    else productParams.set('sku',clean(first.sku));
-    const productLink='product.html?'+productParams.toString();
+    const v=selectedPriceVariant(f),params=new URLSearchParams({brand:f.brand,sku:v.sku||''});
+    const choices=selectedStock(f)?[{label:/kit|package/i.test(v.type)?'Package:':'MSRP:',v,variants:[v],isPackage:/kit|package/i.test(v.type)}]:priceChoices(f);
+    const rows=choices.map(choice=>pricePanel(choice.label,choice.v,choice.isPackage,f,choice.variants));
     return '<div class="market-price-lines">'+rows.join('')+
-      '<a class="market-product-page-link" href="'+esc(productLink)+'" style="display:block;text-align:center;margin:8px 0;padding:10px;border:1px solid #176c34;border-radius:8px;font-weight:800;color:#176c34;text-decoration:none">Open Product Page ↗</a></div>';
+      '<a class="market-product-page-link" href="'+esc('product.html?'+params.toString())+'" style="display:block;text-align:center;margin:8px 0;padding:10px;border:1px solid #176c34;border-radius:8px;font-weight:800;color:#176c34;text-decoration:none">Open Product Page ↗</a></div>';
   }
 
   function offerOverlay(f){
@@ -1948,28 +2155,26 @@
   }
 
     function card(f){
-    const first=isYanmarTractor(f)?yanmarSelectedVariant(f):(f.variants[0]||{});
+    const first=selectedPriceVariant(f);
     const specs=familySpecs(f).slice(0,4);
     const heading=clean(first.description)||clean(f.model)||clean(first.sku);
     const equipmentMode=state.shopMode==='equipment';
     const yanmarOptions=clean(f.brand).toUpperCase()==='YANMAR'&&clean(f.category)==='Compact Tractors';
     // YANMAR_CONFIGURATOR_LINK_V1
-    const optionsVariant=yanmarOptions
-      ? yanmarSelectedVariant(f)
-      : first;
+    const optionsVariant=first;
     const optionsUrl=yanmarOptions
       ? 'https://westendpower.github.io/yanmar-equipment-configurator/?'+new URLSearchParams({category:f.category,sku:optionsVariant.sku||''}).toString()
       : 'product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+'&brand='+encodeURIComponent(f.brand)+'&return='+encodeURIComponent(location.pathname+location.search+location.hash);
     // WEP_TORO_BUILD_LINK_V1: the configurator owns compatibility and pricing.
     const buildUrl=f.brand==='TORO'?optionsUrl:''; // WEP_MARKET_OPTIONS_V1
-    const runtimeUrl='index.html?category='+encodeURIComponent(f.category)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';
+    const runtimeUrl=optionsUrl+'&view=runtime';
     const productParams=new URLSearchParams({brand:f.brand});
     if(isYanmarTractor(f)&&clean(first.sku)) productParams.set('sku',clean(first.sku));
-    else if(clean(f.model)||clean(first.model)) productParams.set('model',clean(f.model)||clean(first.model));
-    else productParams.set('sku',clean(first.sku));
+    else if(clean(first.sku)) productParams.set('sku',clean(first.sku));
+    else productParams.set('model',clean(f.model)||clean(first.model));
     const productPageUrl='product.html?'+productParams.toString();
     return '<article class="market-card" data-key="'+esc(f.key)+'">'+
-      '<header class="market-card-head"><h3><strong>'+esc(heading)+'</strong>'+(first.sku?'<div style="display:block;width:100%;font-size:0.8em;font-weight:400;clear:both">SKU: '+esc(first.sku)+'</div>':'')+'</h3></header>'+
+      '<header class="market-card-head"><h3 style="flex:1 1 auto;width:100%"><strong>'+esc(heading)+'</strong>'+(first.sku?'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;font-size:0.8em;font-weight:400;clear:both"><span>SKU: '+esc(first.sku)+sawHeaderBars(f)+'</span>'+stockHeaderMarkup(f)+'</div>':'')+'</h3></header>'+
       '<div class="market-card-body">'+
         '<section class="market-card-left">'+
           '<div class="market-image-wrap">'+
@@ -1996,12 +2201,8 @@
         '</section>'+
         '<section class="market-buy">'+
           familyPriceMarkup(f)+
-          (equipmentMode
-            ? '<div class="market-actions"><a href="'+optionsUrl+'">'+(/battery/i.test(f.power)?'View Accessories':'View Options')+'</a>'+
-                (buildUrl?'<a href="'+esc(buildUrl)+'">Build Your Own</a>':'')+
-                (/battery/i.test(f.power)?'<a href="'+runtimeUrl+'">Run/Charge Times</a>':'')+
-              '</div>'
-            : '')+
+          (equipmentMode&&/battery/i.test(f.power)?'<div class="market-actions"><a href="'+optionsUrl+'&view=runtime" data-wep-runtime-brand="'+esc(f.brand)+'" data-wep-runtime-sku="'+esc(first.sku)+'">Run &amp; Charge Times</a></div>':'')+
+          (/battery/i.test(f.power)?'<div data-wep-integrated="'+esc(JSON.stringify(first.marketplaceRow||{}))+'"></div>':'')+
           cartMarkup(f)+
         '</section>'+
       '</div>'+
@@ -2009,13 +2210,33 @@
     '</article>';
   }
 
+  // Fit the 42-character description to its actual price-box width.
+  function fitPriceDescription(el){
+    const width=el.clientWidth;
+    if(!width)return;
+    el.style.fontSize='13px';
+    const natural=el.scrollWidth;
+    if(natural>width)el.style.fontSize=(Math.floor(13*(width-1)/natural*100)/100)+'px';
+  }
+  const descriptionResize=typeof ResizeObserver==='function'
+    ? new ResizeObserver(entries=>entries.forEach(entry=>fitPriceDescription(entry.target))) : null;
+  function fitPriceDescriptions(){
+    if(descriptionResize)descriptionResize.disconnect();
+    document.querySelectorAll('.market-price-description').forEach(el=>{
+      fitPriceDescription(el);
+      if(descriptionResize)descriptionResize.observe(el);
+    });
+  }
+  window.addEventListener('resize',fitPriceDescriptions);
+
   let cardRenderVersion=0;
   function renderCards(){
+    const version=++cardRenderVersion;
     if(!marketplaceHasSelection()){
+      $('#market-grid').setAttribute('aria-busy','false');
       $('#market-grid').innerHTML='';
       return;
     }
-    const version=++cardRenderVersion;
     const grid=$('#market-grid');
     const families=DATA.filtered.slice();
     const batchSize=24;
@@ -2026,11 +2247,13 @@
       return;
     }
     grid.innerHTML=families.slice(0,batchSize).map(card).join('');
+    fitPriceDescriptions();
     offset=batchSize;
     function appendBatch(){
       // A changed filter invalidates any pending cards from the previous results.
       if(version!==cardRenderVersion) return;
       grid.insertAdjacentHTML('beforeend',families.slice(offset,offset+batchSize).map(card).join(''));
+      fitPriceDescriptions();
       offset+=batchSize;
       if(offset<families.length) setTimeout(appendBatch,16);
       else grid.setAttribute('aria-busy','false');
@@ -2066,6 +2289,9 @@
   function renderResultMeta(){
     updateUniversalCategoryLink();
     const showProducts=marketplaceHasSelection();
+    const shell=$('#market-app'),refine=$('#market-refine');
+    if(shell)shell.classList.toggle('we-market-home',!showProducts);
+    if(shell)shell.classList.add('we-filters-expanded');
     $('#market-result-count').parentElement.hidden=!showProducts;
     $('#market-compare-float').style.display=showProducts ? '' : 'none';
     $('#market-result-count').textContent=DATA.filtered.length;
@@ -2164,7 +2390,7 @@
 
     const params=new URLSearchParams(location.search);
 
-    state.shopMode='equipment';
+    resetMarketplaceSelection();
     state.category=clean(params.get('category'));
     state.subcategory=clean(params.get('subcategory'));
     state.power=clean(params.get('power'));
@@ -2197,6 +2423,9 @@
 
   function resetContext(){
     state.seriesOrEngine=''; state.width=''; state.specFilters.clear();
+    state.hpRanges.clear();state.seriesFilter='';state.modelFilter='';
+    state.seriesModelOpen=false;state.seriesModelView='';
+    state.packageFilter='';state.packageComponents.clear();state.openBFilter='';
   }
 
   function track(name,params={}){
@@ -2207,7 +2436,7 @@
     }catch(e){}
   }
 
-  function returnMarketplaceHome(){
+  function resetMarketplaceSelection(){
     state.shopMode='equipment';
     state.category='';state.subcategory='';state.power='';
     state.seriesOrEngine='';state.width='';
@@ -2217,6 +2446,10 @@
     state.seriesModelOpen=false;state.seriesModelView='';
     state.seriesFilter='';state.modelFilter='';
     state.packageFilter='';state.packageComponents.clear();state.openBFilter='';
+  }
+
+  function returnMarketplaceHome(){
+    resetMarketplaceSelection();
     $('#market-search').value='';
     $('#filter-buy-online').checked=false;
     renderTopFilters();renderSidebar();filterFamilies();
@@ -2227,7 +2460,15 @@
   }
 
   function wire(){
+    document.addEventListener('toggle',event=>{
+      if(!event.target.matches?.('.market-tire-guide'))return;
+      const host=event.target.closest('.market-card');
+      if(host)host.style.zIndex=event.target.open?'60':'';
+    },true);
     document.addEventListener('click',e=>{
+      if(handleStockToggle(e))return;
+      if(handleCompactSelection(e))return;
+      if(handlePriceSelection(e))return;
       const openFilters=e.target.closest('[data-mobile-filters-open]');
       if(openFilters){
         document.body.classList.add('market-mobile-filters-open');
@@ -2482,6 +2723,16 @@
 
     document.addEventListener('change',e=>{
       const el=e.target;
+      if(el.matches('[data-cart-variant]')){
+        const f=activeFamilies().find(f=>f.key===el.dataset.cartVariant),index=Number(el.value.slice(el.value.lastIndexOf('|')+1));
+        if(f&&selectCardVariant(f,index)){refreshSelectedCard(f);document.querySelector('[data-cart-variant="'+CSS.escape(f.key)+'"]')?.focus({preventScroll:true});}
+        return;
+      }
+      if(el.matches('[data-cart-qty]')){
+        const f=activeFamilies().find(f=>f.key===el.dataset.cartQty);
+        if(f){if(selectCardVariant(f,cardSelectionFor(f).index,Number(el.value)))refreshSelectedCard(f);else{el.value=String(selectedPriceQuantity(f));el.reportValidity();}}
+        return;
+      }
       if(el.matches('[data-brand]')){ el.checked?state.brand.add(el.dataset.brand):state.brand.delete(el.dataset.brand); filterFamilies(); }
       else if(el.matches('[data-availability]')){ el.checked?state.availability.add(el.dataset.availability):state.availability.delete(el.dataset.availability); filterFamilies(); }
       else if(el.id==='filter-buy-online'){ state.buyOnline=el.checked; filterFamilies(); }
@@ -2512,9 +2763,14 @@
       }
     });
 
+    document.addEventListener('input',e=>{
+      const el=e.target;if(!el.matches('[data-cart-qty]'))return;
+      const f=activeFamilies().find(f=>f.key===el.dataset.cartQty);
+      if(f)selectCardVariant(f,cardSelectionFor(f).index,Number(el.value));
+    });
     $('#market-search').addEventListener('input',e=>{ state.search=e.target.value; filterFamilies(); });
     $('#market-clear').addEventListener('click',()=>{
-      state.shopMode='equipment';state.category='';state.subcategory='';state.power='';state.seriesOrEngine='';state.width='';state.brand.clear();state.availability.clear();state.buyOnline=false;state.promoOnly=false;state.search='';state.specFilters.clear();state.packageFilter='';
+      resetMarketplaceSelection();
       $('#market-search').value=''; $('#filter-buy-online').checked=false;
       renderTopFilters();renderSidebar();filterFamilies();
       track('marketplace_clear_filters');
@@ -2550,7 +2806,7 @@
     const name=clean(settings.DealerName)||clean(settings.DefaultSEOName)||'Equipment Dealer';
     $('#market-dealer-name').textContent=name;
     const logo=clean(settings.DealerLogoURL);
-    if(logo){ const img=$('#market-dealer-logo'); img.src=logo; img.alt=name; img.hidden=false; }
+    // The approved header embeds the dealer logo for reliable display.
     document.title=(clean(settings.DefaultSEOName)||name)+' | Shop Equipment';
     const meta=$('meta[name="description"]');
     if(meta) meta.content='Shop and compare equipment by category, brand, power source, availability and specifications at '+name+'.';
@@ -2575,9 +2831,8 @@
   function marketplaceBrandProfiles(){
     const brands=window.WESTEND_BRANDS||{};
 
-    return ['STIHL','YANMAR','BILLYGOAT','TORO','HONDA','REDMAX','GREENWORKS','MITM']
-      .map(id=>brands[id])
-      .filter(Boolean);
+    if(Array.isArray(window.WESTEND_PUBLISHED_BRANDS)) return window.WESTEND_PUBLISHED_BRANDS;
+    return Object.values(brands).filter(Boolean);
   }
 
   async function loadMarketplaceProducts(){
@@ -2622,10 +2877,11 @@
     try{
       const preload=document.querySelector('link[data-marketplace-catalog]');
       const url=preload ? preload.getAttribute('href') : 'data/marketplace-catalog.json';
-      const response=await fetch(url,{cache:'default',credentials:'same-origin'});
+      const response=await fetch(url,{cache:'no-cache',credentials:'same-origin'});
       if(!response.ok)throw new Error('Combined catalog HTTP '+response.status);
       const bundle=await response.json();
-      const expected=marketplaceBrandProfiles().map(p=>clean(p.id).toUpperCase());
+      const expected=Array.isArray(bundle.brands)?bundle.brands:[];
+      if(!expected.length || new Set(expected).size!==expected.length || expected.some(id=>typeof id!=='string'||!id.trim()))throw new Error('Invalid published brand list');
       if(bundle.schema!==1 || JSON.stringify(bundle.brands)!==JSON.stringify(expected) ||
          bundle.componentBrand!=="STIHL" ||
          !Array.isArray(bundle.productSources) || bundle.productSources.length!==expected.length ||
@@ -2634,6 +2890,11 @@
       }
       const products=bundle.productSources.flatMap(unpackMarketplaceTable);
       if(!products.length)throw new Error('Combined catalog has no products');
+      window.WESTEND_PUBLISHED_BRANDS=bundle.productSources.map(table=>{
+        const id=clean(table.brand).toUpperCase();
+        return (window.WESTEND_BRANDS||{})[id] || {id,name:clean(table.brand),dataRoot:''};
+      }).filter(profile=>products.some(p=>truthy(p.Active)&&clean(p.BrandID||p.BrandName).toUpperCase()===profile.id.toUpperCase()));
+      window.dispatchEvent(new Event('westend:catalog-ready'));
       const result=[products,...['batteries','chargers','compatibility','financePrograms','settingsRows'].map(name=>unpackMarketplaceTable(bundle.tables[name]))];
       window.WESTEND_MARKETPLACE_CATALOG_SOURCE='combined';
       return result;
@@ -2679,7 +2940,8 @@
             if(!sku) continue;
             inventory.set(sku,{
               quantity:Math.max(0,num(item.quantity)),
-              onOrderQuantity:Math.max(0,num(item.onOrderQuantity))
+              onOrderQuantity:Math.max(0,num(item.onOrderQuantity)),
+              selections:Array.isArray(item.selections)?item.selections:[]
             });
           }
 
@@ -2740,3 +3002,25 @@
 })();
 
 // WEP_NAVIGATION_REPAIR_V1
+
+// WEP_NAVIGATION_LAYOUT_V1
+
+// WEP_ROUTE_FIXES_V1
+
+// WEP_ONE_SKU_PER_CARD_V1
+
+// WEP_SORT_ORDER_FIRST_V1
+
+// WEP_POWER_THEN_SORTORDER_V1
+
+// Build & Buy shares the workbook-backed run / charge chart with equipment cards.
+(function(){
+ const css=document.createElement('link');css.rel='stylesheet';css.href='universal/build-buy.css';document.head.append(css);
+ let ready;
+ function tools(){if(window.WEPBuildBuy)return Promise.resolve(window.WEPBuildBuy);if(!ready)ready=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='universal/build-buy-tools.js';s.onload=()=>resolve(window.WEPBuildBuy);s.onerror=()=>{ready=null;reject(Error('Chart could not be loaded'));};document.head.append(s);});return ready;}
+ document.addEventListener('click',async e=>{const a=e.target.closest('[data-wep-runtime-brand]');if(!a||window.WEPBuildBuy)return;e.preventDefault();e.stopImmediatePropagation();try{const api=await tools();api.openChart(await api.load(a.dataset.wepRuntimeBrand,a.dataset.wepRuntimeSku));}catch(error){alert(error.message);}},true);
+ tools().then(api=>{const observer=new MutationObserver(()=>decorate(api));observer.observe(document.body,{childList:true,subtree:true});decorate(api);}).catch(()=>{});
+ function decorate(api){document.querySelectorAll('[data-wep-integrated]').forEach(el=>{if(el.dataset.wepReady)return;el.dataset.wepReady='1';try{const row=JSON.parse(el.dataset.wepIntegrated);el.innerHTML=api.costMarkup(row);}catch{}});}
+})();
+
+// WEP_BUILD_BUY_V1

@@ -11,34 +11,57 @@
 </style>
 </head>
 <body><main>
-<nav><a href="marketplace.html">← Marketplace</a><button id="print" type="button">Print Payment Options</button></nav>
+<nav><a id="marketplace-return" href="marketplace.html">← Return to Marketplace selection</a><button id="print" type="button">Print Payment Options</button></nav>
 <header class="hero"><h1 id="title">Payment Options</h1><p id="description"></p><div class="selection" id="selection"></div><div class="selection" id="inventory-selection"></div><div class="selection"><label for="quote-quantity">Quantity</label><input id="quote-quantity" type="number" min="1" max="100" step="1" value="1"><span id="quantity-note" class="note"></span></div></header>
 <div id="options" aria-live="polite"><p>Loading payment options…</p></div>
 <footer><p>Payments shown for the selected quantity include applicable Connecticut sales tax and listed freight. Application fees are shown separately and included in the amount financed. Where actual freight still needs confirmation, final totals and payments are withheld. Financing is subject to credit approval and program requirements. Pricing and availability will be confirmed before purchase.</p><div class="contact"><div><strong>NEW MILFORD</strong><br>265 Danbury Road · <a href="tel:8603558722">860-355-8722</a></div><div><strong>DANBURY</strong><br>56 Beaver Brook Road · <a href="tel:2037923030">203-792-3030</a></div></div></footer>
 </main>
-<script src="brand-settings.js"></script><script src="universal/payment-pricing.js"></script>
+<script src="brand-settings.js"></script><script src="universal/payment-pricing.js?v=linked-selection-20261015"></script>
 <script>
 (function(){
 'use strict';
 const params=new URLSearchParams(location.search),brand=(params.get('brand')||'').trim().toUpperCase(),sku=(params.get('sku')||'').trim();
+const returnLink=document.getElementById('marketplace-return');
+let returnTarget='';
+try{const value=params.get('return');const url=new URL(value||'',location.href);if(value&&url.origin===location.origin&&/^https?:$/.test(url.protocol))returnTarget=url.href}catch(_){}
+returnLink.href=returnTarget||('marketplace.html?'+new URLSearchParams({brand,sku}).toString());
 const $=id=>document.getElementById(id),clean=v=>String(v==null?'':v).trim(),num=v=>{const n=Number(clean(v).replace(/[$,%]/g,''));return Number.isFinite(n)?n:0;};
 const esc=v=>clean(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(v)||0);
 const payments=window.WestEndPayments;
 let requestVersion=0;
 let selectedInventoryId;
+const requestedInventoryId=params.has('inventoryId')?clean(params.get('inventoryId')):null;
+const requestedUnitRef=clean(params.get('unit'));
+const lockedStock=Boolean(requestedUnitRef||requestedInventoryId);
 let inventorySku='';
 let inventoryChoices=[];
-let selectedQuantity=1;
+let selectedQuantity=Math.min(100,Math.max(1,Math.floor(Number(params.get('quantity'))||1)));
+$('quote-quantity').value=String(selectedQuantity);
 let activeRow=null;
+function isCompactRow(row){return /^compact tractors?$/i.test(clean(row.Category));}
+function configurationLabel(row){
+ const model=clean(row.Model)||clean(row.ProductName)||clean(row.Description)||'Equipment';
+ if(!isCompactRow(row))return model;
+ const truthy=v=>/^(T|TRUE|Y|YES|1)$/i.test(clean(v));
+ const names=[['Loader','P1-Loader'],['Backhoe','P2-Backhoe'],['Mower','P3-Mower'],['Cab','P4-Cab']].filter(([label,field])=>truthy(row[field])||Object.entries(row).some(([key,value])=>/^FactoryInstalled\d+$/i.test(key)&&clean(value).toLowerCase()===label.toLowerCase())).map(x=>x[0]);
+ const rawTire=clean(row['B2-Tires']||row.Tires),normalized=rawTire.toLowerCase().replace(/[\s-]/g,'');
+ const tire=/^(industrial|r4)$/.test(normalized)?'R-4':/^(ag|agricultural|r1)$/.test(normalized)?'R-1':/^(turf|r3)$/.test(normalized)?'R-3':/hybrid|^r14/.test(normalized)?'Hybrid':rawTire;
+ if(tire)names.push(tire+' Tires');
+ const details=names.length>1?names.slice(0,-1).join(', ')+' and '+names[names.length-1]:names[0]||'';
+ return model+(details?' with '+details:'');
+}
 // MARKETPLACE_QUANTITY_COMPARISON_V1
 function updateQuantityLimit(){
  const choice=inventoryChoices.find(c=>clean(c.selectionId)===selectedInventoryId);
- const max=choice?Math.max(Math.min(Math.floor(Number(choice.quantity)||1),100),1):100;
+ const inventoryMax=lockedStock||choice?.serialized===true?1:choice?Math.max(Math.min(Math.floor(Number(choice.quantity)||1),100),1):100;
+ const max=Math.min(inventoryMax,...(activeRow?.__packageItems||[]).map(item=>Math.max(1,Math.floor(100/Math.max(1,Number(item.quantity)||1)))));
  $('quote-quantity').max=String(max);
+ $('quote-quantity').disabled=lockedStock;
+ $('quote-quantity').readOnly=lockedStock;
  selectedQuantity=Math.min(selectedQuantity,max);
  $('quote-quantity').value=String(selectedQuantity);
- $('quantity-note').textContent=choice?'Selected inventory option: up to '+max+' unit'+(max===1?'':'s')+'.':'';
+ $('quantity-note').textContent=lockedStock?'':choice?'Selected inventory option: up to '+max+' unit'+(max===1?'':'s')+'.':'';
 }
 $('quote-quantity').addEventListener('change',()=>{
  const qty=Number($('quote-quantity').value),max=Number($('quote-quantity').max);
@@ -59,7 +82,7 @@ function comparisonMarkup(columns,row){
  const dash='—';
  const rebateText=c=>!c.program?dash:(c.q.rebateCompatible?(c.q.rebateAmount>0?'Compatible rebate included':'Rebates may be combined'):'In lieu of customer rebates');
  const msrp=num(row.MSRP)*selectedQuantity;
- const manufacturerDiscount=c=>Math.max(msrp-(Number.isFinite(Number(c.q.pricing.baseUnitPrice))?num(c.q.pricing.baseUnitPrice)*selectedQuantity:c.q.sellingPrice),0);
+ const manufacturerDiscount=c=>Math.max(msrp-(c.q.pricing.customerPackageQuote?num(c.q.pricing.customerPackageQuote.baseAmount):(Number.isFinite(Number(c.q.pricing.baseUnitPrice))?num(c.q.pricing.baseUnitPrice)*selectedQuantity:c.q.sellingPrice)),0);
  const discount=n=>n>0?'-'+money(n):money(0);
  const rows=[
   {label:'MSRP',value:c=>msrp>0?money(msrp):dash,show:msrp>0},
@@ -88,28 +111,45 @@ function comparisonMarkup(columns,row){
 async function render(row){
  const version=++requestVersion,selectedSku=clean(row.SKU);
  activeRow=row;
- $('title').textContent=(clean(row.Model)||clean(row.ProductName)||clean(row.Description)||'Equipment')+' — Payment Options';
- $('description').textContent=(clean(row.Model)||clean(row.ProductName))?clean(row.Description):'';document.title=$('title').textContent+' | West End Power';
+ $('title').textContent=configurationLabel(row)+' — Payment Options';
+ $('description').textContent=isCompactRow(row)?brand+' · SKU '+selectedSku:(clean(row.Model)||clean(row.ProductName))?clean(row.Description):'';document.title=$('title').textContent+' | West End Power';
  $('options').innerHTML='<p>Loading payment options…</p>';
  try{
   if(inventorySku!==selectedSku){
    const choices=await payments.inventory(brand,selectedSku);
    if(version!==requestVersion)return;
-   inventorySku=selectedSku;inventoryChoices=choices;
-   selectedInventoryId=choices.length?clean(choices[0].selectionId):'';
+   inventoryChoices=choices;
+   if(selectedSku===sku&&requestedUnitRef){
+    const match=choices.find(choice=>clean(choice.unitRef)===requestedUnitRef&&choice.serialized===true);
+    if(!match)throw new Error('This selected unit is no longer available. Return to the Marketplace to choose another unit.');
+    selectedInventoryId=clean(match.selectionId);
+   }else if(selectedSku===sku&&requestedInventoryId!==null){
+    if(requestedInventoryId&&!choices.some(choice=>clean(choice.selectionId)===requestedInventoryId))throw new Error('This selected unit is no longer available. Return to the Marketplace to choose another unit.');
+    selectedInventoryId=requestedInventoryId;
+   }else selectedInventoryId=(requestedUnitRef||requestedInventoryId!==null||isCompactRow(row))?'':choices.length?clean(choices[0].selectionId):'';
+   inventorySku=selectedSku;
    $('inventory-selection').innerHTML='';
-   if(choices.length){
+   if(lockedStock){
+    const unit=choices.find(choice=>clean(choice.selectionId)===selectedInventoryId);
+    const note=document.createElement('p');note.textContent='In Stock'+(clean(unit?.store)?' — '+clean(unit.store):'');
+    $('inventory-selection').appendChild(note);
+    const included=(unit?.includedItems||[]).filter(item=>clean(item.sku)&&clean(item.description));
+    if(included.length){const details=document.createElement('p');details.className='note';details.textContent='Includes: '+included.map(item=>clean(item.description)).join('; ');$('inventory-selection').appendChild(details);}
+   }else if(isCompactRow(row)){
+    const note=document.createElement('p');note.textContent='Build / Order';$('inventory-selection').appendChild(note);
+   }else if(choices.length){
     const label=document.createElement('label');label.htmlFor='inventory-choice';label.textContent='Price this unit';
     const select=document.createElement('select');select.id='inventory-choice';
-    choices.forEach((choice,i)=>{const option=document.createElement('option');option.value=clean(choice.selectionId);option.textContent='In Stock - Option '+(i+1)+' ('+Number(choice.quantity)+' available)';select.appendChild(option);});
+    choices.forEach((choice,i)=>{const option=document.createElement('option');option.value=clean(choice.selectionId);option.textContent='In Stock - Option '+(i+1)+(clean(choice.store)?' — '+clean(choice.store):'');select.appendChild(option);});
     const order=document.createElement('option');order.value='';order.textContent='Build New Orderable Unit';select.appendChild(order);
+    select.value=selectedInventoryId;
     $('inventory-selection').appendChild(label);$('inventory-selection').appendChild(select);
     select.addEventListener('change',()=>{selectedInventoryId=select.value;updateQuantityLimit();render(row);});
    }
   }
  updateQuantityLimit();
  }catch(error){if(version===requestVersion){$('options').innerHTML='<p class="error">'+esc(error.message)+' <button id="retry" type="button">Try Again</button></p>';$('retry').addEventListener('click',()=>render(row));}return;}
- const [programResult,cashResult,creditResult]=await Promise.allSettled([payments.programs(brand,selectedSku,selectedInventoryId),payments.quote(brand,selectedSku,row,'cash',null,selectedInventoryId,selectedQuantity),payments.quote(brand,selectedSku,row,'credit',null,selectedInventoryId,selectedQuantity)]);
+ const [programResult,cashResult,creditResult]=await Promise.allSettled([payments.programs(brand,selectedSku,selectedInventoryId,selectedQuantity,row.__packageItems||[]),payments.quote(brand,selectedSku,row,'cash',null,selectedInventoryId,selectedQuantity),payments.quote(brand,selectedSku,row,'credit',null,selectedInventoryId,selectedQuantity)]);
  if(version!==requestVersion)return;
  const columns=[];let failure=false;
  if(cashResult.status==='fulfilled')columns.push({title:'Cash / Bank Check',kind:'cash',q:cashResult.value});else failure=true;
@@ -126,6 +166,7 @@ async function render(row){
   if(version!==requestVersion)return;
   const remaining=remainingPrograms();
   $('options').innerHTML=(columns.length?comparisonMarkup(columns,row):'')+
+   (programResult.status==='fulfilled'&&!programs.length?'<p class="note">No financing programs are currently available for this selection and quantity.</p>':'')+
    (financeLoading?'<p class="note">Loading financing options…</p>':'')+
    (remaining.length?'<p><button id="load-more-finance" type="button" '+(financeLoading?'disabled':'')+'>Load More Options ('+remaining.length+' remaining)</button></p>':'')+
    (failure?'<p class="error">Some payment options could not be loaded. <button id="retry" type="button">Try Again</button> or call us for current pricing.</p>':'');
@@ -162,16 +203,45 @@ async function render(row){
 async function load(){
  const settings=window.WESTEND_BRANDS&&window.WESTEND_BRANDS[brand];
  if(!settings||!sku)throw new Error('Choose a product from Marketplace to view its payment options.');
- const results=await Promise.allSettled(['products.csv','batteries.csv','chargers.csv'].map(name=>csv(settings.dataRoot+name)));
- const rows=results.filter(r=>r.status==='fulfilled').flatMap(r=>r.value);
- const selected=rows.find(r=>clean(r.SKU).toUpperCase()===sku.toUpperCase());
+ const results=await Promise.allSettled(['products.csv','batteries.csv','chargers.csv','compatibility-runtime.csv'].map(name=>csv(settings.dataRoot+name)));
+ const compat=(results[3].status==='fulfilled'?results[3].value:[]).filter(row=>!/^(F|FALSE|N|NO|0)$/i.test(clean(row.Active)));
+ const rows=results.slice(0,3).filter(r=>r.status==='fulfilled').flatMap(r=>r.value);
+ let selected=rows.find(r=>clean(r.SKU).toUpperCase()===sku.toUpperCase());
  if(!selected)throw new Error('This product could not be found. Return to Marketplace and choose it again.');
  const model=clean(selected.MarketplaceFamily)||clean(selected.Model);
+ if(!returnTarget)returnLink.href='marketplace.html?'+new URLSearchParams(model?{brand,model}:{brand}).toString();
  const related=rows.filter(r=>(clean(r.SKU).toUpperCase()===sku.toUpperCase() || (model&&(clean(r.MarketplaceFamily)||clean(r.Model))===model)) && !/^(F|FALSE|0)$/i.test(clean(r.Active)));
- if(related.length>1){
+ const key=v=>clean(v).toUpperCase().replace(/[^A-Z0-9]/g,'');
+ const recommendationFor=tool=>{
+   const exact=compat.find(r=>key(r.ToolSKU)===key(tool.SKU));
+   if(exact)return exact;
+   const matches=compat.filter(r=>key(r.Model)&&key(r.Model)===key(tool.Model));
+   const signatures=new Set(matches.map(r=>[key(r.RecommendedBatteryID1),r.RecommendedBatteryQty1||1,key(r.RecommendedChargerID1),r.RecommendedChargerQty1||1].join('|')));
+   return signatures.size===1?matches[0]:null;
+ };
+ if(!related.some(r=>/kit|package/i.test(clean(r.ProductType)))){
+   for(const tool of related.slice()){
+     if(!/battery/i.test(clean(tool.PowerType)))continue;
+     const rec=recommendationFor(tool);if(!rec)continue;
+     const battery=rows.find(r=>key(r.BatteryID)===key(rec.RecommendedBatteryID1)&&!/^(F|FALSE|N|NO|0)$/i.test(clean(r.Active)));
+     const charger=rows.find(r=>key(r.ChargerID)===key(rec.RecommendedChargerID1)&&!/^(F|FALSE|N|NO|0)$/i.test(clean(r.Active)));
+     const batteryQty=Math.max(1,num(rec.RecommendedBatteryQty1)||1),chargerQty=Math.max(1,num(rec.RecommendedChargerQty1)||1);
+     if(!Number.isInteger(batteryQty)||!Number.isInteger(chargerQty))continue;
+     if(!battery||!charger||!clean(battery.SKU)||!clean(charger.SKU)||num(battery.MSRP)<=0||num(charger.MSRP)<=0)continue;
+     related.push({...tool,ProductType:'Recommended Package',Description:clean(tool.Description)+' + '+batteryQty+' '+clean(battery.BatteryID)+' Battery + '+chargerQty+' '+clean(charger.ChargerID)+' Charger',
+       MSRP:num(tool.MSRP)+num(battery.MSRP)*batteryQty+num(charger.MSRP)*chargerQty,
+       __packageItems:[{sku:clean(battery.SKU),quantity:batteryQty},{sku:clean(charger.SKU),quantity:chargerQty}]});
+   }
+ }
+ if(params.get('package')==='1'){
+   const packageRow=related.find(r=>r.__packageItems&&key(r.SKU)===key(sku));
+   if(!packageRow)throw new Error('The recommended package could not be confirmed. Return to the shopping page and select it again.');
+   selected=packageRow;
+ }
+ if(related.length>1&&!lockedStock&&!isCompactRow(selected)){
   $('selection').innerHTML='<label for="purchase">Purchase option</label><select id="purchase"></select>';
   related.forEach((r,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=(/kit|package/i.test(clean(r.ProductType))?'Package':'Unit')+(clean(r.Description)?' — '+clean(r.Description):'');o.selected=r===selected;$('purchase').appendChild(o);});
-  $('purchase').addEventListener('change',()=>{const row=related[Number($('purchase').value)];const url=new URL(location.href);url.searchParams.set('sku',clean(row.SKU));history.replaceState(null,'',url);render(row);});
+  $('purchase').addEventListener('change',()=>{const row=related[Number($('purchase').value)];const url=new URL(location.href);url.searchParams.set('sku',clean(row.SKU));if(row.__packageItems)url.searchParams.set('package','1');else url.searchParams.delete('package');history.replaceState(null,'',url);render(row);});
  }
  await render(selected);
 }
@@ -180,3 +250,5 @@ load().catch(error=>{$('options').textContent=error.message;});
 </script>
 </body>
 </html>
+
+<!-- WEP_ROUTE_FIXES_V1 -->

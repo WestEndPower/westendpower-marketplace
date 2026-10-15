@@ -342,7 +342,7 @@ function drawCart(){
   );
 
   $("review-order").disabled=!cart.length;
-  $("review-order").textContent=cart.some(isEquipmentPackageRow)?'Review Quote':'Review Order';
+  $("review-order").textContent='Review Quote / Checkout';
 
   document.querySelectorAll('[data-cart-install]').forEach(input=>{input.onchange=()=>{const row=cart[Number(input.dataset.cartInstall)];if(String(row.assemblyOption||'').trim().toUpperCase()!=='T')return;row.setupSelected=input.checked;row.setupAmount=input.checked?Number(row.assemblyAmount)||0:0;saveCart();resetShipping();drawCart();};});
   document.querySelectorAll("[data-cart-qty]").forEach(input=>{
@@ -697,7 +697,7 @@ function isEquipmentPackageRow(row){
  return brand==='TORO'||(brand==='STIHL'&&String(row.packageId||'').startsWith('STIHL:'));
 }
 function reviewEquipmentPackage(){
- if(!cart.some(isEquipmentPackageRow))return false;
+ if(!cart.length)return false;
  location.assign("checkout.html"+(["127.0.0.1","localhost","[::1]"].includes(location.hostname)?"?api=local":""));
  return true;
 }

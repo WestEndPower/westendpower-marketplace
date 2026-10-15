@@ -91,10 +91,13 @@ function copyBillyGoatImages(rows,sourceFile,root,directory){
   }catch(error){for(const job of journal.reverse()){if(job.exists)fs.copyFileSync(job.saved,job.target);else fs.rmSync(job.target,{force:true});}throw error;}
   return jobs.length;
 }
-function sync({brand,sourceFile,root=path.resolve(__dirname,'..'),backupRoot}){
+function syncBeforeBuildBuy({brand,sourceFile,root=path.resolve(__dirname,'..'),backupRoot}){
   if(!BRANDS.includes(brand))throw Error('Unknown brand');
   if(path.basename(sourceFile).toLowerCase()!=='products.csv')throw Error('Only public products.csv exports are supported');
   if(/configuratorprivate/i.test(sourceFile))throw Error('Private export path rejected');
+  const toroOptions=brand==='toro'
+    ? require('./toro-option-sync.cjs').prepare(sourceFile,root,{parse,encode,isPrivate})
+    : null;
   const target=path.join(root,'brands',brand,'data','products.csv');
   if(!fs.existsSync(target))throw Error('Marketplace brand products file not found: '+target);
   const old=fs.readFileSync(target,'utf8');
@@ -104,12 +107,25 @@ function sync({brand,sourceFile,root=path.resolve(__dirname,'..'),backupRoot}){
   fs.mkdirSync(directory,{recursive:true});
   const imageCount=brand==='stihl'?require('./stihl-marketplace-images.cjs').syncStihlImages(result.rows,sourceFile,root,directory):(brand==='billygoat'?copyBillyGoatImages(result.rows,sourceFile,root,directory):0);
   const data=encode(result.headers,result.rows);
-  if(data===old)return {changed:false,rows:result.rows.length,imageCount};
+  if(data===old){
+    const optionChanges=toroOptions?require('./toro-option-sync.cjs').apply(toroOptions,directory):0;
+    return {changed:optionChanges>0,rows:result.rows.length,imageCount};
+  }
   const stamp=new Date().toISOString().replace(/[:.]/g,'-');
   fs.copyFileSync(target,path.join(directory,`${brand}-${stamp}-${process.pid}.csv`));
   const temp=target+'.sync-'+process.pid;
   try{fs.writeFileSync(temp,data,'utf8');fs.renameSync(temp,target);}finally{if(fs.existsSync(temp))fs.unlinkSync(temp);}
+  if(toroOptions)require('./toro-option-sync.cjs').apply(toroOptions,directory);
   return {changed:true,rows:result.rows.length,imageCount};
+}
+function sync(options){
+ const root=options.root||path.resolve(__dirname,'..');
+ const helper=require('./build-buy-data-sync.cjs');
+ const jobs=helper.prepare(options.brand,options.sourceFile,root,{parse,encode,isPrivate});
+ const result=syncBeforeBuildBuy(options);
+ const backup=options.backupRoot||path.join(process.env.USERPROFILE||os.homedir(),'Desktop','Marketplace-Brand-Backups','automatic-product-sync',new Date().toISOString().replace(/[:.]/g,'-'));
+ const dataChanges=helper.apply(jobs,backup);
+ return {...result,changed:result.changed||dataChanges>0,buildBuyDataChanges:dataChanges};
 }
 module.exports={parse,encode,merge,sync,isPrivate};
 if(require.main===module){
@@ -119,3 +135,7 @@ if(require.main===module){
 }
 
 // STIHL-WORKBOOK-MARKETPLACE-IMAGES-V1
+
+// WEP_TORO_OPTION_DATA_SYNC_V1
+
+// WEP_BUILD_BUY_V1

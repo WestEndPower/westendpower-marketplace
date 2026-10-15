@@ -44,7 +44,8 @@ const num=v=>{const n=Number(clean(v).replace(/[$,%]/g,''));return Number.isFini
 
 
 // PAYMENT_PRICING_REQUEST_PACING_V1
-let pricingQueue=Promise.resolve();
+const pricingQueue=[];
+let pricingRunning=false;
 let lastPricingRequest=-Infinity;
 const paymentDelay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function sendPaymentRequest(path,body){
@@ -63,16 +64,32 @@ async function sendPaymentRequest(path,body){
   return data;
  }
 }
-async function post(path,body){
+function pricingCancelled(){const error=new Error('Selection changed.');error.name='AbortError';return error;}
+function pricingPriority(job){try{return Number(job.options.priority?.())||0;}catch(_){return 0;}}
+async function drainPricingQueue(){
+ if(pricingRunning)return;
+ pricingRunning=true;
+ try{
+  while(pricingQueue.length){
+   // Keep service pacing, but choose the next job after the wait so a new selection can move ahead.
+   const wait=1500-(Date.now()-lastPricingRequest);
+   if(wait>0)await paymentDelay(wait);
+   pricingQueue.sort((a,b)=>pricingPriority(b)-pricingPriority(a));
+   const job=pricingQueue.shift();
+   try{
+    if(job.options.shouldRun&&!job.options.shouldRun())throw pricingCancelled();
+    lastPricingRequest=Date.now();
+    job.resolve(await sendPaymentRequest('/customer-pricing',job.body));
+   }catch(error){job.reject(error);}
+  }
+ }finally{pricingRunning=false;}
+}
+async function post(path,body,options={}){
  if(path!=='/customer-pricing')return sendPaymentRequest(path,body);
- const pending=pricingQueue.then(async()=>{
-  const wait=1500-(Date.now()-lastPricingRequest);
-  if(wait>0)await paymentDelay(wait);
-  lastPricingRequest=Date.now();
-  return sendPaymentRequest(path,body);
+ return new Promise((resolve,reject)=>{
+  pricingQueue.push({body,options,resolve,reject});
+  void drainPricingQueue();
  });
- pricingQueue=pending.catch(()=>{});
- return pending;
 }
 const inventoryCache=new Map();
 async function inventory(brandId,sku){
@@ -91,28 +108,43 @@ async function selectInventory(brandId,sku,requested){
  if(requested!=null){if(choices.some(x=>clean(x.selectionId)===requested))return requested;throw new Error('The selected in-stock unit is no longer available.');}
  return choices.length?clean(choices[0].selectionId):'';
 }
-async function programs(brandId,sku,inventoryId){
-  const selected=await selectInventory(brandId,sku,inventoryId);
-  const data=await post('/customer-finance-programs',{brandId,sku,inventoryId:selected});
-  return (data.programs||[]).filter(p=>num(p.TermMonths)>0 && clean(p.ProgramID));
+function selectedPackageItems(items,quantity){
+  if(!Array.isArray(items)||items.length>20)throw new Error('Invalid package selection.');
+  return items.map(item=>{
+    const count=Number(item.quantity)*quantity;
+    if(!clean(item.sku)||!Number.isInteger(count)||count<1||count>100)throw new Error('The package component quantity must be between 1 and 100.');
+    return {sku:clean(item.sku),quantity:count};
+  });
 }
-async function quote(brandId,sku,row,paymentMethod,program,inventoryId,quantity=1){
+async function programs(brandId,sku,inventoryId,quantity=1,packageItems=[]){
   quantity=Number(quantity);
   if(!Number.isInteger(quantity)||quantity<1||quantity>100)throw new Error('Choose a whole-number quantity from 1 to 100.');
   const selected=await selectInventory(brandId,sku,inventoryId);
+  const selectionItems=selectedPackageItems(packageItems,quantity);
+  const data=await post('/customer-finance-programs',{brandId,sku,inventoryId:selected,quantity,...(selected?{inventorySelectionRequired:true}:{}),...(selectionItems.length?{selectionItems}:{})});
+  return (data.programs||[]).filter(p=>num(p.TermMonths)>0 && clean(p.ProgramID));
+}
+async function quote(brandId,sku,row,paymentMethod,program,inventoryId,quantity=1,requestOptions={}){
+  quantity=Number(quantity);
+  if(!Number.isInteger(quantity)||quantity<1||quantity>100)throw new Error('Choose a whole-number quantity from 1 to 100.');
+  const selected=await selectInventory(brandId,sku,inventoryId);
+  const selectionItems=selectedPackageItems(row.__packageItems||[],quantity);
   const pricing=await post('/customer-pricing',{
     brandId,sku,quantity,paymentMethod,inventoryId:selected,includeFreightQuote:true,
+    ...(selected?{inventorySelectionRequired:true}:{}),
+    ...(selectionItems.length?{selectionItems}:{}),
     ...(program?{financeProgramId:clean(program.ProgramID)}:{}),
-    cart:{primarySku:sku,items:[{sku,quantity,inventoryId:selected}]}
-  });
+    cart:{primarySku:sku,items:[{sku,quantity,inventoryId:selected},...selectionItems]}
+  },requestOptions);
   if(!Number.isFinite(Number(pricing.customerLinePrice)) || num(pricing.customerLinePrice)<0) throw new Error('Pricing is not available for this product.');
-  const sellingPrice=num(pricing.customerLinePrice);
+  if(selectionItems.length&&!pricing.customerPackageQuote)throw new Error('Package pricing is unavailable. Please retry after the pricing service is updated.');
+  const sellingPrice=selectionItems.length?num(pricing.customerPackageQuote.merchandiseAmount):num(pricing.customerLinePrice);
   const freightQuote=pricing.customerFreightQuote;
   if(!freightQuote)throw new Error('The pricing API needs the Freight update before these payment options can load.');
   const freightConfirmed=freightQuote.confirmed===true && Number.isFinite(Number(freightQuote.amount)) && freightQuote.amount!==null;
   const freight=freightConfirmed?Math.max(num(freightQuote.amount),0):0;
   const taxableSubtotal=cents(sellingPrice+freight);
-  const salesTax=!/^(F|FALSE|N|NO|0)$/i.test(clean(row.Taxable))?cents(taxableSubtotal*TAX_RATE):0;
+  const salesTax=selectionItems.length?cents((num(pricing.customerPackageQuote.taxableMerchandiseAmount)+freight)*TAX_RATE):(!/^(F|FALSE|N|NO|0)$/i.test(clean(row.Taxable))?cents(taxableSubtotal*TAX_RATE):0);
   const outTheDoor=cents(taxableSubtotal+salesTax);
   const requiredDown=program?Math.max(programMinimumDown(program,outTheDoor),num(pricing.profitProtectionDown)):0;
   const applicationFee=program?(brandId==='YANMAR'?299:num(program.CustomerOriginationFee||program.ApplicationFee||program.UCCFilingFee)):0;
@@ -123,7 +155,20 @@ async function quote(brandId,sku,row,paymentMethod,program,inventoryId,quantity=
   return {quantity,pricing,sellingPrice,freight,freightConfirmed,freightSource:freightQuote.source,freightMessage:freightQuote.message||'',inventoryId:selected,salesTax,outTheDoor,requiredDown,applicationFee,amountFinanced,
     apr,aprLabel:apr===0?'0%':apr.toFixed(2).replace(/\.00$/,'')+'%',termMonths,
     monthly:program?monthlyPayment(amountFinanced,apr,termMonths):0,
-    rebateAmount:cents(num(pricing.customerRebate)*quantity),rebateCompatible:program?programAllowsRebate(program):true};
+    rebateAmount:cents(selectionItems.length?num(pricing.customerPackageQuote.rebateAmount):num(pricing.customerRebate)),rebateCompatible:program?programAllowsRebate(program):true};
 }
+
+// Shared payment links retain the shopping page, including dynamically rendered price tags.
+if(root.document?.addEventListener)root.document.addEventListener('click',event=>{
+ const link=event.target?.closest?.('a[href]');if(!link)return;
+ try{
+  const url=new URL(link.href,root.location?.href);
+  if(!/\/payment-options(?:\.html)?\/?$/i.test(url.pathname))return;
+  link.target='_blank';
+  const rel=new Set((link.getAttribute('rel')||'').split(/\s+/).filter(Boolean));
+  rel.add('noopener');rel.add('noreferrer');link.setAttribute('rel',[...rel].join(' '));
+ }catch(_){}
+},true);
+
 root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFinanceProgram,monthlyPayment,programMinimumDown,programAllowsRebate};
 })(typeof window==='undefined'?globalThis:window);

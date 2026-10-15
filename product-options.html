@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Product Options | West End Power</title>
+<title>Build &amp; Buy | West End Power</title>
 <style>
 :root{--red:#c8102e;--dark:#202020;--border:#ddd;--green:#287a32}
 *{box-sizing:border-box}body{margin:0;font:16px/1.5 Arial,sans-serif;color:#171717;background:#f7f7f7}
@@ -19,6 +19,7 @@ a{color:inherit}.wrap{max-width:1180px;margin:auto;padding:20px}.top{display:fle
 @media(max-width:800px){.hero{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.summary{align-items:flex-start;flex-direction:column}.media{height:240px}}
 .stock-action{display:inline-block;margin:8px 6px 0 0;padding:5px 8px;font-size:12px;border:1px solid #aaa;border-radius:5px;background:white;cursor:pointer;text-decoration:none}.stock-details{font-size:13px}.stock-details a{display:block;margin:6px 0}.cart-action{background:#fff;color:#222}.card-media img{max-width:180px}.summary small{display:block}.summary-actions{display:flex;gap:8px;flex-wrap:wrap}
 </style>
+<link rel="stylesheet" href="universal/build-buy.css">
 </head>
 <body>
 <div class="wrap">
@@ -29,6 +30,7 @@ a{color:inherit}.wrap{max-width:1180px;margin:auto;padding:20px}.top{display:fle
   </div>
   <div id="app"><p>Loading product options…</p></div>
 </div>
+<script src="universal/build-buy-tools.js"></script>
 <script src="brand-settings.js"></script>
 <script src="universal/shared-navigation.js"></script>
 <script>
@@ -49,7 +51,7 @@ function updateReturn(product,brand){
  $('return-link').textContent='← Return to '+(safeReturn?'Marketplace selection':category);
 }
 // WEP_MARKET_OPTIONS_V1
-let selectedProduct=null,selectedBrand='',stockLocations=[];
+let selectedProduct=null,selectedBrand='',stockLocations=[],buildContext=null;
 const requestedBrand=(qs.get('brand')||'').trim().toLowerCase();
 const $=id=>document.getElementById(id);
 const clean=v=>String(v==null?'':v).replace(/^\uFEFF/,'').trim();
@@ -68,9 +70,66 @@ function parseCSV(text){
  const headers=(rows.shift()||[]).map((h,i)=>i===0?clean(h):clean(h));
  return rows.filter(r=>r.some(x=>clean(x)!=='')).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]||''])));
 }
-async function csv(path){const r=await fetch(path,{cache:'no-store'});if(!r.ok)throw new Error(path+' '+r.status);return parseCSV(await r.text())}
+async function csv(path,optional=false){const r=await fetch(path,{cache:'no-store'});if(optional&&r.status===404)return [];if(!r.ok)throw new Error(path+' '+r.status);return parseCSV(await r.text())}
+
+function runtimeSection(compat,batteries){
+ const rows=[];
+ for(let i=1;i<=10;i++){
+  const id=clean(compat['BatteryID'+i]);
+  if(!id)continue;
+  const battery=batteries.find(b=>clean(b.BatteryID).toUpperCase()===id.toUpperCase());
+  const min=clean(compat['RunTimeMin'+i]),max=clean(compat['RunTimeMax'+i]);
+  const valid=v=>v!==''&&Number.isFinite(Number(v))&&Number(v)>0;
+  if(!valid(min)&&!valid(max))continue;
+  const value=valid(min)&&valid(max)?(min===max?min:min+'–'+max):(valid(max)?'Up to '+max:min);
+  rows.push('<tr><th scope="row">'+esc(battery&&(battery.Model||battery.Description)||id)+'</th><td>'+esc(value)+' minutes</td></tr>');
+ }
+ if(!rows.length&&qs.get('view')!=='runtime')return '';
+ return '<section id="battery-runtime" class="section"><h2>Battery Run Times</h2>'+(rows.length?'<table><thead><tr><th scope="col">Battery</th><th scope="col">Estimated run time</th></tr></thead><tbody>'+rows.join('')+'</tbody></table><p class="note">Published estimates vary with use and conditions. Confirm the battery and equipment combination with either store.</p>':'<p>Contact New Milford or Danbury for run-time information for this product.</p>')+'</section>';
+}
+
+function requiredSetup(x){return clean(x&&x.AssemblyOption).toUpperCase()==='F'?Math.max(0,money(x.AssemblyAmount)):0}
+function assemblyAmount(x){return Math.max(0,money(x&&x.AssemblyAmount))}
+function assemblyCode(x){return clean(x&&x.AssemblyOption).toUpperCase()}
+function setupChoice(type,id){return document.querySelector('[data-install-type="'+CSS.escape(type)+'"][data-install-sku="'+CSS.escape(String(id))+'"]')}
+function mainSetupSelected(){return assemblyCode(selectedProduct)==='F'||(assemblyCode(selectedProduct)==='T'&&!!setupChoice('tool',sku)?.checked)}
+function optionSetupSelected(c){return c.dataset.setupOption==='F'||(c.dataset.setupOption==='T'&&!!setupChoice(c.dataset.type,c.dataset.sku)?.checked)}
+function setupMarkup(x,type){
+ const amount=assemblyAmount(x),code=assemblyCode(x);
+ if(amount===0)return '<p class="note">Set-Up / Assembly Included</p>';
+ if(code==='T')return '<label class="note"><input type="checkbox" class="setup-choice" data-install-type="'+esc(type)+'" data-install-sku="'+esc(x.SKU)+'" checked> Optional Dealer Installation: '+fmt(amount)+' per item</label>';
+ if(code==='F')return '<p class="note">Required Set-Up / Assembly: '+fmt(amount)+' per item</p><p class="note">Additional to item price. Added automatically.</p>';
+ return '<p class="note">Dealer installation fee: '+fmt(amount)+' per item. Confirm with the store.</p>';
+}
+
+function buildPanels(bats,chgs,atts,accs,prts){
+ const groups=[['energy','Batteries & Chargers',bats.length+chgs.length,optionSection('Additional Batteries',bats,'battery')+optionSection('Additional Chargers',chgs,'charger')],['attachment','Attachments',atts.length,optionSection('Compatible Attachments',atts,'attachment')],['accessory','Accessories',accs.length,optionSection('Compatible Accessories',accs,'accessory')],['part','Parts',prts.length,optionSection('Maintenance & Replacement Parts',prts,'part')]].filter(x=>x[2]);
+ if(!groups.length)return '<p class="empty">No additional compatible options are currently listed for this SKU.</p>';
+ return '<nav class="wep-option-nav" aria-label="Compatible options">'+groups.map(([id,label,count])=>'<button type="button" data-wep-panel="'+id+'" aria-controls="wep-panel-'+id+'" aria-expanded="false">'+label+' ('+count+')</button>').join('')+'</nav>'+groups.map(([id,label,count,html])=>'<div class="wep-option-panel" id="wep-panel-'+id+'" hidden>'+html+'</div>').join('');
+}
+function wireBuildPage(){
+ const summary=document.querySelector('.wep-compact-actions'),hero=document.querySelector('.hero');
+ if(summary&&hero){hero.classList.add('wep-summary-hero');hero.appendChild(summary);}
+ $('wep-print-build')?.addEventListener('click',()=>window.print());
+ document.querySelectorAll('[data-wep-panel]').forEach(button=>button.addEventListener('click',()=>{
+  const opening=button.getAttribute('aria-expanded')!=='true';
+  document.querySelectorAll('[data-wep-panel]').forEach(b=>b.setAttribute('aria-expanded','false'));
+  document.querySelectorAll('.wep-option-panel').forEach(p=>p.hidden=true);
+  button.setAttribute('aria-expanded',String(opening));const panel=$('wep-panel-'+button.dataset.wepPanel);panel.hidden=!opening;
+  if(opening)panel.scrollIntoView({behavior:'smooth',block:'start'});
+ }));
+ document.querySelectorAll('.wep-card-chart').forEach(button=>button.addEventListener('click',()=>WEPBuildBuy.openChart(buildContext,button.dataset.wepCardKind,button.dataset.wepCardSku)));
+ const groupButtons=[...document.querySelectorAll('[data-wep-panel]')];
+ const batteryProduct=/battery/i.test(clean(selectedProduct.PowerType));
+ const preferred=batteryProduct?groupButtons.find(b=>b.dataset.wepPanel==='energy'):groupButtons.find(b=>b.dataset.wepPanel!=='energy');
+ const first=preferred||groupButtons[0];
+ if(first){first.setAttribute('aria-expanded','true');$('wep-panel-'+first.dataset.wepPanel).hidden=false;}
+ $('wep-runtime')?.addEventListener('click',()=>WEPBuildBuy.openChart(buildContext));
+ if(qs.get('view')==='runtime'&&WEPBuildBuy.hasChart(buildContext))WEPBuildBuy.openChart(buildContext);
+}
+
 function currentPrice(x){return money(x.SalePrice)>0?money(x.SalePrice):money(x.MSRP)}
-function imageUrl(x){let v=clean(x.ImageURL);if(!v)return '';if(/^https?:\/\//i.test(v))return v;return 'brands/'+selectedBrand+'/'+v.replace(/^\.\//,'').replace(/^\//,'')}
+function imageUrl(x){let v=clean(x.ImageURL).replace(/\\/g,'/');if(!v)return '';if(/^https?:\/\//i.test(v))return v;if(v.startsWith('/'))return v;v=v.replace(/^\.\//,'');if(/^brands\//i.test(v))return v;return 'brands/'+selectedBrand+'/'+v}
 function img(x,alt){const src=imageUrl(x);return src?'<img src="'+esc(src)+'" alt="'+esc(alt)+'" loading="lazy">':'<div class="placeholder">Image Coming Soon</div>'}
 function stockMarkup(x){
  const name=clean(x.Description)||clean(x.Model)||clean(x.SKU);
@@ -85,13 +144,21 @@ function stockMarkup(x){
  return '<details class="stock-details"><summary class="stock-action">Check Stock</summary>'+(rows||'<p>Contact New Milford or Danbury to confirm availability.</p>')+'<small>Opens your text app. Send the message to request confirmation.</small></details>';
 }
 function itemCard(x,type){
- const name=clean(x.Model)||clean(x.ChargerName)||clean(x.Description)||clean(x.SKU);
+ const baseName=clean(x.Model)||clean(x.ChargerName)||clean(x.Description)||clean(x.SKU);
+ const name=type==='battery'?(clean(x.BatteryID)||baseName.replace(/\s*Battery\s*$/i,''))+' Battery':type==='charger'?(clean(x.ChargerID)||baseName.replace(/\s*Charger\s*$/i,''))+' Charger':baseName;
  const price=currentPrice(x);
- return '<article class="card"><div class="card-media">'+img(x,name)+'</div><div class="card-body"><h3>'+esc(name)+'</h3><p>'+esc(clean(x.Description))+'</p><p class="card-price">'+(price>0?fmt(price):'Contact Us')+'</p>'+(money(x.AssemblyAmount)>0?'<p class="note">Setup / installation: '+fmt(money(x.AssemblyAmount))+' per item. Review in quote.</p>':'')+stockMarkup(x)+'<label class="select-row"><input type="checkbox" class="option-check" data-type="'+esc(type)+'" data-sku="'+esc(x.SKU)+'" data-name="'+esc(name)+'" data-price="'+price+'"'+(price<=0?' disabled':'')+'> Add <input class="qty" type="number" min="1" max="20" value="1" data-qty="'+esc(x.SKU)+'" aria-label="Quantity"></label>'+(selectedBrand==='toro'?'<button class="stock-action add-option-cart" data-type="'+esc(type)+'" data-sku="'+esc(x.SKU)+'" type="button"'+(price<=0?' disabled':'')+'>Add to Cart</button>':'')+'</div></article>';
+ const energyCard=['battery','charger'].includes(type);
+ const shortName=v=>clean(v).toUpperCase().replace(/\b(BATTERY|CHARGER)\b/g,'').replace(/[^A-Z0-9]/g,'');
+ const description=shortName(x.Description)===shortName(name)?'':clean(x.Description);
+ return '<article class="card'+(energyCard?' wep-energy-card':'')+'"><div class="card-media">'+img(x,name)+'</div><div class="card-body"><h3>'+esc(name)+'</h3><small>SKU '+esc(x.SKU)+'</small>'+(description?'<p>'+esc(description)+'</p>':'')+'<p class="card-price">'+(price>0?fmt(price):'Contact Us')+'</p>'+(!energyCard||assemblyAmount(x)>0?setupMarkup(x,type):'')+stockMarkup(x)+'<label class="select-row"><input type="checkbox" class="option-check" data-type="'+esc(type)+'" data-sku="'+esc(x.SKU)+'" data-name="'+esc(name)+'" data-price="'+price+'" data-setup="'+assemblyAmount(x)+'" data-setup-option="'+esc(assemblyCode(x))+'"'+(price<=0?' disabled':'')+'> Add <input class="qty" type="number" min="1" max="20" value="1" data-qty="'+esc(x.SKU)+'" aria-label="Quantity"></label>'+(['toro','stihl'].includes(selectedBrand)?'<button class="stock-action add-option-cart" data-type="'+esc(type)+'" data-sku="'+esc(x.SKU)+'" type="button"'+(price<=0?' disabled':'')+'>Add to Cart</button>':'')+WEPBuildBuy.cardInfo(x,type,buildContext)+'</div>'+WEPBuildBuy.energySpecs(x,type)+'</article>';
 }
+
+
+function powerRank(v){const types=['manual','electric','battery','gas','diesel','hybrid','kerosene','natural gas','propane','tow-behind'];const rank=types.indexOf(String(v??'').trim().toLowerCase());return rank<0?types.length:rank}
+function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!==''&&Number.isFinite(n)?n:Infinity}
 function optionSection(title,items,type){
  if(!items.length)return '';
- return '<section class="section"><h2>'+esc(title)+'</h2><div class="grid">'+items.map(x=>itemCard(x,type)).join('')+'</div></section>';
+ return '<section class="section"><h2>'+esc(title)+'</h2><div class="grid">'+items.slice().sort((a,b)=>{const av=sortOrderValue(a.SortOrder),bv=sortOrderValue(b.SortOrder);return powerRank(a.PowerType)-powerRank(b.PowerType)||(av===bv?0:av-bv)}).map(x=>itemCard(x,type)).join('')+'</div></section>';
 }
 function compatibleRows(rows,toolSku){
  return rows.filter(x=>{
@@ -108,44 +175,93 @@ function idsFromRuntime(runtime,prefix,count){
 }
 function packageSpec(){
  const mainQty=Number($('equipment-qty')?.value||1);if(!Number.isInteger(mainQty)||mainQty<1||mainQty>20)throw new Error('Choose whole quantities from 1 to 20.');
- const items=[{type:'tool',sku,qty:mainQty}];
+ const items=[{type:'tool',sku,qty:mainQty,setupSelected:mainSetupSelected()}];
  document.querySelectorAll('.option-check:checked').forEach(c=>{
   const q=document.querySelector('[data-qty="'+CSS.escape(c.dataset.sku)+'"]');
   const qty=Number(q.value);if(!Number.isInteger(qty)||qty<1||qty>20)throw new Error('Choose whole quantities from 1 to 20.');
-  items.push({type:c.dataset.type,sku:c.dataset.sku,qty});
+  items.push({type:c.dataset.type,sku:c.dataset.sku,qty,setupSelected:optionSetupSelected(c)});
  });
- return {brandId:'TORO',sku,items};
+ return {brandId:selectedBrand.toUpperCase(),sku,items};
 }
-function reviewPackage(spec){
- const url=new URL('https://toro-equipment-configurator.westendpower-nm.workers.dev/');
- url.searchParams.set('sku',spec.sku);url.searchParams.set('from','marketplace');url.searchParams.set('package',JSON.stringify(spec));location.assign(url.href);
+function reviewPackage(){
+ addPackageToCart();
+ location.assign("checkout.html");
 }
 function addPackageToCart(){
  if(currentPrice(selectedProduct)<=0)throw new Error('Contact the store for equipment pricing.');
  const spec=packageSpec();
  let cart=JSON.parse(localStorage.getItem('wepCart')||'[]');if(!Array.isArray(cart))throw new Error('Cart could not be read.');
- const group='TORO:'+sku;
+ const group=selectedBrand.toUpperCase()+':'+sku;
  cart=cart.filter(row=>row.packageId!==group);
  spec.items.forEach(row=>{
   const c=[...document.querySelectorAll('.option-check')].find(c=>c.dataset.sku===row.sku&&c.dataset.type===row.type);
-  cart.push({brandId:'TORO',packageId:group,equipmentSku:sku,type:row.type,sku:row.sku,quantity:row.qty,productName:row.type==='tool'?(clean(selectedProduct.Description)||clean(selectedProduct.Model)||sku):c.dataset.name,itemPrice:row.type==='tool'?currentPrice(selectedProduct):Number(c.dataset.price),shipping:null});
+  cart.push({brandId:selectedBrand.toUpperCase(),packageId:group,equipmentSku:sku,type:row.type,sku:row.sku,quantity:row.qty,productName:row.type==='tool'?(clean(selectedProduct.Description)||clean(selectedProduct.Model)||sku):c.dataset.name,itemPrice:row.type==='tool'?currentPrice(selectedProduct):Number(c.dataset.price),assemblyOption:row.type==='tool'?assemblyCode(selectedProduct):c.dataset.setupOption,assemblyAmount:row.type==='tool'?assemblyAmount(selectedProduct):Number(c.dataset.setup||0),setupSelected:row.setupSelected,setupAmount:row.setupSelected?(row.type==='tool'?assemblyAmount(selectedProduct):Number(c.dataset.setup||0)):0,shipping:null});
  });
  localStorage.setItem('wepCart',JSON.stringify(cart));
+ renderSavedCartSubtotal();
  $('options-message').textContent='Package saved in cart. Review your quote for setup, freight, delivery and payment totals.';
 }
+function renderSavedCartSubtotal(){
+ const target=$('wep-cart-subtotal');if(!target)return;
+ try{
+  const rows=JSON.parse(localStorage.getItem('wepCart')||'[]');if(!Array.isArray(rows))throw Error('Invalid cart');
+  const total=rows.reduce((sum,row)=>{
+   const qty=Number(row.quantity),price=Number(row.itemPrice);if(!Number.isFinite(qty)||qty<0||!Number.isFinite(price)||price<0)throw Error('Invalid cart amount');
+   const code=clean(row.assemblyOption).toUpperCase();
+   let fee=Number(row.assemblyAmount??row.setupAmount??0);
+   if(!Number.isFinite(fee)||fee<0)throw Error('Invalid installation amount');
+   if(code==='T'&&!row.setupSelected)fee=0;
+   return sum+(price+fee)*qty;
+  },0);
+  target.textContent=fmt(total);
+ }catch(e){target.textContent='View Cart';}
+}
+
+function renderBuildPackageReview(){
+ const container=$('wep-package-lines');if(!container)return;
+ const mainQty=Number($('equipment-qty')?.value||1);
+ const lines=[{name:clean(selectedProduct.Description)||clean(selectedProduct.Model)||sku,sku,type:'tool',code:assemblyCode(selectedProduct),fee:assemblyAmount(selectedProduct),qty:mainQty,unit:currentPrice(selectedProduct),setup:mainSetupSelected()?assemblyAmount(selectedProduct):0}];
+ document.querySelectorAll('.option-check:checked').forEach(c=>{const qty=Number(document.querySelector('[data-qty="'+CSS.escape(c.dataset.sku)+'"]')?.value);lines.push({name:c.dataset.name,sku:c.dataset.sku,type:c.dataset.type,code:c.dataset.setupOption,fee:Number(c.dataset.setup||0),qty,unit:Number(c.dataset.price||0),setup:optionSetupSelected(c)?Number(c.dataset.setup||0):0});});
+ container.innerHTML='<div class="wep-package-table-scroll"><table class="wep-package-table"><thead><tr><th>Item / SKU</th><th>Qty</th><th>Unit price</th><th>Item total</th><th>Installation / Set-Up</th></tr></thead><tbody>'+lines.map(line=>{
+  const valid=Number.isInteger(line.qty)&&line.qty>=1&&line.qty<=20;
+  const optional=line.code==='T'&&line.fee>0;
+  const installation=optional?'<label><input type="checkbox" data-review-install-type="'+esc(line.type)+'" data-review-install-sku="'+esc(line.sku)+'" '+(line.setup>0?'checked':'')+'> Optional Dealer Installation</label><small>'+fmt(line.fee)+' per item</small><small>'+(line.setup>0&&valid?fmt(line.setup*line.qty)+' applied':'Installation / Set-Up Available')+'</small>':valid&&line.setup>0?fmt(line.setup*line.qty)+' applied'+(line.code==='F'?'<small>Required</small>':''):'—';
+  return '<tr><th scope="row">'+esc(line.name)+'<small>SKU '+esc(line.sku)+'</small>'+(line.type!=='tool'?'<button type="button" data-review-remove-type="'+esc(line.type)+'" data-review-remove-sku="'+esc(line.sku)+'">Remove</button>':'')+'</th><td><input class="qty wep-review-qty" type="number" min="1" max="20" value="'+esc(line.qty)+'" data-review-qty-type="'+esc(line.type)+'" data-review-qty-sku="'+esc(line.sku)+'" aria-label="Quantity for '+esc(line.name)+'"><span class="wep-print-qty">'+esc(line.qty)+'</span></td><td>'+fmt(line.unit)+'</td><td>'+(valid?fmt(line.unit*line.qty):'Check quantity')+'</td><td>'+installation+'</td></tr>';
+ }).join('')+'</tbody><tfoot><tr><th colspan="3">Package subtotal</th><td colspan="2"><strong id="selected-total"></strong></td></tr></tfoot></table></div><p class="note">Package subtotal includes applied installation charges. Freight, delivery, tax and payment options are calculated in your quote.</p>';
+ renderSavedCartSubtotal();
+ container.querySelectorAll('[data-review-qty-type]').forEach(input=>input.addEventListener('change',()=>{
+  const source=input.dataset.reviewQtyType==='tool'?$('equipment-qty'):document.querySelector('[data-qty="'+CSS.escape(input.dataset.reviewQtySku)+'"]');
+  if(!source)return;
+  source.value=input.value;
+  source.dispatchEvent(new Event('input',{bubbles:true}));
+ }));
+ container.querySelectorAll('[data-review-remove-type]').forEach(button=>button.addEventListener('click',()=>{
+  const choice=[...document.querySelectorAll('.option-check')].find(c=>c.dataset.type===button.dataset.reviewRemoveType&&c.dataset.sku===button.dataset.reviewRemoveSku);
+  if(!choice)return;
+  choice.checked=false;
+  choice.dispatchEvent(new Event('change',{bubbles:true}));
+ }));
+ container.querySelectorAll('[data-review-install-type]').forEach(input=>input.addEventListener('change',()=>{
+  const choice=setupChoice(input.dataset.reviewInstallType,input.dataset.reviewInstallSku);
+  if(!choice)return;
+  choice.checked=input.checked;
+  choice.dispatchEvent(new Event('change',{bubbles:true}));
+ }));
+}
+
 function wireSummary(basePrice){
  const checks=[...document.querySelectorAll('.option-check')];
- if(selectedBrand==='toro'){
+ if(['toro','stihl'].includes(selectedBrand)){
   try{
-   const saved=JSON.parse(localStorage.getItem('wepCart')||'[]').filter(row=>row.packageId==='TORO:'+sku);
-   const main=saved.find(row=>row.type==='tool');if(main)$('equipment-qty').value=main.quantity;
+   const saved=JSON.parse(localStorage.getItem('wepCart')||'[]').filter(row=>row.packageId===selectedBrand.toUpperCase()+':'+sku);
+   const main=saved.find(row=>row.type==='tool');if(main){$('equipment-qty').value=main.quantity;const choice=setupChoice('tool',sku);if(choice&&typeof main.setupSelected==='boolean')choice.checked=main.setupSelected;}
    saved.forEach(row=>{
     const check=checks.find(c=>c.dataset.type===row.type&&c.dataset.sku===row.sku);
-    if(check&&!check.disabled){check.checked=true;document.querySelector('[data-qty="'+CSS.escape(row.sku)+'"]').value=row.quantity;}
+    if(check&&!check.disabled){check.checked=true;document.querySelector('[data-qty="'+CSS.escape(row.sku)+'"]').value=row.quantity;const choice=setupChoice(row.type,row.sku);if(choice&&typeof row.setupSelected==='boolean')choice.checked=row.setupSelected;}
    });
   }catch(e){$('options-message').textContent='Your saved cart could not be restored. Review your selections.';}
   $('equipment-qty').addEventListener('input',recalc);
-  $('save-options').textContent='Add Package to Cart';
+  $('save-options').textContent='Add to Cart';
   $('review-package').addEventListener('click',()=>{try{reviewPackage(packageSpec());}catch(e){$('options-message').textContent=e.message;}});
   document.querySelectorAll('.add-option-cart').forEach(button=>button.addEventListener('click',()=>{
    const check=checks.find(c=>c.dataset.sku===button.dataset.sku&&c.dataset.type===button.dataset.type);check.checked=true;recalc();
@@ -153,11 +269,15 @@ function wireSummary(basePrice){
   }));
  }
  function recalc(){
-  let add=0,count=0;
+  let add=0,count=0,setup=0;
   const mainQty=Math.max(1,Math.min(20,Number($('equipment-qty')?.value)||1));
-  checks.forEach(c=>{if(c.checked){const q=document.querySelector('[data-qty="'+CSS.escape(c.dataset.sku)+'"]');const qty=Math.max(1,Number(q&&q.value)||1);add+=Number(c.dataset.price||0)*qty;count+=qty}});
+  checks.forEach(c=>{if(c.checked){const q=document.querySelector('[data-qty="'+CSS.escape(c.dataset.sku)+'"]');const qty=Math.max(1,Number(q&&q.value)||1);add+=Number(c.dataset.price||0)*qty;setup+=(optionSetupSelected(c)?Number(c.dataset.setup||0):0)*qty;count+=qty}});
   $('selected-count').textContent=count+' additional item'+(count===1?'':'s');
-  $('selected-total').textContent=fmt(basePrice*mainQty+add);
+  const merchandise=basePrice*mainQty+add;setup+=(mainSetupSelected()?assemblyAmount(selectedProduct):0)*mainQty;
+  $('selected-merchandise').textContent=fmt(merchandise);
+  $('selected-setup').textContent=fmt(setup);
+  renderBuildPackageReview();
+  $('selected-total').textContent=fmt(merchandise+setup);
  }
  document.querySelectorAll('[data-stock-sku]').forEach(link=>link.addEventListener('click',()=>{
   const q=link.dataset.stockSku===sku?$('equipment-qty'):document.querySelector('[data-qty="'+CSS.escape(link.dataset.stockSku)+'"]');
@@ -167,9 +287,10 @@ function wireSummary(basePrice){
  }));
  checks.forEach(c=>c.addEventListener('change',recalc));
  document.querySelectorAll('.qty').forEach(q=>q.addEventListener('input',recalc));
+ document.querySelectorAll('.setup-choice').forEach(c=>c.addEventListener('change',recalc));
  $('save-options').addEventListener('click',()=>{
-  if(selectedBrand==='toro'){try{addPackageToCart();}catch(e){$('options-message').textContent=e.message;}return;}
-  const selected=checks.filter(c=>c.checked).map(c=>{const q=document.querySelector('[data-qty="'+CSS.escape(c.dataset.sku)+'"]');return {type:c.dataset.type,sku:c.dataset.sku,name:c.dataset.name,price:Number(c.dataset.price||0),qty:Math.max(1,Number(q&&q.value)||1)}})
+  if(['toro','stihl'].includes(selectedBrand)){try{addPackageToCart();}catch(e){$('options-message').textContent=e.message;}return;}
+  const selected=checks.filter(c=>c.checked).map(c=>{const q=document.querySelector('[data-qty="'+CSS.escape(c.dataset.sku)+'"]');return {type:c.dataset.type,sku:c.dataset.sku,name:c.dataset.name,price:Number(c.dataset.price||0),setupSelected:optionSetupSelected(c),assemblyOption:c.dataset.setupOption,assemblyAmount:Number(c.dataset.setup||0),qty:Math.max(1,Number(q&&q.value)||1)}})
   sessionStorage.setItem('wep-options:'+sku,JSON.stringify({sku,selected,updated:new Date().toISOString()}));
   $('save-options').textContent='Options Saved';
  });
@@ -177,42 +298,41 @@ function wireSummary(basePrice){
 }
 async function init(){
  updateReturn(null,requestedBrand);
- if(!sku){$('app').innerHTML='<section class="section"><h2>No product selected</h2><p>Return to the product page and choose View Options.</p></section>';return}
+ if(!sku){$('app').innerHTML='<section class="section"><h2>No product selected</h2><p>Return to Marketplace and choose Build &amp; Buy.</p></section>';return}
  try{
   const brands=['billygoat','toro','honda','redmax','greenworks','mitm'].includes(requestedBrand)?[requestedBrand]:(requestedBrand==='yanmar'||requestedBrand==='stihl'?[requestedBrand]:['stihl','yanmar']);
   let root='';
   for(const brand of brands){const candidate='brands/'+brand+'/data/';const rows=await csv(candidate+'products.csv');if(rows.some(x=>clean(x.SKU)===sku)){root=candidate;selectedBrand=brand;break}}
   if(!root)throw new Error('Product SKU not found: '+sku);
   const [products,runtime,batteries,chargers,attachments,accessories,parts]=await Promise.all([
-   csv(root+'products.csv'),csv(root+'compatibility-runtime.csv'),csv(root+'batteries.csv'),csv(root+'chargers.csv'),csv(root+'attachments.csv'),csv(root+'accessories.csv'),csv(root+'parts.csv')
+   csv(root+'products.csv'),csv(root+'compatibility-runtime.csv',true),csv(root+'batteries.csv',true),csv(root+'chargers.csv',true),csv(root+'attachments.csv',true),csv(root+'accessories.csv',true),csv(root+'parts.csv',true)
   ]);
   stockLocations=await csv('data/locations.csv').catch(()=>[]);
   const product=products.find(x=>clean(x.SKU)===sku);
   if(!product)throw new Error('Product SKU not found: '+sku);
   selectedProduct=product;
+  buildContext=WEPBuildBuy.context(product,runtime,batteries,chargers);
+  document.title=(clean(product.Model)||sku)+" | Build & Buy | West End Power";
   updateReturn(product,selectedBrand);
   const compat=runtime.find(x=>clean(x.ToolSKU)===sku)||{};
   const batteryIds=idsFromRuntime(compat,'BatteryID',10);
   const chargerIds=idsFromRuntime(compat,'ChargerID',10);
-  const bats=byId(batteries,batteryIds,['BatteryID','Model']);
-  const chgs=byId(chargers,chargerIds,['ChargerID','Model','ChargerName']);
-  const atts=compatibleRows(attachments,sku);
-  const accs=compatibleRows(accessories,sku);
-  const prts=compatibleRows(parts,sku);
+  const bats=buildContext.batteries;
+  const chgs=buildContext.chargers;
+  const atts=compatibleRows(attachments,sku).filter(WEPBuildBuy.usable);
+  const accs=compatibleRows(accessories,sku).filter(WEPBuildBuy.usable);
+  const prts=compatibleRows(parts,sku).filter(WEPBuildBuy.usable);
   const name=clean(product.Model)||clean(product.Description)||sku;
   const base=currentPrice(product);
   const kit=['kit','package'].includes(clean(product.ProductType).toLowerCase());
   const included=kit?clean(product.Description):'';
   $('app').innerHTML=
-   '<section class="hero"><div class="media">'+img(product,name)+'</div><div><div class="eyebrow">'+esc([product.PowerType,product.SubCategory].filter(Boolean).join(' · '))+'</div><h1>'+esc(name)+'</h1><p>'+esc(product.Description)+'</p><p class="price">'+fmt(base)+'</p>'+stockMarkup(product)+(selectedBrand==='toro'?'<label>Equipment quantity <input id="equipment-qty" class="qty" type="number" min="1" max="20" value="1"></label>':'')+(included?'<div class="included"><strong>Selected package:</strong> '+esc(included)+'</div>':'')+'</div></section>'+
-   optionSection('Additional Battery(s)',bats,'battery')+
-   optionSection('Additional Charger(s)',chgs,'charger')+
-   optionSection('Compatible Attachments',atts,'attachment')+
-   optionSection('Compatible Accessories',accs,'accessory')+
-   optionSection('Maintenance & Replacement Parts',prts,'part')+
-   (!bats.length&&!chgs.length&&!atts.length&&!accs.length&&!prts.length?'<section class="section"><p class="empty">No additional compatible options are currently listed for this SKU.</p></section>':'')+
-   '<div class="summary"><div><span id="selected-count">0 additional items</span><br><strong id="selected-total">'+fmt(base)+'</strong></div><div class="summary-actions"><button id="save-options" type="button">Save Options</button>'+(selectedBrand==='toro'?'<button id="review-package" type="button">Review Package &amp; Quote</button><a class="back" style="color:#222" href="cart.html">View Cart</a>':'')+'</div></div><p id="options-message" role="status"></p><p class="note">Merchandise subtotal. Setup, freight, delivery, tax and payment discounts are calculated in the quote. Availability requires store confirmation.</p>';
+   '<section class="hero"><div class="media">'+img(product,name)+'</div><div><div class="eyebrow">'+esc([product.PowerType,product.SubCategory].filter(Boolean).join(' · '))+'</div><h1>'+esc(name)+'</h1><small>SKU '+esc(sku)+'</small><p>'+esc(product.Description)+'</p><p class="price">'+(base>0?fmt(base):'Contact Us')+'</p>'+WEPBuildBuy.versionMarkup(products,product,selectedBrand,qs.get('return'))+(/battery/i.test(clean(product.PowerType))?WEPBuildBuy.costMarkup(product):'')+setupMarkup(product,'tool')+stockMarkup(product)+(['toro','stihl'].includes(selectedBrand)?'<label>Equipment quantity <input id="equipment-qty" class="qty" type="number" min="1" max="20" value="1"></label>':'')+(included?'<div class="included"><strong>Included in this kit:</strong> '+esc(included)+'<small> Batteries and chargers added below are additional to the included kit.</small></div>':'')+'<a class="wep-spec-link" href="product.html?'+new URLSearchParams({brand:selectedBrand,sku,view:'specs'})+'">View Specifications</a>'+(WEPBuildBuy.hasChart(buildContext)?'<button id="wep-runtime" class="wep-runtime-button" type="button">Run &amp; Charge Times</button>':'')+'</div></section>'+
+   buildPanels(bats,chgs,atts,accs,prts)+
+   '<section class="section wep-package-review"><h2>Your Package</h2><div id="wep-package-lines" aria-live="polite"></div></section><div class="summary wep-compact-actions" aria-label="Package subtotal and actions"><div class="wep-summary-hidden"><span id="selected-count"></span><span id="selected-merchandise"></span><span id="selected-setup"></span></div><div class="wep-subtotal">Cart subtotal: <strong id="wep-cart-subtotal">$0.00</strong><small>Saved items</small></div><div class="summary-actions"><button id="save-options" type="button">Save Options</button>'+(['toro','stihl'].includes(selectedBrand)?'<button id="review-package" type="button">Review Quote</button><a class="back" href="cart.html">View Cart</a>':'')+'<button id="wep-print-build" type="button">Print</button></div></div><p id="options-message" role="status"></p><p class="note">Freight, delivery, tax and payment options are calculated in your quote. Availability requires store confirmation.</p>';
   wireSummary(base);
+  wireBuildPage();
+
  }catch(e){$('app').innerHTML='<section class="section"><h2>Unable to load options</h2><p>'+esc(e.message)+'</p></section>'}
 }
 init();
@@ -222,3 +342,37 @@ init();
 </html>
 
 <!-- WEP_NAVIGATION_REPAIR_V1 -->
+
+<!-- WEP_ROUTE_FIXES_V1 -->
+
+<!-- WEP_SORT_ORDER_FIRST_V1 -->
+
+<!-- WEP_POWER_THEN_SORTORDER_V1 -->
+
+<!-- WEP_REQUIRED_SETUP_V1 -->
+
+<!-- WEP_ASSEMBLY_T_OPTIONAL_F_REQUIRED_V1 -->
+
+<!-- WEP_OPTIONAL_INSTALLATION_WORDING_V1 -->
+
+<!-- WEP_STIHL_MARKETPLACE_PACKAGE_V1 -->
+
+<!-- WEP_STIHL_PACKAGE_CART_V1 -->
+
+<!-- WEP_BUILD_BUY_V1 -->
+
+<!-- WEP_COMPACT_ENERGY_CARDS_V1 -->
+
+<!-- WEP_OPTION_DEFAULTS_AND_ENERGY_SPECS_V1 -->
+
+<!-- WEP_BUILD_PACKAGE_REVIEW_V1 -->
+
+<!-- WEP_PACKAGE_INSTALLATION_CONTROLS_V1 -->
+
+<!-- WEP_COMPACT_BUILD_ACTIONS_V1 -->
+
+<!-- WEP_PACKAGE_EDIT_CONTROLS_V1 -->
+
+<!-- WEP_PACKAGE_AND_CART_SUBTOTALS_V1 -->
+
+<!-- WEP_MARKETPLACE_CUSTOMER_REVIEW_V1 -->

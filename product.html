@@ -12,7 +12,7 @@
 <div id="price" class="price"></div>
 <p id="summary"></p><div class="actions">
 <button class="btn" id="share" type="button">Copy Product Link</button>
-<a class="btn secondary" id="market-link" href="marketplace.html">See Marketplace Pricing & Options</a>
+<a class="btn" id="market-link" href="product-options.html">Choose Compatible Options</a>
 <a class="btn secondary" id="manufacturer-link" hidden>Manufacturer Details</a>
 </div><p class="note">Marketplace pricing, availability, financing, rebates and discounts must be confirmed before ordering.</p></div></div>
 <h3>Product specifications</h3><div class="specs" id="specs"></div>
@@ -33,6 +33,12 @@ const params=new URLSearchParams(location.search);
 const brand=(params.get('brand')||'').trim().toUpperCase();
 const model=(params.get('model')||'').trim();
 const sku=(params.get('sku')||'').trim();
+ if(brand&&sku&&params.get('view')!=='specs'){
+  const target=new URL('product-options.html',location.href);
+  target.searchParams.set('brand',brand);target.searchParams.set('sku',sku);
+  for(const field of ['category','return'])if(params.get(field))target.searchParams.set(field,params.get(field));
+  location.replace(target.href);return;
+ }
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
 function absolute(url){try{return new URL(url,location.href).href}catch(_){return ''}}
@@ -42,21 +48,29 @@ function numeric(v){const n=Number(String(v||'').replace(/[$,]/g,''));return Num
 function init(source,rows){
  const h=source.headers;const first=rows[0];const b=source.brand;const m=cell(first,h,'Model')||model||cell(first,h,'Description');
  const desc=cell(first,h,'Description')||b+' '+m;
- const canonical=new URL(makeLink(b,m),location.href);history.replaceState(null,'',canonical.pathname+canonical.search);
+ const selectedSku=cell(first,h,'SKU');
+ if(params.get('view')!=='specs'){
+  const destination=new URL('product-options.html',location.href);
+  destination.searchParams.set('brand',b);destination.searchParams.set('sku',selectedSku);
+  if(params.get('return'))destination.searchParams.set('return',params.get('return'));
+  location.replace(destination.href);return;
+ }
+ const canonical=new URL('product.html?'+new URLSearchParams({brand:b,sku:selectedSku}).toString(),location.href);canonical.searchParams.set('view','specs');history.replaceState(null,'',canonical.pathname+canonical.search);
  document.title=b+' '+m+' | West End Marketplace';
  $('brand').textContent=b+' / '+cell(first,h,'Category');
  $('title').textContent=desc;
  const img=cell(first,h,'ImageURL');if(img){const image=document.createElement('img');image.src=absolute(img);image.alt=desc;image.onerror=()=>{$('photo').textContent='Image coming soon'};$('photo').appendChild(image)}else $('photo').textContent='Image coming soon';
  const amounts=rows.map(r=>numeric(cell(r,h,'MAP /'))||numeric(cell(r,h,'MAP'))||numeric(cell(r,h,'MSRP'))).filter(Boolean);
- $('price').innerHTML='<small>Reference list price'+(amounts.length?' (from manufacturer data)':'')+'</small><div><strong>'+(amounts.length?'$'+Math.min(...amounts).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'See Marketplace for pricing')+'</strong></div><small>For actual dealer price, promotions and financing, use Marketplace Pricing & Options.</small>';
+ $('price').innerHTML='<small>Reference list price'+(amounts.length?' (from manufacturer data)':'')+'</small><div><strong>'+(amounts.length?'$'+Math.min(...amounts).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'See Marketplace for pricing')+'</strong></div><small>Choose compatible options, then review your package and quote for promotions, financing and totals.</small>';
  $('summary').textContent=cell(first,h,'SubCategory')||cell(first,h,'ProductType')||'';
  const specNames=new Set();let html='';
  function add(label,value){if(!value||specNames.has(label.toLowerCase()))return;specNames.add(label.toLowerCase());html+='<div class="spec"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>'}
- add('Model',m);add('Category',cell(first,h,'Category'));add('Power type',cell(first,h,'PowerType'));add('Series',cell(first,h,'Series'));
+ add('Model',m);add('SKU',[...new Set(rows.map(row=>cell(row,h,'SKU')).filter(Boolean))].join(', '));add('Category',cell(first,h,'Category'));add('Power type',cell(first,h,'PowerType'));add('Series',cell(first,h,'Series'));
  for(let i=1;i<=10;i++)add(cell(first,h,'SpecLabel'+i),cell(first,h,'SpecValue'+i));
  $('specs').innerHTML=html||'<p>Specifications are being added.</p>';
  const manufacturer=cell(first,h,'ProductURL');if(/^https?:\/\//i.test(manufacturer)){$('manufacturer-link').href=manufacturer;$('manufacturer-link').hidden=false}
- $('market-link').href='marketplace.html?'+new URLSearchParams({brand:b,model:m}).toString();
+ $('market-link').href='product-options.html?'+new URLSearchParams({brand:b,sku:selectedSku}).toString();
+ $('market-link').textContent=norm(cell(first,h,'PowerType'))==='BATTERY'?'Add Batteries & Compatible Options':'Choose Compatible Options';
  const productLabel=b+' '+m;
  $('context').textContent='Regarding: '+productLabel;
  $('share').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(location.href);$('share').textContent='Link Copied!'}catch(_){prompt('Copy this product link:',location.href)}});
@@ -74,10 +88,19 @@ fetch('data/marketplace-catalog.json').then(r=>{if(!r.ok)throw Error('Catalog un
  if(!brand||(!model&&!sku))throw Error('Missing product identifier');
  const source=(data.productSources||[]).find(x=>x.brand.toUpperCase()===brand);if(!source)throw Error('Brand not found');
  const productRows=source.encoding==='sparse'?source.rows.map(row=>{const dense=Array(source.headers.length).fill('');for(let i=0;i<row.length;i+=2)dense[row[i]]=row[i+1];return dense}):source.rows;
- const rows=productRows.filter(row=>sku?norm(cell(row,source.headers,'SKU'))===norm(sku):norm(cell(row,source.headers,'Model'))===norm(model));
+ const matchingRows=productRows.filter(row=>sku?norm(cell(row,source.headers,'SKU'))===norm(sku):norm(cell(row,source.headers,'Model'))===norm(model));
+ const rows=matchingRows.slice(0,1);
  if(!rows.length)throw Error('Product not found in current catalog');
  init(source,rows);
 }).catch(e=>{$('status').className='error';$('status').textContent=e.message+'. Please return to the Marketplace and select a product.'});
 })();
 </script><script src="brand-settings.js"></script><script src="universal/shared-navigation.js"></script></body></html>
 <!-- WEP_NAVIGATION_REPAIR_V1 -->
+
+<!-- WEP_SKU_DISPLAY_V1 -->
+
+<!-- WEP_ONE_SKU_PER_CARD_V1 -->
+
+<!-- WEP_DIRECT_PRODUCT_OPTIONS_V1 -->
+
+<!-- WEP_BUILD_BUY_V1 -->

@@ -2,3 +2,6 @@
 
 /* WEP_MARKETPLACE_SECURE_CHECKOUT_V1 */
 .customer-fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}.customer-fields input{display:block;width:100%;padding:10px;margin-top:5px;border:1px solid #aaa;border-radius:6px}#payment-status{font-weight:bold}.test-banner{background:#fff3ce;border:1px solid #b38617;padding:12px}@media(max-width:650px){.customer-fields{grid-template-columns:1fr}}@media print{#payment-panel,#retry,#print{display:none!important}}
+
+/* WEP_CHECKOUT_FINANCE_SHIP_V1 */
+#shipping-address{border:1px solid #ccd1d5;border-radius:8px;padding:18px;margin-top:18px}.finance-selector{display:block;margin-top:18px;font-weight:bold}.finance-selector select{display:block;width:100%;max-width:650px;padding:12px;margin-top:6px;border:1px solid #aaa;border-radius:6px;font-size:15px}#finance-summary{border:1px solid #ccd1d5;padding:18px;border-radius:8px;margin:20px 0}#finance-summary:empty{display:none}label:has(input:disabled){color:#687078}
