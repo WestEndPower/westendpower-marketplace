@@ -3260,7 +3260,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
       : 'product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+'&brand='+encodeURIComponent(f.brand)+'&return='+encodeURIComponent(location.pathname+location.search+location.hash);
     // WEP_TORO_BUILD_LINK_V1: the configurator owns compatibility and pricing.
     const buildUrl=f.brand==='TORO'?optionsUrl:''; // WEP_MARKET_OPTIONS_V1
-    const runtimeUrl='index.html?category='+encodeURIComponent(f.category)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';
+    const runtimeUrl='product-options.html?brand='+encodeURIComponent(f.brand)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';
     const productParams=new URLSearchParams({brand:f.brand});
     if(isYanmarTractor(f)&&clean(first.sku)) productParams.set('sku',clean(first.sku));
     else if(clean(f.model)||clean(first.model)) productParams.set('model',clean(f.model)||clean(first.model));
