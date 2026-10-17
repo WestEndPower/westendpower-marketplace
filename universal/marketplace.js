@@ -97,6 +97,21 @@
 function powerRank(v){const types=['manual','electric','battery','gas','diesel','hybrid','kerosene','natural gas','propane','tow-behind'];const rank=types.indexOf(String(v??'').trim().toLowerCase());return rank<0?types.length:rank}
 function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!==''&&Number.isFinite(n)?n:Infinity}
   function groupFamilies(rows){
+    // WEP_TORO_ONE_SKU_V1: pair a battery kit only with its exact tool SKU.
+    const toroRows=rows.filter(p=>truthy(p.Active) && clean(p.BrandID||p.BrandName).toUpperCase()==='TORO');
+    const toroTools=new Map(toroRows.filter(p=>/battery/i.test(clean(p.PowerType)) && /T$/i.test(clean(p.SKU)))
+      .map(p=>[clean(p.SKU).toUpperCase(),p]));
+    function toroCard(p){
+      const sku=clean(p.SKU).toUpperCase();
+      const tool=toroTools.get(sku+'T');
+      const battery=/^battery$/i.test(clean(p.PowerType));
+      const kit=battery && tool && (!clean(p.ProductType) || /kit|package/i.test(clean(p.ProductType))) &&
+        clean(tool.Category).toUpperCase()===clean(p.Category).toUpperCase();
+      return {key:'TORO|SKU|'+(kit?sku+'T':sku),
+        type:kit?(clean(p.ProductType)||'Kit'):
+          (battery && /T$/.test(sku)?(clean(p.ProductType)||'Tool'):clean(p.ProductType))};
+    }
+
     const map=new Map();
 
     rows.filter(x=>truthy(x.Active)).forEach(p=>{
@@ -127,7 +142,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
       const productSku=clean(p.SKU);
       if(!productSku||['STOP','REFERENCE_ONLY'].includes(productSku.toUpperCase()))return;
-      const key=(/^compact tractors?$/i.test(category) ? brand+'|'+familyModel+'|'+clean(p.PowerType) : /^chainsaws?$/i.test(category) ? brand+'|SAW|'+familyModel+'|'+clean(p.PowerType) : brand+'|'+productSku).toUpperCase();
+      const key=normalizedBrand==='TORO' ? toroCard(p).key : ((/^compact tractors?$/i.test(category) ? brand+'|'+familyModel+'|'+clean(p.PowerType) : /^chainsaws?$/i.test(category) ? brand+'|SAW|'+familyModel+'|'+clean(p.PowerType) : brand+'|'+productSku).toUpperCase());
       const rowSort=sortOrderValue(p.SortOrder);
 
       if(!map.has(key)){
@@ -211,7 +226,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
         model:clean(p.Model),
         marketplaceRow:p,
         specs:variantSpecs,
-        type:clean(p.ProductType),
+        type:normalizedBrand==='TORO'?toroCard(p).type:clean(p.ProductType),
         msrp:num(p.MSRP),
         sale:num(p.SalePrice),
         saleStart:clean(p.SaleStartDate),
@@ -2381,7 +2396,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     history[push?'pushState':'replaceState'](
       {marketplace:true},
       '',
-      next
+      new URL(next,location.href).href
     );
   }
 
