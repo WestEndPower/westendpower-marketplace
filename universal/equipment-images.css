@@ -1,0 +1,45 @@
+/* Center equipment pictures and preserve their proportions. */
+.market-image,
+.shop-subimage,
+.shop-tile-image,
+#product .photo {
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    min-width:0;
+    box-sizing:border-box;
+}
+.market-image {
+    height:250px !important;
+    min-height:250px !important;
+    padding:12px !important;
+}
+.shop-subimage,
+.shop-tile-image {
+    width:100%;
+}
+#product .photo {
+    height:350px;
+    padding:12px;
+}
+.market-image img,
+.shop-subimage img,
+.shop-tile-image img,
+#product .photo img {
+    display:block !important;
+    width:100% !important;
+    height:100% !important;
+    max-width:100% !important;
+    max-height:100% !important;
+    object-fit:contain !important;
+    object-position:center center !important;
+    padding:0 !important;
+    margin:0 !important;
+    box-sizing:border-box;
+}
+.market-image-wrap:has(.market-offer-row) .market-image {
+    padding:52px 12px !important;
+}
+.shop-carousel .shop-subtile:hover img {
+    transform:none !important;
+}

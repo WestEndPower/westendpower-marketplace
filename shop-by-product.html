@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<base href="https://westendpower.github.io/westendpower-marketplace/"><link rel="preload" href="https://westendpower.github.io/westendpower-marketplace/data/marketplace-catalog.json" as="fetch" crossorigin="anonymous" data-marketplace-catalog="">
+<base href="./"><link rel="preload" href="data/marketplace-catalog.json" as="fetch" crossorigin="anonymous" data-marketplace-catalog="">
 
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>West End Power Equipment | Shop by Product</title>
@@ -704,6 +704,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav summary::after{content:''!important;display:inline-block!important;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor;border-bottom:0;margin-left:7px;vertical-align:middle}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
+<link rel="stylesheet" href="universal/equipment-images.css?v=1">
 </head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
@@ -2517,7 +2518,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
             const rank=v=>{const i=order.findIndex(x=>x.toLowerCase()===v.toLowerCase());return i<0?99:i};return rank(a)-rank(b)||a.localeCompare(b);
           }).slice(0,3);
           const subAttr=sub?' data-subcategory="'+esc(sub)+'"':'';
-          return '<div class="shop-slide"'+(index?' hidden':'')+'><button type="button" class="shop-subtile"'+categoryAttr+subAttr+'><span class="shop-subimage">'+(image?'<img loading="lazy" src="'+esc(image)+'" alt="" onerror="this.hidden=true;this.parentElement.textContent=\'View equipment\'">':'<span>View equipment</span>')+'</span><span class="shop-sublabel">'+esc(sub||'View All')+'</span></button><div class="shop-product-powers">'+powers.map(power=>'<button type="button"'+categoryAttr+subAttr+' data-category-power="'+esc(power)+'">'+esc(power)+'</button>').join('')+'</div></div>';
+          return '<div class="shop-slide"'+(index?' hidden':'')+'><div class="shop-subtile"><button type="button" class="shop-subimage"'+categoryAttr+' aria-label="'+esc('View all '+category)+'">'+(image?'<img loading="lazy" src="'+esc(image)+'" alt="" onerror="this.hidden=true;this.parentElement.textContent=\'View equipment\'">':'<span>View equipment</span>')+'</button><button type="button" class="shop-sublabel"'+categoryAttr+subAttr+'>'+esc(sub||'View All')+'</button></div><div class="shop-product-powers">'+powers.map(power=>'<button type="button"'+categoryAttr+subAttr+' data-category-power="'+esc(power)+'">'+esc(power)+'</button>').join('')+'</div></div>';
 
         }).join('')+'</div><div class="shop-carousel-controls">'+'<button type="button" data-slide-direction="-1" aria-label="'+esc('Previous '+category+' type')+'">&lsaquo;</button><span class="shop-slide-position">1 / '+choices.length+'</span><button type="button" data-slide-direction="1" aria-label="'+esc('Next '+category+' type')+'">&rsaquo;</button>'+'</div></article>';
       }).join('');
