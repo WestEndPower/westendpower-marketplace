@@ -101,11 +101,11 @@ function syncBeforeBuildBuy({brand,sourceFile,root=path.resolve(__dirname,'..'),
   const target=path.join(root,'brands',brand,'data','products.csv');
   if(!fs.existsSync(target))throw Error('Marketplace brand products file not found: '+target);
   const old=fs.readFileSync(target,'utf8');
-  const result=merge(parse(fs.readFileSync(sourceFile,'utf8')),parse(old),{preferWorkbookImage:brand==='billygoat'||brand==='honda',workbookImageAuthoritative:brand==='stihl'});
+  const result=merge(parse(fs.readFileSync(sourceFile,'utf8')),parse(old),{preferWorkbookImage:['billygoat','honda','greenworks'].includes(brand),workbookImageAuthoritative:brand==='stihl'});
 
   const directory=backupRoot||path.join(process.env.USERPROFILE||os.homedir(),'Desktop','Marketplace-Brand-Backups','automatic-product-sync');
   fs.mkdirSync(directory,{recursive:true});
-  const imageCount=brand==='honda'?require('./honda-marketplace-images.cjs').syncHondaImages(result.rows,sourceFile,root,directory):brand==='stihl'?require('./stihl-marketplace-images.cjs').syncStihlImages(result.rows,sourceFile,root,directory):(brand==='billygoat'?copyBillyGoatImages(result.rows,sourceFile,root,directory):0);
+  const imageCount=brand==='greenworks'?require('./greenworks-marketplace-images.cjs').syncGreenworksImages(result.rows,sourceFile,root,directory):brand==='honda'?require('./honda-marketplace-images.cjs').syncHondaImages(result.rows,sourceFile,root,directory):brand==='stihl'?require('./stihl-marketplace-images.cjs').syncStihlImages(result.rows,sourceFile,root,directory):(brand==='billygoat'?copyBillyGoatImages(result.rows,sourceFile,root,directory):0);
   const data=encode(result.headers,result.rows);
   if(data===old){
     const optionChanges=toroOptions?require('./toro-option-sync.cjs').apply(toroOptions,directory):0;
@@ -141,3 +141,5 @@ if(require.main===module){
 // WEP_BUILD_BUY_V1
 
 // WEP_HONDA_MARKETPLACE_IMAGES_V1
+
+// WEP_GREENWORKS_MARKETPLACE_IMAGES_V1
