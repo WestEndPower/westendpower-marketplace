@@ -49,11 +49,14 @@ function updateReturn(product,brand){
  if(category!=='Equipment')params.set('category',category);
  if(product&&String(product.Model||'').trim())params.set('model',String(product.Model).trim());
  $('return-link').href=safeReturn||('./marketplace.html'+(params.size?'?'+params.toString():''));
- $('return-link').textContent='← Return to '+(safeReturn?'Marketplace selection':category);
+ $('return-link').textContent='← Return to '+(safeReturn?(/\/checkout(?:\.html)?\/?$/i.test(new URL(safeReturn).pathname)?'Quote':'Marketplace selection'):category);
 }
 // WEP_MARKET_OPTIONS_V1
 let selectedProduct=null,selectedBrand='',stockLocations=[],buildContext=null;
 const requestedBrand=(qs.get('brand')||'').trim().toLowerCase();
+// WEP_ALL_BRAND_QUOTE_OPTIONS_V1
+const brandRegistry=Object.values(window.WESTEND_BRANDS||{});
+function quoteEnabled(){return brandRegistry.some(b=>String(b.id).toLowerCase()===selectedBrand);}
 const $=id=>document.getElementById(id);
 const clean=v=>String(v==null?'':v).replace(/^\uFEFF/,'').trim();
 const money=v=>{const n=Number(clean(v).replace(/[$,]/g,''));return Number.isFinite(n)?n:0};
@@ -151,7 +154,7 @@ function itemCard(x,type){
  const energyCard=['battery','charger'].includes(type);
  const shortName=v=>clean(v).toUpperCase().replace(/\b(BATTERY|CHARGER)\b/g,'').replace(/[^A-Z0-9]/g,'');
  const description=shortName(x.Description)===shortName(name)?'':clean(x.Description);
- return '<article class="card'+(energyCard?' wep-energy-card':'')+'"><div class="card-media">'+img(x,name)+'</div><div class="card-body"><h3>'+esc(name)+'</h3><small>SKU '+esc(x.SKU)+'</small>'+(description?'<p>'+esc(description)+'</p>':'')+'<p class="card-price">'+(price>0?fmt(price):'Contact Us')+'</p>'+(!energyCard||assemblyAmount(x)>0?setupMarkup(x,type):'')+stockMarkup(x)+'<label class="select-row"><input type="checkbox" class="option-check" data-type="'+esc(type)+'" data-sku="'+esc(x.SKU)+'" data-name="'+esc(name)+'" data-price="'+price+'" data-setup="'+assemblyAmount(x)+'" data-setup-option="'+esc(assemblyCode(x))+'"'+(price<=0?' disabled':'')+'> Add <input class="qty" type="number" min="1" max="20" value="1" data-qty="'+esc(x.SKU)+'" aria-label="Quantity"></label>'+(['toro','stihl'].includes(selectedBrand)?'<button class="stock-action add-option-cart" data-type="'+esc(type)+'" data-sku="'+esc(x.SKU)+'" type="button"'+(price<=0?' disabled':'')+'>Add to Cart</button>':'')+WEPBuildBuy.cardInfo(x,type,buildContext)+'</div>'+WEPBuildBuy.energySpecs(x,type)+'</article>';
+ return '<article class="card'+(energyCard?' wep-energy-card':'')+'"><div class="card-media">'+img(x,name)+'</div><div class="card-body"><h3>'+esc(name)+'</h3><small>SKU '+esc(x.SKU)+'</small>'+(description?'<p>'+esc(description)+'</p>':'')+'<p class="card-price">'+(price>0?fmt(price):'Contact Us')+'</p>'+(!energyCard||assemblyAmount(x)>0?setupMarkup(x,type):'')+stockMarkup(x)+'<label class="select-row"><input type="checkbox" class="option-check" data-type="'+esc(type)+'" data-sku="'+esc(x.SKU)+'" data-name="'+esc(name)+'" data-price="'+price+'" data-setup="'+assemblyAmount(x)+'" data-setup-option="'+esc(assemblyCode(x))+'"'+(price<=0?' disabled':'')+'> Add <input class="qty" type="number" min="1" max="20" value="1" data-qty="'+esc(x.SKU)+'" aria-label="Quantity"></label>'+(quoteEnabled()?'<button class="stock-action add-option-cart" data-type="'+esc(type)+'" data-sku="'+esc(x.SKU)+'" type="button"'+(price<=0?' disabled':'')+'>Add to Cart</button>':'')+WEPBuildBuy.cardInfo(x,type,buildContext)+'</div>'+WEPBuildBuy.energySpecs(x,type)+'</article>';
 }
 
 
@@ -186,7 +189,8 @@ function packageSpec(){
 }
 function reviewPackage(){
  addPackageToCart();
- location.assign("checkout.html");
+ // WEP_RETURN_TO_QUOTE_V1
+ location.assign("checkout.html"+(qs.get('api')==='local'?'?api=local':''));
 }
 function addPackageToCart(){
  if(currentPrice(selectedProduct)<=0)throw new Error('Contact the store for equipment pricing.');
@@ -250,15 +254,28 @@ function renderBuildPackageReview(){
  }));
 }
 
+// WEP_OPTION_INSTALL_DEFAULT_V1
+function restoreOptionInstallation(choice,row,currentFee){
+ if(!choice)return;
+ const optionalComponent=['attachment','accessory','part'].includes(row.type);
+ const savedFee=Number(row.assemblyAmount??row.setupAmount??0);
+ // New controls already start checked. A stale no-charge cart entry must not
+ // turn off installation when a fee is subsequently added to the workbook.
+ if(optionalComponent&&currentFee>0&&(!Number.isFinite(savedFee)||savedFee!==currentFee)){
+  choice.checked=true;
+ }else if(typeof row.setupSelected==='boolean'){
+  choice.checked=row.setupSelected;
+ }
+}
 function wireSummary(basePrice){
  const checks=[...document.querySelectorAll('.option-check')];
- if(['toro','stihl'].includes(selectedBrand)){
+ if(quoteEnabled()){
   try{
    const saved=JSON.parse(localStorage.getItem('wepCart')||'[]').filter(row=>row.packageId===selectedBrand.toUpperCase()+':'+sku);
    const main=saved.find(row=>row.type==='tool');if(main){$('equipment-qty').value=main.quantity;const choice=setupChoice('tool',sku);if(choice&&typeof main.setupSelected==='boolean')choice.checked=main.setupSelected;}
    saved.forEach(row=>{
     const check=checks.find(c=>c.dataset.type===row.type&&c.dataset.sku===row.sku);
-    if(check&&!check.disabled){check.checked=true;document.querySelector('[data-qty="'+CSS.escape(row.sku)+'"]').value=row.quantity;const choice=setupChoice(row.type,row.sku);if(choice&&typeof row.setupSelected==='boolean')choice.checked=row.setupSelected;}
+    if(check&&!check.disabled){check.checked=true;document.querySelector('[data-qty="'+CSS.escape(row.sku)+'"]').value=row.quantity;const choice=setupChoice(row.type,row.sku);restoreOptionInstallation(choice,row,Number(check.dataset.setup||0));}
    });
   }catch(e){$('options-message').textContent='Your saved cart could not be restored. Review your selections.';}
   $('equipment-qty').addEventListener('input',recalc);
@@ -290,7 +307,7 @@ function wireSummary(basePrice){
  document.querySelectorAll('.qty').forEach(q=>q.addEventListener('input',recalc));
  document.querySelectorAll('.setup-choice').forEach(c=>c.addEventListener('change',recalc));
  $('save-options').addEventListener('click',()=>{
-  if(['toro','stihl'].includes(selectedBrand)){try{addPackageToCart();}catch(e){$('options-message').textContent=e.message;}return;}
+  if(quoteEnabled()){try{addPackageToCart();}catch(e){$('options-message').textContent=e.message;}return;}
   const selected=checks.filter(c=>c.checked).map(c=>{const q=document.querySelector('[data-qty="'+CSS.escape(c.dataset.sku)+'"]');return {type:c.dataset.type,sku:c.dataset.sku,name:c.dataset.name,price:Number(c.dataset.price||0),setupSelected:optionSetupSelected(c),assemblyOption:c.dataset.setupOption,assemblyAmount:Number(c.dataset.setup||0),qty:Math.max(1,Number(q&&q.value)||1)}})
   sessionStorage.setItem('wep-options:'+sku,JSON.stringify({sku,selected,updated:new Date().toISOString()}));
   $('save-options').textContent='Options Saved';
@@ -301,9 +318,18 @@ async function init(){
  updateReturn(null,requestedBrand);
  if(!sku){$('app').innerHTML='<section class="section"><h2>No product selected</h2><p>Return to Marketplace and choose Build &amp; Buy.</p></section>';return}
  try{
-  const brands=['billygoat','toro','honda','redmax','greenworks','mitm'].includes(requestedBrand)?[requestedBrand]:(requestedBrand==='yanmar'||requestedBrand==='stihl'?[requestedBrand]:['stihl','yanmar']);
+  const brands=requestedBrand?brandRegistry.filter(b=>String(b.id).toLowerCase()===requestedBrand):brandRegistry;
+  if(!brands.length)throw new Error('This brand is not configured yet.');
   let root='';
-  for(const brand of brands){const candidate='brands/'+brand+'/data/';const rows=await csv(candidate+'products.csv');if(rows.some(x=>clean(x.SKU)===sku)){root=candidate;selectedBrand=brand;break}}
+  const matches=[];
+  for(const brand of brands){
+   const candidate=clean(brand.dataRoot);
+   if(!/^brands\/[a-z0-9_-]+\/data\/$/i.test(candidate))throw new Error('This brand needs a valid data folder.');
+   const rows=await csv(candidate+'products.csv');
+   if(rows.some(x=>clean(x.SKU)===sku))matches.push({root:candidate,brand:String(brand.id).toLowerCase()});
+  }
+  if(matches.length>1)throw new Error('This SKU belongs to more than one brand. Return to Marketplace and select the brand.');
+  if(matches.length===1){root=matches[0].root;selectedBrand=matches[0].brand;}
   if(!root)throw new Error('Product SKU not found: '+sku);
   const [products,runtime,batteries,chargers,attachments,accessories,parts]=await Promise.all([
    csv(root+'products.csv'),csv(root+'compatibility-runtime.csv',true),csv(root+'batteries.csv',true),csv(root+'chargers.csv',true),csv(root+'attachments.csv',true),csv(root+'accessories.csv',true),csv(root+'parts.csv',true)
@@ -328,9 +354,9 @@ async function init(){
   const kit=['kit','package'].includes(clean(product.ProductType).toLowerCase());
   const included=kit?clean(product.Description):'';
   $('app').innerHTML=
-   '<section class="hero"><div class="media">'+img(product,name)+'</div><div><div class="eyebrow">'+esc([product.PowerType,product.SubCategory].filter(Boolean).join(' · '))+'</div><h1>'+esc(name)+'</h1><small>SKU '+esc(sku)+'</small><p>'+esc(product.Description)+'</p><p class="price">'+(base>0?fmt(base):'Contact Us')+'</p>'+WEPBuildBuy.versionMarkup(products,product,selectedBrand,qs.get('return'))+(/battery/i.test(clean(product.PowerType))?WEPBuildBuy.costMarkup(product):'')+setupMarkup(product,'tool')+stockMarkup(product)+(['toro','stihl'].includes(selectedBrand)?'<label>Equipment quantity <input id="equipment-qty" class="qty" type="number" min="1" max="20" value="1"></label>':'')+(included?'<div class="included"><strong>Included in this kit:</strong> '+esc(included)+'<small> Batteries and chargers added below are additional to the included kit.</small></div>':'')+'<a class="wep-spec-link" href="product.html?'+new URLSearchParams({brand:selectedBrand,sku,view:'specs'})+'">View Specifications</a>'+(WEPBuildBuy.hasChart(buildContext)?'<button id="wep-runtime" class="wep-runtime-button" type="button">Run &amp; Charge Times</button>':'')+'</div></section>'+
+   '<section class="hero"><div class="media">'+img(product,name)+'</div><div><div class="eyebrow">'+esc([product.PowerType,product.SubCategory].filter(Boolean).join(' · '))+'</div><h1>'+esc(name)+'</h1><small>SKU '+esc(sku)+'</small><p>'+esc(product.Description)+'</p><p class="price">'+(base>0?fmt(base):'Contact Us')+'</p>'+WEPBuildBuy.versionMarkup(products,product,selectedBrand,qs.get('return'))+(/battery/i.test(clean(product.PowerType))?WEPBuildBuy.costMarkup(product):'')+setupMarkup(product,'tool')+stockMarkup(product)+(quoteEnabled()?'<label>Equipment quantity <input id="equipment-qty" class="qty" type="number" min="1" max="20" value="1"></label>':'')+(included?'<div class="included"><strong>Included in this kit:</strong> '+esc(included)+'<small> Batteries and chargers added below are additional to the included kit.</small></div>':'')+'<a class="wep-spec-link" href="product.html?'+new URLSearchParams({brand:selectedBrand,sku,view:'specs'})+'">View Specifications</a>'+(WEPBuildBuy.hasChart(buildContext)?'<button id="wep-runtime" class="wep-runtime-button" type="button">Run &amp; Charge Times</button>':'')+'</div></section>'+
    buildPanels(bats,chgs,atts,accs,prts)+
-   '<section class="section wep-package-review"><h2>Your Package</h2><div id="wep-package-lines" aria-live="polite"></div></section><div class="summary wep-compact-actions" aria-label="Package subtotal and actions"><div class="wep-summary-hidden"><span id="selected-count"></span><span id="selected-merchandise"></span><span id="selected-setup"></span></div><div class="wep-subtotal">Cart subtotal: <strong id="wep-cart-subtotal">$0.00</strong><small>Saved items</small></div><div class="summary-actions"><button id="save-options" type="button">Save Options</button>'+(['toro','stihl'].includes(selectedBrand)?'<button id="review-package" type="button">Review Quote</button><a class="back" href="cart.html">View Cart</a>':'')+'<button id="wep-print-build" type="button">Print</button></div></div><p id="options-message" role="status"></p><p class="note">Freight, delivery, tax and payment options are calculated in your quote. Availability requires store confirmation.</p>';
+   '<section class="section wep-package-review"><h2>Your Package</h2><div id="wep-package-lines" aria-live="polite"></div></section><div class="summary wep-compact-actions" aria-label="Package subtotal and actions"><div class="wep-summary-hidden"><span id="selected-count"></span><span id="selected-merchandise"></span><span id="selected-setup"></span></div><div class="wep-subtotal">Cart subtotal: <strong id="wep-cart-subtotal">$0.00</strong><small>Saved items</small></div><div class="summary-actions"><button id="save-options" type="button">Save Options</button>'+(quoteEnabled()?'<button id="review-package" type="button">Review Quote</button><a class="back" href="cart.html">View Cart</a>':'')+'<button id="wep-print-build" type="button">Print</button></div></div><p id="options-message" role="status"></p><p class="note">Freight, delivery, tax and payment options are calculated in your quote. Availability requires store confirmation.</p>';
   wireSummary(base);
   wireBuildPage();
 

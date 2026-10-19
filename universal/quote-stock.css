@@ -1,0 +1,3 @@
+/* WEP_QUOTE_STOCK_PRICING_V1 */
+.quote-stock-row{padding:12px 0;border-bottom:1px solid #ddd}.quote-stock-row label{display:block;font-weight:bold}.quote-stock-row select{display:block;width:100%;max-width:650px;margin-top:8px;padding:11px;border:1px solid #aaa;border-radius:6px;font-size:15px}
+@media print{#quote-stock{display:none!important}}

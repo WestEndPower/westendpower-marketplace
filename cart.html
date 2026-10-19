@@ -699,7 +699,8 @@ function isEquipmentPackageRow(row){
 }
 function reviewEquipmentPackage(){
  if(!cart.length)return false;
- location.assign("checkout.html"+(["127.0.0.1","localhost","[::1]"].includes(location.hostname)?"?api=local":""));
+ // WEP_ALL_BRAND_QUOTE_CART_V1
+ location.assign("checkout.html"+(new URLSearchParams(location.search).get("api")==="local"?"?api=local":""));
  return true;
 }
 $("review-order").onclick=function(){
