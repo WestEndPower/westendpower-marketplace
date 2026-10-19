@@ -142,7 +142,8 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
       const productSku=clean(p.SKU);
       if(!productSku||['STOP','REFERENCE_ONLY'].includes(productSku.toUpperCase()))return;
-      const key=normalizedBrand==='TORO' ? toroCard(p).key : ((/^compact tractors?$/i.test(category) ? brand+'|'+familyModel+'|'+clean(p.PowerType) : /^chainsaws?$/i.test(category) ? brand+'|SAW|'+familyModel+'|'+clean(p.PowerType) : brand+'|'+productSku).toUpperCase());
+      // WEP_GREENWORKS_ONE_SKU_V1: each Greenworks SKU has its own card.
+      const key=normalizedBrand==='GREENWORKS' ? 'GREENWORKS|SKU|'+clean(p.SKU).toUpperCase() : normalizedBrand==='TORO' ? toroCard(p).key : ((/^compact tractors?$/i.test(category) ? brand+'|'+familyModel+'|'+clean(p.PowerType) : /^chainsaws?$/i.test(category) ? brand+'|SAW|'+familyModel+'|'+clean(p.PowerType) : brand+'|'+productSku).toUpperCase());
       const rowSort=sortOrderValue(p.SortOrder);
 
       if(!map.has(key)){
@@ -763,7 +764,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const rank=label=>/49-State/i.test(label)?0:/50-State/i.test(label)?1:2;
     [...groups.entries()].sort((a,b)=>rank(a[0])-rank(b[0])).forEach(([label,variants])=>{
       const isPackage=/^Package/.test(label),prices=new Set(variants.map(v=>Number(v.price)||0));
-      if(prices.size>1)variants.forEach(v=>choices.push({label:label+' - SKU '+v.sku,v,variants:[v],isPackage}));
+      if(prices.size>1)variants.forEach(v=>choices.push({label,v,variants:[v],isPackage}));
       else choices.push({label,v:variants[0],variants,isPackage});
     });
     return choices;
