@@ -55,7 +55,7 @@
    });
    function persist(){
     const now=rawCart();if(cartSignature(now)!==cartSignature(rows)){void load();return;}
-    for(const {select,index} of controls){if(select.value==='__unavailable__'){ready=false;$('stock-editor').open=true;changed();$('update').disabled=true;$('quote-stock-status').textContent='A previous stock selection is unavailable. Choose the pricing source again.';return;}
+    for(const {select,index} of controls){if(select.value==='__unavailable__'){ready=false;$('stock-editor').open=true;window.dispatchEvent(new Event('wep:quote-stock-error'));changed();$('update').disabled=true;$('quote-stock-status').textContent='A previous stock selection is unavailable. Choose the pricing source again.';return;}
      now[index].inventoryId=select.value===ORDERABLE?'':select.value;now[index].quoteStockChoice=select.value===ORDERABLE?'orderable':'stock';
     }
     localStorage.setItem('wepCart',JSON.stringify(now));signature=cartSignature(now);ready=true;$('stock-choice-summary').textContent=now.every(x=>x.quoteStockChoice==='orderable')?'Available to order':now.every(x=>x.quoteStockChoice==='stock')?'In-stock pricing':'Mixed stock / orderable pricing';$('stock-editor').open=false;changed();
@@ -64,7 +64,7 @@
    for(const {select} of controls)select.addEventListener('change',persist);
    persist();
   }catch(error){
-   if(current!==generation)return;ready=false;$('stock-editor').open=true;changed();$('update').disabled=true;
+   if(current!==generation)return;ready=false;$('stock-editor').open=true;window.dispatchEvent(new Event('wep:quote-stock-error'));changed();$('update').disabled=true;
    $('quote-stock-status').textContent=error.message+' Retry before reviewing this quote.';
    const retry=document.createElement('button');retry.type='button';retry.textContent='Retry Inventory Check';retry.onclick=load;$('quote-stock-status').append(' ',retry);
   }

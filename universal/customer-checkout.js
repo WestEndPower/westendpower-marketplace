@@ -5,7 +5,7 @@ const local=['127.0.0.1','localhost','[::1]'].includes(location.hostname);
 const api=local&&new URLSearchParams(location.search).get('api')==='local'?'http://127.0.0.1:8787':'https://westendpower-configurator-api.westendpower-nm.workers.dev';
 // WEP_QUOTE_STOCK_REQUEST_V1
 const stockPending=()=>!!window.WEPQuoteStock&&!window.WEPQuoteStock.ready();
-let quote=null,busy=false,requestNumber=0;
+let quote=null,busy=false,requestNumber=0,customerDetailsOpen=false;
 function cartText(){return localStorage.getItem('wepCart')||'[]';}
 // WEP_ALL_BRAND_QUOTE_EVENTS_V1
 function readCart(){
@@ -17,7 +17,7 @@ function readCart(){
   return {brandId,type,sku,quantity,setupSelected:x.setupSelected===true,inventoryId};
  });
 }
-function clearQuote(){document.body.classList.add('quote-stale');$('proceed-checkout').disabled=true;$('print').disabled=true;$('email').setAttribute('aria-disabled','true');$('finance-summary').replaceChildren();$('quote-rebates').replaceChildren();$('totals').innerHTML='<div><dt>Estimated total</dt><dd>Updating…</dd></div>';window.dispatchEvent(new Event('wep:quote-cleared'));quote=null;if($('payment-panel'))$('payment-panel').hidden=true;requestNumber++;$('review').hidden=false;$('email').removeAttribute('href');}
+function clearQuote(){document.body.classList.add('quote-stale');$('proceed-checkout').disabled=true;$('pay').disabled=true;$('print').disabled=true;$('email').setAttribute('aria-disabled','true');$('finance-summary').replaceChildren();$('quote-rebates').replaceChildren();$('totals').innerHTML='<div><dt>Estimated total</dt><dd>Updating…</dd></div>';window.dispatchEvent(new Event('wep:quote-cleared'));quote=null;if($('payment-panel'))$('payment-panel').hidden=!customerDetailsOpen;requestNumber++;$('review').hidden=false;$('email').removeAttribute('href');}
 let financeLoad=0,financeSnapshot='',financeReady=false;
 function selectedFulfillment(){return new FormData($('choices')).get('fulfillment');}
 function shippingAddress(){const f=new FormData($('choices'));return {address1:String(f.get('shipAddress1')||'').trim(),address2:String(f.get('shipAddress2')||'').trim(),city:String(f.get('shipCity')||'').trim(),state:String(f.get('shipState')||'').trim().toUpperCase(),zip:String(f.get('shipZip')||'').trim()};}
@@ -29,10 +29,11 @@ function changes(){
  for(const method of ['cash','finance']){const input=$('choices').querySelector('[name="paymentMethod"][value="'+method+'"]');input.disabled=ship;if(ship)input.checked=false;}
  if(ship)$('choices').querySelector('[name="paymentMethod"][value="credit"]').checked=true;
  const finance=new FormData($('choices')).get('paymentMethod')==='finance';$('finance-options').hidden=!finance;for(const select of $('finance-options').querySelectorAll('select'))select.disabled=!finance;
- $('status').textContent='Select Review Current Pricing to update your quote.';
+ $('status').textContent=document.body.classList.contains('checkout-preloaded')?'Loading your selected package and checking current pricing…':'Select Review Current Pricing to update your quote.';
  if(finance&&financeSnapshot!==cartText())loadFinanceOptions();
  updateChoiceSummaries();
  $('update').disabled=busy||(finance&&!financeReady)||stockPending();
+ if(ship&&window.WEPCheckoutSelection?.fulfillment==='SHIP')$('proceed-checkout').disabled=false;
 }
 async function loadFinanceOptions(){
  const number=++financeLoad;financeSnapshot=cartText();financeReady=false;$('update').disabled=true;$('finance-options').textContent='Loading eligible financing programs…';
@@ -48,7 +49,7 @@ async function loadFinanceOptions(){
   }));
   if(number!==financeLoad||financeSnapshot!==cartText())return;
   $('finance-options').innerHTML=choices.join('');for(const select of $('finance-options').querySelectorAll('select'))select.disabled=new FormData($('choices')).get('paymentMethod')!=='finance';financeReady=true;queueMicrotask(scheduleAutoQuote);
- }catch(error){if(number===financeLoad){financeSnapshot='';$('finance-options').textContent=error.message;}}
+ }catch(error){if(number===financeLoad){financeSnapshot='';$('finance-options').textContent=error.message;window.dispatchEvent(new Event('wep:quote-error'));}}
  finally{if(number===financeLoad)$('update').disabled=busy||(new FormData($('choices')).get('paymentMethod')==='finance'&&!financeReady)||stockPending();}
 }
 let fulfillmentLoad=0;
@@ -99,7 +100,7 @@ $('choices').addEventListener('submit',async e=>{
   if(!Array.isArray(q.lines)||!q.lines.length||!Array.isArray(q.issues))throw Error('Current quote pricing is unavailable. Please try again.');
   if(items.some(l=>l.inventoryId)&&q.stockPricingVersion!==1)throw Error('The pricing service needs the quote stock update before in-stock pricing can be shown.');
   await window.WEPQuoteLayout.ready;if(number!==requestNumber||snapshot!==cartText())return;window.WEPQuoteLayout.enrich(q);quote=q;render(q);showMarketplacePayment(q,snapshot);
- }catch(error){if(number===requestNumber){$('status').textContent=error.name==='AbortError'?'Pricing took too long. Please try again.':error.message;$('review').hidden=false;}}
+ }catch(error){if(number===requestNumber){window.dispatchEvent(new Event('wep:quote-error'));$('status').textContent=error.name==='AbortError'?'Pricing took too long. Please try again.':error.message;$('review').hidden=false;}}
  finally{busy=false;$('update').disabled=(new FormData($('choices')).get('paymentMethod')==='finance'&&!financeReady)||stockPending();}
 });
 $('print').onclick=()=>{if(quote&&Date.now()-Date.parse(quote.createdAt)<300000)window.print();else{clearQuote();$('status').textContent='Refresh current pricing before printing your quote.';}};
@@ -110,8 +111,8 @@ const testPayment=local||new URLSearchParams(location.search).get('test')==='1';
 function showMarketplacePayment(q,snapshot){
  paymentQuote=q;paymentCart=snapshot;
  const supported=q.paymentMethod==='credit'&&['NEW_MILFORD','DANBURY','SHIP'].includes(q.fulfillment)&&q.total!==null&&q.issues.length===0&&!q.lines.some(l=>l.freightNote)&&q.fingerprint&&q.terms?.version;
- $('payment-panel').hidden=true;$('proceed-checkout').disabled=false;
- $('proceed-checkout').textContent='Proceed to Checkout';
+ $('payment-panel').hidden=!customerDetailsOpen;$('proceed-checkout').disabled=false;$('pay').disabled=false;
+ $('proceed-checkout').textContent='Checkout';
  $('selected-payment-description').textContent=(q.paymentMethod==='cash'?'Cash / check':q.paymentMethod==='finance'?'Financing':'Credit card')+' · '+window.WEPQuoteDocument.fulfillmentLabel(window.WEPQuoteDocument.snapshot(q));
  $('checkout-terms').hidden=!supported;$('payment-form').elements.namedItem('termsAccepted').required=supported;
  if(!supported){$('order-terms').textContent='';$('payment-mode').textContent=q.paymentMethod==='finance'?'Your selected financing is included below. Send your details to the store to confirm availability and complete financing.':q.paymentMethod==='cash'?'Send your details to the store to confirm availability and arrange payment by cash / check.':'This package needs store confirmation before payment can be collected.';$('pay').textContent='Email Order Request';$('payment-status').textContent='This opens your email app. Review and send the request; the store will confirm your order.';return;}
@@ -202,7 +203,11 @@ function updateChoiceSummaries(){
 function scheduleAutoQuote(){
  clearTimeout(autoTimer);autoTimer=setTimeout(()=>{
   if(busy){autoQueued=true;return;}
-  if($('choices').hidden||$('update').disabled||stockPending()||!$('choices').checkValidity())return;
+  if($('choices').hidden||$('update').disabled||stockPending())return;
+  if(selectedFulfillment()==='SHIP'&&window.WEPCheckoutSelection?.fulfillment==='SHIP'&&[...$('shipping-address').querySelectorAll('input')].some(x=>!x.validity.valid)){
+   $('status').textContent='Click Checkout to enter your shipping address and calculate UPS shipping and tax.';return;
+  }
+  if(!$('choices').checkValidity())return;
   const data=new FormData($('choices'));if(!data.get('fulfillment')||!data.get('paymentMethod'))return;
   const signature=JSON.stringify([cartText(),[...data],financeProgramIds()]);
   if(signature===autoSignature)return;autoSignature=signature;autoQueued=false;$('choices').requestSubmit();
@@ -211,10 +216,24 @@ function scheduleAutoQuote(){
 $('choices').addEventListener('change',scheduleAutoQuote);
 $('choices').addEventListener('input',scheduleAutoQuote);
 $('proceed-checkout').addEventListener('click',()=>{
+ if(!quote&&selectedFulfillment()==='SHIP'&&window.WEPCheckoutSelection?.fulfillment==='SHIP'){
+  customerDetailsOpen=true;$('payment-panel').hidden=false;$('quote-details').open=false;
+  $('payment-mode').textContent='Enter your contact details and matching billing / shipping address. UPS shipping and tax will update automatically.';
+  $('checkout-terms').hidden=true;$('payment-form').elements.namedItem('termsAccepted').required=false;$('pay').disabled=true;
+  $('payment-panel').scrollIntoView({behavior:'smooth',block:'start'});$('payment-form').elements.namedItem('firstName').focus({preventScroll:true});$('payment-form').dispatchEvent(new Event('input',{bubbles:true}));return;
+ }
  if(!quote||Date.now()-Date.parse(quote.createdAt)>300000||paymentCart!==cartText()){clearQuote();autoSignature='';scheduleAutoQuote();$('status').textContent='Refreshing current pricing before checkout.';return;}
- $('quote-details').open=false;$('payment-panel').hidden=false;$('payment-panel').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});$('payment-form').elements.namedItem('firstName').focus({preventScroll:true});
+ customerDetailsOpen=true;$('quote-details').open=false;$('payment-panel').hidden=false;$('payment-panel').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});$('payment-form').elements.namedItem('firstName').focus({preventScroll:true});
 });
-$('back-to-quote').addEventListener('click',()=>{$('payment-panel').hidden=true;$('review').scrollIntoView({behavior:'smooth'});});
+$('payment-form').addEventListener('input',()=>{
+ if(selectedFulfillment()!=='SHIP'||!window.WEPCheckoutSelection)return;
+ const from=$('payment-form').elements,to=$('choices').elements;let changed=false;
+ for(const [key,target] of [['address1','shipAddress1'],['address2','shipAddress2'],['city','shipCity'],['state','shipState'],['zip','shipZip']]){
+  const value=from.namedItem(key).value;if(to.namedItem(target).value!==value){to.namedItem(target).value=value;changed=true;}
+ }
+ if(changed)$('choices').dispatchEvent(new Event('input',{bubbles:true}));
+});
+$('back-to-quote').addEventListener('click',()=>{customerDetailsOpen=false;$('payment-panel').hidden=true;$('review').scrollIntoView({behavior:'smooth'});});
 new MutationObserver(()=>{if(autoQueued)scheduleAutoQuote();}).observe($('update'),{attributes:true,attributeFilter:['disabled']});
 try{const rows=JSON.parse(cartText());if(Array.isArray(rows)&&rows.length)$('lines').innerHTML=window.WEPQuoteLayout.rows(rows,true);}catch(_){}
 try{readCart();loadShippingEligibility();changes();}catch(e){$('choices').hidden=true;$('lines').innerHTML='<tr><td colspan="6" class="quote-empty">Your cart is empty. <a href="marketplace.html">Browse equipment</a> to start a quote.</td></tr>';$('totals').replaceChildren();$('status').textContent=e.message;}
