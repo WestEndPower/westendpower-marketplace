@@ -6,9 +6,9 @@
  const local=['127.0.0.1','localhost','[::1]'].includes(location.hostname);
  const api=local&&new URLSearchParams(location.search).get('api')==='local'?'http://127.0.0.1:8787':'https://westendpower-configurator-api.westendpower-nm.workers.dev';
  const panel=document.createElement('section');panel.className='panel';panel.id='quote-stock';
- panel.innerHTML='<h2>Availability for this quote</h2><p class="note">Choose available stock or an orderable unit. Stock is shared between both stores. This selects pricing only; no unit is reserved and no serial number is assigned.</p><div id="quote-stock-lines"></div><p id="quote-stock-status" role="status"></p>';
+ panel.innerHTML='<details id="stock-editor" open><summary>Availability / pricing source · <span id="stock-choice-summary">Checking…</span></summary><h2>Availability for this quote</h2><p class="note">Choose available stock or an orderable unit. Stock is shared between both stores. This selects pricing only; no unit is reserved and no serial number is assigned.</p><div id="quote-stock-lines"></div><p id="quote-stock-status" role="status"></p></details>';
  $('choices').querySelectorAll('.panel')[1].before(panel);
- const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Refresh Availability';refresh.onclick=()=>void load();panel.appendChild(refresh);
+ const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Refresh Availability';refresh.onclick=()=>void load();panel.querySelector('details').appendChild(refresh);
  let ready=false,generation=0,signature='';
  const rawCart=()=>JSON.parse(localStorage.getItem('wepCart')||'[]');
  const cartSignature=rows=>JSON.stringify(rows.map(x=>[x.brandId,x.type||'tool',x.sku,x.quantity]));
@@ -55,16 +55,16 @@
    });
    function persist(){
     const now=rawCart();if(cartSignature(now)!==cartSignature(rows)){void load();return;}
-    for(const {select,index} of controls){if(select.value==='__unavailable__'){ready=false;changed();$('update').disabled=true;$('quote-stock-status').textContent='A previous stock selection is unavailable. Choose the pricing source again.';return;}
+    for(const {select,index} of controls){if(select.value==='__unavailable__'){ready=false;$('stock-editor').open=true;changed();$('update').disabled=true;$('quote-stock-status').textContent='A previous stock selection is unavailable. Choose the pricing source again.';return;}
      now[index].inventoryId=select.value===ORDERABLE?'':select.value;now[index].quoteStockChoice=select.value===ORDERABLE?'orderable':'stock';
     }
-    localStorage.setItem('wepCart',JSON.stringify(now));signature=cartSignature(now);ready=true;changed();
+    localStorage.setItem('wepCart',JSON.stringify(now));signature=cartSignature(now);ready=true;$('stock-choice-summary').textContent=now.every(x=>x.quoteStockChoice==='orderable')?'Available to order':now.every(x=>x.quoteStockChoice==='stock')?'In-stock pricing':'Mixed stock / orderable pricing';$('stock-editor').open=false;changed();
     $('quote-stock-status').textContent='Availability checked for pricing. Final availability is checked again when you review prices.';
    }
    for(const {select} of controls)select.addEventListener('change',persist);
    persist();
   }catch(error){
-   if(current!==generation)return;ready=false;changed();$('update').disabled=true;
+   if(current!==generation)return;ready=false;$('stock-editor').open=true;changed();$('update').disabled=true;
    $('quote-stock-status').textContent=error.message+' Retry before reviewing this quote.';
    const retry=document.createElement('button');retry.type='button';retry.textContent='Retry Inventory Check';retry.onclick=load;$('quote-stock-status').append(' ',retry);
   }

@@ -3,11 +3,12 @@
  'use strict';
  const D=window.WEPQuoteDocument,$=id=>document.getElementById(id);
  let current=null,cartSnapshot='',reference='';
+ const referenceId=()=>crypto.randomUUID?crypto.randomUUID():Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');
  const form=document.createElement('form');form.id='quote-customer';form.className='panel';
  form.innerHTML='<h2>Customer details for your quote</h2><p class="note">Add the details you want included on your printed or saved quote.</p><div class="customer-fields">'+[
   ['firstName','First name','given-name'],['lastName','Last name','family-name'],['companyName','Company (optional)','organization'],['phone','Phone','tel'],['email','Email','email'],['address1','Street address','address-line1'],['address2','Apartment / suite (optional)','address-line2'],['city','City','address-level2'],['state','State','address-level1'],['zip','ZIP','postal-code']
  ].map(([key,label,auto])=>'<label>'+label+'<input name="'+key+'" autocomplete="'+auto+'" maxlength="250"'+(key==='email'?' type="email"':key==='phone'?' type="tel"':'')+'></label>').join('')+'</div><label class="quote-notes">Customer notes (optional)<textarea name="notes" rows="3" maxlength="2000"></textarea></label>';
- $('choices').before(form);
+ $('quote-details').append(form);
  const save=document.createElement('button');save.id='save-quote';save.type='button';save.textContent='Save Quote Copy';save.disabled=true;
  $('print').after(save);
  const preview=document.createElement('div');preview.id='quote-customer-preview';preview.className='quote-customer-preview';
@@ -24,7 +25,7 @@
   if(!current)return;
   try{
    const s=D.snapshot(current,details(),reference);preview.replaceChildren();
-   for(const line of ['Quote reference: '+reference,...D.customerText(s),s.customer.notes?'Customer notes: '+s.customer.notes:''].filter(Boolean)){const p=document.createElement('p');p.textContent=line;preview.appendChild(p);}
+   for(const line of [...D.customerText(s),s.customer.notes?'Customer notes: '+s.customer.notes:''].filter(Boolean)){const p=document.createElement('p');p.textContent=line;preview.appendChild(p);}
    $('email').href='mailto:sales@westendpower.com?subject='+encodeURIComponent('Quote request — '+reference)+'&body='+encodeURIComponent(D.text(s));
   }catch(error){$('status').textContent=error.message;save.disabled=true;}
  }
@@ -35,10 +36,10 @@
   current=event.detail.quote;cartSnapshot=event.detail.cartSnapshot;
   try{
    const saved=JSON.parse(sessionStorage.getItem('wepQuoteReference')||'null');
-   reference=saved?.cart===cartSnapshot?saved.reference:'Q-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+crypto.randomUUID().slice(0,8).toUpperCase();
+   reference=saved?.cart===cartSnapshot?saved.reference:'Q-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+referenceId().slice(0,8).toUpperCase();
    sessionStorage.setItem('wepQuoteReference',JSON.stringify({cart:cartSnapshot,reference}));
-  }catch(_error){reference='Q-'+crypto.randomUUID().slice(0,12).toUpperCase();}
-  save.disabled=false;showDetails();
+  }catch(_error){reference='Q-'+referenceId().slice(0,12).toUpperCase();}
+  save.disabled=false;$('quote-reference-label').textContent=reference;showDetails();
  });
  window.addEventListener('wep:quote-cleared',()=>{current=null;save.disabled=true;preview.replaceChildren();});
  save.addEventListener('click',()=>{

@@ -17,7 +17,7 @@ function readCart(){
   return {brandId,type,sku,quantity,setupSelected:x.setupSelected===true,inventoryId};
  });
 }
-function clearQuote(){window.dispatchEvent(new Event('wep:quote-cleared'));quote=null;if($('payment-panel'))$('payment-panel').hidden=true;requestNumber++;$('review').hidden=true;$('email').removeAttribute('href');}
+function clearQuote(){document.body.classList.add('quote-stale');$('proceed-checkout').disabled=true;$('print').disabled=true;$('email').setAttribute('aria-disabled','true');$('finance-summary').replaceChildren();$('quote-rebates').replaceChildren();$('totals').innerHTML='<div><dt>Estimated total</dt><dd>Updating…</dd></div>';window.dispatchEvent(new Event('wep:quote-cleared'));quote=null;if($('payment-panel'))$('payment-panel').hidden=true;requestNumber++;$('review').hidden=false;$('email').removeAttribute('href');}
 let financeLoad=0,financeSnapshot='',financeReady=false;
 function selectedFulfillment(){return new FormData($('choices')).get('fulfillment');}
 function shippingAddress(){const f=new FormData($('choices'));return {address1:String(f.get('shipAddress1')||'').trim(),address2:String(f.get('shipAddress2')||'').trim(),city:String(f.get('shipCity')||'').trim(),state:String(f.get('shipState')||'').trim().toUpperCase(),zip:String(f.get('shipZip')||'').trim()};}
@@ -28,9 +28,10 @@ function changes(){
  $('shipping-address').hidden=!ship;$('shipping-address').disabled=!ship;
  for(const method of ['cash','finance']){const input=$('choices').querySelector('[name="paymentMethod"][value="'+method+'"]');input.disabled=ship;if(ship)input.checked=false;}
  if(ship)$('choices').querySelector('[name="paymentMethod"][value="credit"]').checked=true;
- const finance=new FormData($('choices')).get('paymentMethod')==='finance';$('finance-options').hidden=!finance;
+ const finance=new FormData($('choices')).get('paymentMethod')==='finance';$('finance-options').hidden=!finance;for(const select of $('finance-options').querySelectorAll('select'))select.disabled=!finance;
  $('status').textContent='Select Review Current Pricing to update your quote.';
  if(finance&&financeSnapshot!==cartText())loadFinanceOptions();
+ updateChoiceSummaries();
  $('update').disabled=busy||(finance&&!financeReady)||stockPending();
 }
 async function loadFinanceOptions(){
@@ -46,7 +47,7 @@ async function loadFinanceOptions(){
    return '<label class="finance-selector">'+esc(brand)+' financing program<select data-finance-brand="'+esc(brand)+'" required><option value="">Choose a program</option>'+programs.map(p=>'<option value="'+esc(p.ProgramID)+'">'+esc(p.ProgramName||p.ProgramID)+' · '+esc(p.APR)+'% APR · '+esc(p.TermMonths)+' months</option>').join('')+'</select></label>';
   }));
   if(number!==financeLoad||financeSnapshot!==cartText())return;
-  $('finance-options').innerHTML=choices.join('');financeReady=true;
+  $('finance-options').innerHTML=choices.join('');for(const select of $('finance-options').querySelectorAll('select'))select.disabled=new FormData($('choices')).get('paymentMethod')!=='finance';financeReady=true;queueMicrotask(scheduleAutoQuote);
  }catch(error){if(number===financeLoad){financeSnapshot='';$('finance-options').textContent=error.message;}}
  finally{if(number===financeLoad)$('update').disabled=busy||(new FormData($('choices')).get('paymentMethod')==='finance'&&!financeReady)||stockPending();}
 }
@@ -57,7 +58,7 @@ async function loadShippingEligibility(){
   if(!r.ok||v.ok!==true)throw Error('Shipping eligibility is unavailable. Choose pickup or local delivery.');
   input.disabled=!v.shipEligible;$('shipping-eligibility').textContent=v.message;
  }catch(error){if(number===fulfillmentLoad)$('shipping-eligibility').textContent=error.message;}
- if(input.disabled&&input.checked){input.checked=false;changes();}
+ if(input.disabled&&input.checked){input.checked=false;changes();}scheduleAutoQuote();
 }
 $('choices').addEventListener('change',changes);
 $('choices').addEventListener('input',e=>{if(e.target.name!=='fulfillment'&&e.target.name!=='paymentMethod')changes();});
@@ -70,7 +71,7 @@ function quoteEditLink(line){
  return '<a class="quote-edit-options" href="product-options.html?'+esc(params.toString())+'">Edit Equipment &amp; Options</a>';
 }
 function render(q){
- $('lines').innerHTML=q.lines.map(l=>'<tr><td><strong>'+esc(l.productName)+'</strong><small>'+esc(l.brandId)+(l.type==='tool'?' · SKU '+esc(l.sku):'')+'</small>'+(l.pricingSource?'<small>'+(l.pricingSource==='stock'?'In-stock pricing':'Available to order')+'</small>':'')+quoteEditLink(l)+'</td><td>'+l.quantity+'</td><td>'+fmt(l.unitPrice)+'</td><td>'+fmt(l.itemTotal)+'</td><td>'+(l.setupUnit>0?(l.setupSelected?fmt(l.setupTotal)+' applied'+(l.assemblyOption==='F'?'<small>Required</small>':''):'Available · '+fmt(l.setupUnit)+' per item'):'—')+'</td></tr>').join('');
+ $('lines').innerHTML=window.WEPQuoteLayout.rows(q.lines);window.WEPQuoteLayout.rebates(q);
  const amounts=[['Merchandise',q.merchandise],['Installation / Set-Up',q.installation],['Special order / factory freight',q.freight],['Local delivery',q.delivery],['UPS Ground shipping',q.shipping||0],['Subtotal',q.subtotal],['Estimated CT sales tax',q.tax],['Estimated total',q.total]];
  $('totals').innerHTML=amounts.filter(([name,value],i)=>![1,2,3,4].includes(i)||value!==0).map(([name,value],i)=>'<div'+(name==='Estimated total'?' class="total"':'')+'><dt>'+name+'</dt><dd>'+fmt(value)+'</dd></div>').join('');
  const store=q.fulfillment==='SHIP'?'Ship to '+q.shippingDetails.destination.city+', '+q.shippingDetails.destination.state+' '+q.shippingDetails.destination.zip:q.fulfillment==='NEW_MILFORD'?'New Milford':q.fulfillment==='DANBURY'?'Danbury':(q.deliveryDetails?.confirmed?'Delivery to '+q.deliveryDetails.town+', '+q.deliveryDetails.state+' '+q.zip:'Delivery');
@@ -80,7 +81,7 @@ function render(q){
  $('confirmation').className=q.issues.length?'warning':'';$('dated').textContent='Prepared '+new Date(q.createdAt).toLocaleString();
  const text=['West End Power Equipment — Quote Request',store+' / '+(q.paymentMethod==='cash'?'Cash / check':q.paymentMethod==='finance'?'Financing':'Credit card'),q.zip?'Delivery ZIP: '+q.zip:'',q.fulfillment==='SHIP'?'Ship-to street: '+q.shippingDetails.destination.address1+' '+q.shippingDetails.destination.address2:'','',...q.lines.map(l=>l.brandId+' '+l.productName+' | SKU '+l.sku+' | Qty '+l.quantity+' | Unit '+fmt(l.unitPrice)+' | Item total '+fmt(l.itemTotal)+' | Installation '+(l.setupSelected?fmt(l.setupTotal)+' applied':'not selected')), '',...amounts.map(([n,v])=>n+': '+fmt(v)),...financeText,...q.issues,'','Please confirm availability, compatibility and final pricing.','Customer name:','Phone:'].join('\n');
  $('email').href='mailto:sales@westendpower.com?subject='+encodeURIComponent('Marketplace quote request — '+store)+'&body='+encodeURIComponent(text);
- $('review').hidden=false;$('review').focus();$('status').textContent='Quote ready for store review. No order or payment has been created.';
+ $('review').hidden=false;document.body.classList.remove('quote-stale');$('print').disabled=false;$('email').removeAttribute('aria-disabled');$('fulfillment-editor').open=false;$('payment-editor').open=false;updateChoiceSummaries();$('status').textContent='Quote ready for store review. No order or payment has been created.';
  window.dispatchEvent(new CustomEvent('wep:quote-ready',{detail:{quote:q,cartSnapshot:cartText()}}));
 }
 $('choices').addEventListener('submit',async e=>{
@@ -97,8 +98,8 @@ $('choices').addEventListener('submit',async e=>{
   if(snapshot!==cartText())throw Error('Your cart changed. Review current pricing again.');
   if(!Array.isArray(q.lines)||!q.lines.length||!Array.isArray(q.issues))throw Error('Current quote pricing is unavailable. Please try again.');
   if(items.some(l=>l.inventoryId)&&q.stockPricingVersion!==1)throw Error('The pricing service needs the quote stock update before in-stock pricing can be shown.');
-  quote=q;render(q);showMarketplacePayment(q,snapshot);
- }catch(error){if(number===requestNumber){$('status').textContent=error.name==='AbortError'?'Pricing took too long. Please try again.':error.message;$('review').hidden=true;}}
+  await window.WEPQuoteLayout.ready;if(number!==requestNumber||snapshot!==cartText())return;window.WEPQuoteLayout.enrich(q);quote=q;render(q);showMarketplacePayment(q,snapshot);
+ }catch(error){if(number===requestNumber){$('status').textContent=error.name==='AbortError'?'Pricing took too long. Please try again.':error.message;$('review').hidden=false;}}
  finally{busy=false;$('update').disabled=(new FormData($('choices')).get('paymentMethod')==='finance'&&!financeReady)||stockPending();}
 });
 $('print').onclick=()=>{if(quote&&Date.now()-Date.parse(quote.createdAt)<300000)window.print();else{clearQuote();$('status').textContent='Refresh current pricing before printing your quote.';}};
@@ -108,8 +109,13 @@ let paymentBusy=false,paymentCart='',paymentQuote=null;
 const testPayment=local||new URLSearchParams(location.search).get('test')==='1';
 function showMarketplacePayment(q,snapshot){
  paymentQuote=q;paymentCart=snapshot;
- const supported=q.paymentMethod==='credit'&&['NEW_MILFORD','DANBURY','SHIP'].includes(q.fulfillment)&&q.total!==null&&q.issues.length===0&&q.fingerprint&&q.terms?.version;
- $('payment-panel').hidden=!supported;if(!supported)return;
+ const supported=q.paymentMethod==='credit'&&['NEW_MILFORD','DANBURY','SHIP'].includes(q.fulfillment)&&q.total!==null&&q.issues.length===0&&!q.lines.some(l=>l.freightNote)&&q.fingerprint&&q.terms?.version;
+ $('payment-panel').hidden=true;$('proceed-checkout').disabled=false;
+ $('proceed-checkout').textContent='Proceed to Checkout';
+ $('selected-payment-description').textContent=(q.paymentMethod==='cash'?'Cash / check':q.paymentMethod==='finance'?'Financing':'Credit card')+' · '+window.WEPQuoteDocument.fulfillmentLabel(window.WEPQuoteDocument.snapshot(q));
+ $('checkout-terms').hidden=!supported;$('payment-form').elements.namedItem('termsAccepted').required=supported;
+ if(!supported){$('order-terms').textContent='';$('payment-mode').textContent=q.paymentMethod==='finance'?'Your selected financing is included below. Send your details to the store to confirm availability and complete financing.':q.paymentMethod==='cash'?'Send your details to the store to confirm availability and arrange payment by cash / check.':'This package needs store confirmation before payment can be collected.';$('pay').textContent='Email Order Request';$('payment-status').textContent='This opens your email app. Review and send the request; the store will confirm your order.';return;}
+
  $('order-terms').textContent=q.terms.text;
  $('payment-mode').textContent=testPayment?'STRIPE TEST MODE — no real payment will be collected. Test orders are labelled TEST.':'Review your total above. Card details are entered on Stripe’s secure payment page.';
  $('payment-mode').className=testPayment?'test-banner':'';
@@ -163,6 +169,12 @@ $('payment-form').addEventListener('submit',async e=>{
   if(cartText()!==paymentCart||Date.now()-Date.parse(paymentQuote.createdAt)>300000){clearQuote();throw Error('Your cart or pricing changed. Review current pricing again.');}
   const values=new FormData($('payment-form')),customer={};
   for(const key of ['firstName','lastName','companyName','email','phone','address1','address2','city','state','zip'])customer[key]=String(values.get(key)||'').trim();
+  const supported=paymentQuote.paymentMethod==='credit'&&['NEW_MILFORD','DANBURY','SHIP'].includes(paymentQuote.fulfillment)&&paymentQuote.total!==null&&paymentQuote.issues.length===0&&!paymentQuote.lines.some(l=>l.freightNote)&&paymentQuote.fingerprint&&paymentQuote.terms?.version;
+  if(!supported){
+   const snapshot=window.WEPQuoteDocument.snapshot(paymentQuote,customer);
+   location.href='mailto:sales@westendpower.com?subject='+encodeURIComponent('Equipment order request')+'&body='+encodeURIComponent(window.WEPQuoteDocument.text(snapshot)+'\n\nPlease contact me to confirm this order.');
+   $('payment-status').textContent='Your email app has been opened. Review and send the request. Your order is confirmed only after the store contacts you.';return;
+  }
   const body={items:readCart(),customer,fulfillment:paymentQuote.fulfillment,zip:paymentQuote.zip,shippingAddress:paymentQuote.fulfillment==='SHIP'?paymentQuote.shippingDetails.destination:undefined,paymentMethod:'credit',termsAccepted:values.get('termsAccepted')==='on',termsVersion:paymentQuote.terms.version,quoteFingerprint:paymentQuote.fingerprint,testMode:testPayment};
   const identity=JSON.stringify(body);let pending=paymentRecord();
   if(!pending||pending.identity!==identity)pending={identity,requestKey:crypto.randomUUID(),cartSnapshot:paymentCart,api};
@@ -180,7 +192,32 @@ $('payment-form').addEventListener('submit',async e=>{
  finally{paymentBusy=false;$('pay').disabled=false;}
 });
 
-try{readCart();loadShippingEligibility();changes();}catch(e){$('choices').hidden=true;$('status').textContent=e.message;}
+let autoTimer,autoSignature='',autoQueued=false;
+function updateChoiceSummaries(){
+ const data=new FormData($('choices')),fulfillment=data.get('fulfillment'),method=data.get('paymentMethod');
+ $('fulfillment-summary').textContent=({NEW_MILFORD:'Pickup · New Milford',DANBURY:'Pickup · Danbury',DELIVERY:'Local delivery'+($('zip').value?' · '+$('zip').value:''),SHIP:'UPS Ground shipping'}[fulfillment]||'Choose how you’ll receive your equipment');
+ $('payment-summary').textContent=({cash:'Cash / check',credit:'Credit card',finance:'Financing'}[method]||'Choose a payment option');
+ if(method==='finance'){const selected=[...$('finance-options').querySelectorAll('select')].filter(x=>x.value).map(x=>x.selectedOptions[0].textContent);if(selected.length)$('payment-summary').textContent=selected.join(' · ');}
+}
+function scheduleAutoQuote(){
+ clearTimeout(autoTimer);autoTimer=setTimeout(()=>{
+  if(busy){autoQueued=true;return;}
+  if($('choices').hidden||$('update').disabled||stockPending()||!$('choices').checkValidity())return;
+  const data=new FormData($('choices'));if(!data.get('fulfillment')||!data.get('paymentMethod'))return;
+  const signature=JSON.stringify([cartText(),[...data],financeProgramIds()]);
+  if(signature===autoSignature)return;autoSignature=signature;autoQueued=false;$('choices').requestSubmit();
+ },400);
+}
+$('choices').addEventListener('change',scheduleAutoQuote);
+$('choices').addEventListener('input',scheduleAutoQuote);
+$('proceed-checkout').addEventListener('click',()=>{
+ if(!quote||Date.now()-Date.parse(quote.createdAt)>300000||paymentCart!==cartText()){clearQuote();autoSignature='';scheduleAutoQuote();$('status').textContent='Refreshing current pricing before checkout.';return;}
+ $('quote-details').open=false;$('payment-panel').hidden=false;$('payment-panel').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});$('payment-form').elements.namedItem('firstName').focus({preventScroll:true});
+});
+$('back-to-quote').addEventListener('click',()=>{$('payment-panel').hidden=true;$('review').scrollIntoView({behavior:'smooth'});});
+new MutationObserver(()=>{if(autoQueued)scheduleAutoQuote();}).observe($('update'),{attributes:true,attributeFilter:['disabled']});
+try{const rows=JSON.parse(cartText());if(Array.isArray(rows)&&rows.length)$('lines').innerHTML=window.WEPQuoteLayout.rows(rows,true);}catch(_){}
+try{readCart();loadShippingEligibility();changes();}catch(e){$('choices').hidden=true;$('lines').innerHTML='<tr><td colspan="6" class="quote-empty">Your cart is empty. <a href="marketplace.html">Browse equipment</a> to start a quote.</td></tr>';$('totals').replaceChildren();$('status').textContent=e.message;}
 })();
 
 // WEP_MARKETPLACE_SECURE_CHECKOUT_V1
