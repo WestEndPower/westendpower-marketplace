@@ -33,7 +33,7 @@
    if(select.value!==id){select.value=id;select.dispatchEvent(new Event('change',{bubbles:true}));}
   }
   if(saved.paymentMethod==='finance'&&[...form.querySelectorAll('[data-finance-brand]')].some(x=>!x.value))complete=false;
-  if(complete){observer?.disconnect();clearTimeout(timer);}
+  if(complete){observer?.disconnect();clearTimeout(timer);window.dispatchEvent(new Event('wep:checkout-restored'));}
  }
  observer=new MutationObserver(apply);observer.observe(form,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled']});timer=setTimeout(()=>{observer.disconnect();document.body.classList.remove('checkout-preloaded');document.getElementById('status').textContent='Review your saved choices below. A payment program or shipping option still needs confirmation.';},30000);apply();
 })();

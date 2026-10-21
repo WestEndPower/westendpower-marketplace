@@ -17,7 +17,9 @@
  window.addEventListener('wep:quote-ready',event=>{
   const q=event.detail.quote;current=q;
   sync();
-  $('selected-fulfillment').textContent=WEPQuoteDocument.fulfillmentLabel(WEPQuoteDocument.snapshot(q));
+  const confirmed=WEPQuoteDocument.fulfillmentLabel(WEPQuoteDocument.snapshot(q));
+  $('selected-fulfillment').textContent=confirmed;$('fulfillment-summary').textContent=confirmed;
   document.body.classList.add('checkout-preloaded');
+  const edit=$('lines').querySelector('.quote-edit-options');if(edit)$('review-equipment').href=edit.href;
  });
 })();
