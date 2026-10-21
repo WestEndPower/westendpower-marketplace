@@ -1,0 +1,86 @@
+{
+  "Box Blades": {
+    "path": "brands/yanmar/images/implements/box-blades.jpg",
+    "source": "https://www.yanmartractor.com/webres/catalog/sm/YBB306_S-01.jpg",
+    "page": "https://www.yanmartractor.com/products/attachments/grading-leveling/box-scraper-blades/",
+    "size": 21912
+  },
+  "Grader Blades": {
+    "path": "brands/yanmar/images/implements/grader-blades.jpg",
+    "source": "https://www.yanmartractor.com/webres/catalog/sm/YGB205_5'GraderBlade_S-01.jpg",
+    "page": "https://www.yanmartractor.com/products/attachments/grading-leveling/grader-blades/",
+    "size": 13112
+  },
+  "Land Graders": {
+    "path": "brands/yanmar/images/implements/land-graders.jpg",
+    "source": "https://www.yanmartractor.com/webres/catalog/sm/YLG1145_S-01_BL.jpg",
+    "page": "https://www.yanmartractor.com/products/attachments/grading-leveling/land-grader/",
+    "size": 20009
+  },
+  "Landscape Rakes": {
+    "path": "brands/yanmar/images/implements/landscape-rakes.jpg",
+    "source": "https://www.yanmartractor.com/webres/catalog/sm/YLR306_S-01.jpg",
+    "page": "https://www.yanmartractor.com/products/attachments/grading-leveling/landscape-rake/",
+    "size": 26891
+  },
+  "Rotary Cutters": {
+    "path": "brands/yanmar/images/implements/rotary-cutters.jpg",
+    "source": "https://www.yanmartractor.com/webres/catalog/xl/RotaryCutter.jpg",
+    "page": "https://www.yanmartractor.com/products/attachments/vegetation-management/rotary-cutter/",
+    "size": 108688
+  },
+  "Rotary Tillers": {
+    "path": "brands/yanmar/images/implements/rotary-tillers.jpg",
+    "source": "https://www.yanmartractor.com/webres/catalog/YRT104_S-01(1).jpg",
+    "page": "https://www.yanmartractor.com/products/attachments/tillage/rotary-tiller/",
+    "size": 46041
+  },
+  "Disc Harrows": {
+    "path": "brands/yanmar/images/implements/disc-harrows.jpg",
+    "source": "https://www.yanmartractor.com/webres/catalog/sm/YDH206_S-01.jpg",
+    "page": "https://www.yanmartractor.com/products/attachments/tillage/disc-harrows/",
+    "size": 23911
+  },
+  "Cultivators": {
+    "path": "brands/yanmar/images/implements/cultivators.jpg",
+    "source": "https://www.yanmartractor.com/webres/catalog/sm/YFC201_S-01.jpg",
+    "page": "https://www.yanmartractor.com/products/attachments/tillage/cultivator/",
+    "size": 15680
+  },
+  "Subsoilers": {
+    "path": "brands/yanmar/images/implements/subsoilers.jpg",
+    "source": "https://www.yanmartractor.com/webres/catalog/sm/YSS20_S-01.jpg",
+    "page": "https://www.yanmartractor.com/products/attachments/tillage/middle-buster-subsoiler/",
+    "size": 8248
+  },
+  "Spreaders": {
+    "path": "brands/yanmar/images/implements/spreaders.jpg",
+    "source": "https://www.yanmartractor.com/webres/catalog/sm/YPFS20_S-01.jpg",
+    "page": "https://www.yanmartractor.com/products/attachments/seeding-planting/fertilizer-spreader-seeder/",
+    "size": 14853
+  },
+  "Bed Shapers": {
+    "path": "brands/yanmar/images/implements/bed-shapers.jpg",
+    "source": "https://www.yanmartractor.com/webres/catalog/xl/bed-shaper-1.jpg",
+    "page": "https://www.yanmartractor.com/products/attachments/seeding-planting/four-in-one-planting-tool-kit/",
+    "size": 119625
+  },
+  "Disc Mowers": {
+    "path": "brands/yanmar/images/implements/disc-mowers.jpg",
+    "source": "https://www.yanmartractor.com/webres/catalog/xl/YT235-Mowing-IMG_3684-large.jpg",
+    "page": "https://www.yanmartractor.com/products/attachments/hay-harvesting/drum-disc-mower/",
+    "size": 110196
+  },
+  "Hay Balers": {
+    "path": "brands/yanmar/images/implements/hay-balers.jpg",
+    "source": "https://www.yanmartractor.com/webres/catalog/xl/YT235-Baling-IMG_3475-large.jpg",
+    "page": "https://www.yanmartractor.com/products/attachments/hay-harvesting/round-baler/",
+    "size": 108232
+  },
+  "Hay Rakes": {
+    "path": "brands/yanmar/images/implements/hay-rakes.jpg",
+    "source": "https://www.yanmartractor.com/webres/catalog/xl/YT235-Tedding-IMG_3194-large.jpg",
+    "page": "https://www.yanmartractor.com/products/attachments/hay-harvesting/tedder-rake/",
+    "size": 68218
+  }
+}

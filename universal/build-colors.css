@@ -1,0 +1,17 @@
+/* WEP_BUILD_COLORS_V3: screen colors only; print retains its existing layout. */
+@media screen {
+ body:has(#wep-build-header){background:#176a14}
+ body:has(#wep-build-header)>.wrap{background:transparent}
+ #app>.hero{background:#fff;color:#171717;border-color:#69736d;border-top-color:#c8102e;box-shadow:0 5px 18px #0002}
+ #app>.hero>.media{background:#fff}
+ #app>.section,#app .wep-option-panel>.section{background:#edf0ed;color:#171717;border-color:#c5cec7;box-shadow:0 4px 14px #0002}
+ #app .wep-option-panel .card{background:#fff;color:#171717;border-color:#c5cec7}
+ #app .wep-option-nav.wep-floating-options{background:#353c40;border-color:#68756c;box-shadow:0 4px 14px #0003}
+ #app .wep-option-nav.wep-floating-options button{background:#fff;color:#24412a;border:1px solid #b9c7bb}
+ #app .wep-option-nav.wep-floating-options button[aria-expanded=true]{background:#287a32;color:#fff;border-color:#4a9b53}
+ #app .wep-option-nav button:focus-visible{outline:3px solid #f1cf65;outline-offset:3px}
+ #app .wep-compact-actions{background:#353c40;color:#fff;border:1px solid #546359;box-shadow:0 4px 14px #0002}
+ #app .wep-compact-actions .wep-build-finance-note{color:#e3e9e3}
+ #app>.note,#app>.empty,#app>#options-message{color:#f1f7f1}
+ #app>#options-message:not(:empty){padding:10px 14px;background:#353c40;border-left:3px solid #79b380;border-radius:5px}
+}

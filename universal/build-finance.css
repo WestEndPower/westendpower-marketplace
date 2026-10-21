@@ -1,0 +1,375 @@
+/* WEP_BUILD_FINANCE_V1: compact product header keeps the option tabs higher. */
+#wep-build-header{padding-top:10px;padding-bottom:10px;margin-bottom:8px}
+#wep-build-header .market-header{padding-top:10px;padding-bottom:10px}
+#wep-build-header .market-home-link img{max-width:170px;max-height:55px}
+#wep-build-header .wep-nav{margin-top:12px;padding-bottom:6px}
+#wep-build-header .wep-nav>a,#wep-build-header summary{padding:8px 10px;font-size:14px}
+.wrap:has(.wep-build-finance){padding-top:10px}
+.wep-finance-hero-details{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,220px);gap:10px 16px;align-items:start}
+.wep-finance-hero-details .wep-build-heading{grid-column:1/-1}
+.wep-build-heading h1{font-size:23px!important;line-height:1.2;margin:4px 0!important}
+.wep-build-heading [hidden]{display:none!important}
+.wep-build-heading>small{font-size:11px}
+.wep-build-product-info{min-width:0}
+.wep-build-product-info .price{font-size:25px;margin:4px 0!important}
+.wep-build-product-info>.note{font-size:12px;margin:4px 0}
+.wep-build-product-info .stock-details{font-size:12px}
+.wep-build-product-info .stock-details a{margin:3px 0}
+.wep-build-product-info .wep-spec-link{display:block;font-size:12px;margin-top:7px}
+.wep-build-product-info>label{font-size:13px}
+.wep-build-finance{min-width:0;background:#f1f7f1;border:1px solid #bfd0bf;border-radius:8px;padding:11px;color:#203a24}
+.wep-build-finance h3{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.03em}
+.wep-build-finance p{margin:5px 0!important}
+.wep-build-finance-program{font-size:13px;font-weight:800}
+.wep-build-finance-monthly{font-size:12px}.wep-build-finance-monthly strong{font-size:25px;color:#176a14}
+.wep-build-finance-note{font-size:10px;line-height:1.35;color:#536056}
+.wep-build-finance dl{margin:8px 0;font-size:11px}
+.wep-build-finance dl>div{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:4px 0}
+.wep-build-finance dt{font-weight:400}.wep-build-finance dd{margin:0;text-align:right;white-space:nowrap;font-weight:700}
+.wep-build-finance-retry{font-size:12px;padding:7px 9px;border:1px solid #8ca58c;border-radius:5px;background:#fff;color:#176a14;cursor:pointer}
+.hero.wep-summary-hero:has(.wep-build-finance){grid-template-columns:minmax(130px,180px) minmax(0,1fr) 180px;gap:16px;padding:14px}
+.hero:has(.wep-build-finance)>.media{height:180px}
+.hero:has(.wep-build-finance) .wep-compact-actions{padding:11px;gap:8px}
+.hero:has(.wep-build-finance) .wep-compact-actions button,.hero:has(.wep-build-finance) .wep-compact-actions .back{font-size:12px;padding:8px}
+@media(max-width:1100px){.hero.wep-summary-hero:has(.wep-build-finance){grid-template-columns:140px minmax(0,1fr) 160px;gap:12px}.wep-finance-hero-details{grid-template-columns:minmax(0,1fr) minmax(155px,190px)}}
+@media(max-width:800px){.hero.wep-summary-hero:has(.wep-build-finance){grid-template-columns:130px minmax(0,1fr)}.hero:has(.wep-build-finance) .wep-compact-actions{grid-column:1/-1}.wep-build-finance dl>div{flex-basis:150px}}
+@media(max-width:600px){.wep-finance-hero-details{grid-template-columns:minmax(0,1fr)}.wep-finance-hero-details .wep-build-heading{grid-column:auto}}
+@media(max-width:520px){.hero.wep-summary-hero:has(.wep-build-finance){grid-template-columns:1fr}.hero:has(.wep-build-finance)>.media{height:135px}.wep-build-heading h1{font-size:21px!important}.wep-build-finance-monthly strong{font-size:23px}}
+@media print{.wep-build-finance{display:none!important}.wep-finance-hero-details{display:block}.hero.wep-summary-hero:has(.wep-build-finance){grid-template-columns:140px minmax(0,1fr)}.wep-build-finance-retry{display:none!important}}
+
+.wep-build-finance-breakdown{font-size:11px;margin:5px 0}.wep-build-finance-breakdown summary{cursor:pointer;font-weight:700}.wep-build-finance-breakdown[open]{border-top:1px solid #c3d2c3;padding-top:6px}
+/* WEP_ALL_IN_ONE_BUILD_V2 */
+.wep-finance-hero-details{grid-template-columns:minmax(180px,1fr) minmax(190px,1fr);gap:12px 24px}
+.wep-finance-hero-details .wep-build-heading{grid-column:1/-1}
+.wep-build-product-info{grid-column:1;grid-row:2}
+.wep-build-stock{grid-column:2;grid-row:2;min-width:0;padding:6px 0}
+.wep-build-stock label{display:block;margin:8px 0;font-size:13px}
+.wep-build-stock .wep-spec-link{display:inline-block;margin-top:6px;font-size:13px}
+.wep-build-stock .stock-details{font-size:12px}.wep-build-stock .stock-details a{display:block;margin:6px 0}
+.wep-build-delivery{grid-column:1/-1;background:#f3f4f3;border:1px solid #c6cdc7;border-radius:8px;padding:12px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:end}
+.wep-build-delivery h3{flex-basis:100%;font-size:14px;margin:0}
+.wep-build-delivery label,.wep-build-payment-choices label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700;min-width:0}
+.wep-build-delivery input,.wep-build-delivery select,.wep-build-payment-choices select{font:inherit;font-size:14px;max-width:100%;min-height:40px;border:1px solid #95a597;border-radius:5px;background:white;color:#172b1c;padding:7px}
+.wep-build-delivery [hidden]{display:none!important}.wep-build-delivery input{width:110px}
+.wep-finance-hero-details>.wep-build-finance{grid-column:1/-1;padding:12px 14px}
+.wep-build-payment-choices summary{cursor:pointer;font-size:14px;font-weight:700;text-decoration:underline;padding:6px 0}
+.wep-build-payment-choices[open]{margin-bottom:10px}.wep-build-payment-choices select{width:100%}
+.wep-build-price-extra .wep-build-finance-note{font-size:12px}.wep-build-discount{color:#176a14;font-size:14px;font-weight:800;margin:6px 0}
+.wep-build-msrp{font-size:13px;color:#58615a}.wep-build-msrp s{margin-left:5px}
+.wep-build-apply{display:inline-block;padding:9px 12px;background:#176a14;color:#fff;border-radius:5px;font-size:13px;font-weight:700;margin:6px 0}
+.wep-build-totals dl{margin:0;font-size:13px}.wep-build-totals dl>div{display:flex;justify-content:space-between;gap:12px;margin:9px 0}
+.wep-build-totals dt{font-weight:400}.wep-build-totals dd{font-weight:700;text-align:right;margin:0}
+.wep-build-totals dl>div:last-child{border-top:1px solid #69716b;padding-top:12px;font-size:17px}
+.hero:has(.wep-build-finance) .wep-compact-actions h3{margin:0 0 5px;font-size:17px}
+.hero:has(.wep-build-finance) .wep-compact-actions .wep-build-finance-note{color:#e3e9e3}
+.hero.wep-summary-hero:has(.wep-build-finance){grid-template-columns:minmax(180px,280px) minmax(0,1fr) minmax(230px,270px);align-items:start}
+.hero:has(.wep-build-finance)>.media{height:270px}.hero:has(.wep-build-finance)>.media img{max-width:100%;max-height:270px}
+.wep-build-finance button{min-height:40px;cursor:pointer}
+@media(max-width:1150px){.hero.wep-summary-hero:has(.wep-build-finance){grid-template-columns:180px minmax(0,1fr) 230px;gap:12px}.wep-finance-hero-details{gap:10px 14px;grid-template-columns:minmax(130px,1fr) minmax(150px,1fr)}}
+@media(max-width:950px){.hero.wep-summary-hero:has(.wep-build-finance){grid-template-columns:170px minmax(0,1fr)}.hero:has(.wep-build-finance) .wep-compact-actions{grid-column:1/-1}.hero:has(.wep-build-finance)>.media{height:200px}}
+@media(max-width:620px){.hero.wep-summary-hero:has(.wep-build-finance){grid-template-columns:minmax(0,1fr)}.hero:has(.wep-build-finance)>.media{height:170px}.wep-finance-hero-details{grid-template-columns:minmax(0,1fr)}.wep-build-stock{grid-column:1;grid-row:3}.wep-build-product-info{grid-column:1;grid-row:2}.wep-build-heading h1{font-size:21px!important}.wep-build-delivery{align-items:stretch}.wep-build-delivery label{flex:1 1 150px}.wep-build-delivery input{width:100%}}
+@media print{.wep-build-delivery,.wep-build-stock,.wep-build-finance,.wep-build-totals{display:none!important}}
+@media(min-width:700px){.wep-build-finance-output{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:center}.wep-build-finance-output>*{grid-column:1/-1}.wep-build-finance-output>.wep-build-finance-program{grid-column:1}.wep-build-finance-output>.wep-build-finance-monthly{grid-column:2;grid-row:1/3;text-align:right}.wep-build-finance-output>.wep-build-apply{justify-self:start}.wep-build-finance-output>.wep-build-finance-breakdown{margin:0}}
+/* WEP_REQUIRED_PAYMENT_WINDOW_V3 */
+.wep-build-payment-choices [hidden]{display:none!important}
+.wep-build-payment-open{background:#fff;color:#176a14;border:1px solid #176a14;border-radius:5px;padding:9px 13px;font-weight:800;cursor:pointer}
+.wep-payment-dialog{width:min(1420px,96vw);max-width:96vw;max-height:92dvh;padding:18px;border:1px solid #79877c;border-radius:10px;background:#f4f5f4;color:#17251b;font-family:Arial,sans-serif;box-sizing:border-box}
+.wep-payment-dialog::backdrop{background:rgba(15,22,18,.65)}
+.wep-payment-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:15px}.wep-payment-dialog h2{margin:0;font-size:23px}
+.wep-payment-dialog button{min-height:40px;padding:8px 13px;border:1px solid #176a14;border-radius:5px;background:white;color:#176a14;cursor:pointer;font-weight:700}
+.wep-payment-dialog button:disabled{opacity:.6;cursor:wait}.wep-payment-dialog button:focus-visible,.wep-payment-dialog a:focus-visible{outline:3px solid #c00;outline-offset:3px}
+.wep-payment-dialog .wep-build-finance-note{font-size:12px;line-height:1.4}.wep-payment-dialog-status{font-size:13px;min-height:18px}
+.wep-payment-table-wrap{max-height:62dvh;overflow:auto;border:1px solid #a9b1ac;border-radius:6px;background:#fff;margin:12px 0;overscroll-behavior:contain}
+.wep-payment-table-wrap table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+.wep-payment-table-wrap th,.wep-payment-table-wrap td{padding:11px 13px;min-width:220px;border-right:1px solid #c5c9c6;border-bottom:1px solid #d5d9d6;vertical-align:top}
+.wep-payment-table-wrap td{text-align:right;font-weight:600}.wep-payment-table-wrap th:first-child{min-width:175px;width:175px;max-width:175px;text-align:left;position:sticky;left:0;background:#fff;z-index:2}
+.wep-payment-table-wrap thead th{position:sticky;top:0;z-index:3;background:#fff;border-top:5px solid #cf0000;text-align:center}.wep-payment-table-wrap thead th:first-child{z-index:4}
+.wep-payment-table-wrap .cash{background:#e4f3e7}.wep-payment-table-wrap .credit{background:#f0f1f2}.wep-payment-table-wrap .finance{background:#fff0e3}
+.wep-payment-table-wrap thead .cash{border-top-color:#287c32}.wep-payment-table-wrap thead .credit{border-top-color:#6b7074}.wep-payment-table-wrap thead .finance{border-top-color:#e05c08}
+.wep-payment-table-wrap thead strong{display:block;font-size:15px;line-height:1.4}.wep-payment-table-wrap .wep-payment-select{display:block;margin:9px auto 0;background:#176a14;color:#fff;white-space:nowrap}
+.wep-payment-table-wrap .wep-payment-total>*{border-top:1px solid #758078;font-size:16px;font-weight:800}.wep-payment-table-wrap .wep-payment-total td{color:#b00000}
+.wep-payment-table-wrap tr:nth-last-child(-n+3) td{text-align:left;font-size:12px;line-height:1.5;font-weight:400;white-space:normal}.wep-payment-table-wrap a{color:#176a14}
+@media(max-width:600px){.wep-payment-dialog{padding:10px}.wep-payment-dialog h2{font-size:19px}.wep-payment-table-wrap th,.wep-payment-table-wrap td{min-width:200px;padding:9px}.wep-payment-table-wrap th:first-child{min-width:115px;width:115px;max-width:115px;font-size:11px}}
+@media print{.wep-payment-dialog{display:none!important}}
+/* WEP_PERSONAL_PACKAGE_LOADING_V4 */
+.wep-package-loading{position:relative;margin:14px 0;padding:16px 18px 16px 54px;border:1px solid #a6c3a8;border-radius:8px;background:#edf6ed;color:#173c1e}
+.wep-package-loading[hidden]{display:none!important}.wep-package-loading>strong{display:block;font-size:17px}.wep-package-loading .wep-build-finance-note{font-size:13px;color:#3b5441;margin:6px 0 0;line-height:1.5}
+.wep-package-loading:before{content:"";position:absolute;left:18px;top:19px;width:21px;height:21px;border:3px solid #c4d9c6;border-top-color:#176a14;border-radius:50%;animation:wep-package-spin .85s linear infinite}
+@keyframes wep-package-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.wep-package-loading:before{animation:none;border-color:#176a14}}
+/* WEP_BUILD_CART_CONTROLS_V5 */
+.wep-compact-actions>.wep-build-payment-choices{width:100%;margin:4px 0 10px}
+.wep-compact-actions .wep-build-payment-open{width:100%;background:#fff!important;color:#176a14!important;border:1px solid #d2dfd2!important;font-size:13px!important;line-height:1.35}
+.wep-compact-actions .wep-empty-cart{background:#fff!important;color:#333!important;border:1px solid #b9c0ba!important;font-weight:600}
+.wep-compact-actions [hidden]{display:none!important}
+.wep-option-actions .wep-remove-option{background:#fff!important;color:#a51d1d!important;border:1px solid #c78d8d!important}
+/* WEP_BUILD_SUMMARY_PLACEMENT_V7 */
+.wep-build-finance[hidden]{display:none!important}
+.wep-compact-actions>h3{margin-bottom:0!important}
+.wep-compact-actions>.wep-build-payment-choices{margin:3px 0 12px}
+.wep-compact-actions>.wep-build-finance{margin:10px 0 0;width:100%;color:#203a24;background:#f1f7f1}
+.wep-compact-actions .wep-build-finance-output{display:block}
+.wep-compact-actions .wep-build-finance .wep-build-finance-note{color:#536056}
+.wep-compact-actions .wep-build-finance-monthly{text-align:left!important}
+/* WEP_COMPACT_LIVE_CART_V8 */
+.wep-compact-actions{min-width:0}
+.wep-compact-actions .wep-build-totals dl{font-size:12px;line-height:1.25}
+.wep-compact-actions .wep-build-totals dl>div{margin:5px 0;gap:7px}
+.wep-compact-actions .wep-build-totals dt{min-width:0}
+.wep-compact-actions .wep-build-totals dd{white-space:nowrap;flex-shrink:0}
+.wep-compact-actions .wep-build-totals dl>div:last-child{font-size:17px;padding-top:8px}
+.wep-compact-actions .summary-actions{gap:6px}
+.wep-build-stock-choice{display:flex!important;flex-direction:column;gap:4px;margin:9px 0;font-size:12px}
+.wep-build-stock-choice[hidden]{display:none!important}
+.wep-build-stock-choice select{max-width:100%;min-height:38px;border:1px solid #9eaaa0;border-radius:5px;padding:6px;background:#fff;color:#173c1e;font-size:12px}
+.wep-build-inventory-status{font-size:11px;margin:6px 0;color:#56615a}
+.wep-build-inventory-status:empty{display:none}
+/* WEP_RIGHT_PRODUCT_OFFERS_V9 */
+.wep-finance-hero-details{grid-template-columns:minmax(190px,1fr) minmax(220px,280px);align-items:start}
+.wep-finance-hero-details>.wep-build-product-info{grid-column:1;grid-row:2}
+.wep-finance-hero-details>.wep-build-stock{grid-column:1;grid-row:3;padding:0}
+.wep-finance-hero-details>.wep-build-delivery{grid-column:1;grid-row:4}
+.wep-finance-hero-details>.wep-build-finance{grid-column:2;grid-row:2/5;min-width:0;padding:13px;align-self:start}
+.wep-build-finance .wep-build-finance-output{display:block}
+.wep-build-finance-caption{font-size:11px;color:#536056;margin:3px 0}
+.wep-build-promotions{padding-bottom:8px;margin-bottom:9px;border-bottom:1px solid #c4d5c5}
+.wep-build-promotions:empty{display:none}
+.wep-build-offer-saving{font-size:13px;font-weight:800;color:#176a14;line-height:1.4;margin:5px 0}
+.wep-build-finance .wep-build-finance-monthly{text-align:left!important}
+.wep-build-finance .wep-build-finance-monthly strong{font-size:26px}
+@media(max-width:720px){.wep-finance-hero-details{grid-template-columns:minmax(0,1fr)}.wep-finance-hero-details>.wep-build-finance{grid-column:1;grid-row:5}.wep-finance-hero-details>.wep-build-delivery{grid-column:1;grid-row:4}}
+
+/* WEP_COMPACT_PRODUCT_OFFERS_V10 */
+.wep-build-finance h3{font-size:15px;margin:0 0 8px}
+.wep-build-finance-program{font-size:15px!important;font-weight:800;margin:5px 0!important}
+.wep-build-finance-monthly{margin:5px 0!important}
+.wep-build-promotions{padding-bottom:5px;margin-bottom:6px}
+.wep-build-offer-disclaimer{font-size:11px;line-height:1.5;color:#fff;background:#176a14;padding:12px 16px;margin:12px auto;max-width:1768px}
+.wep-build-offer-disclaimer p{margin:4px 0}.wep-build-offer-disclaimer a{color:#fff;text-decoration:underline}
+.wep-build-offer-disclaimer:empty{display:none}
+@media print{.wep-build-offer-disclaimer{display:none}}
+
+/* WEP_FACTORY_PROMOTIONS_V11 */
+.wep-build-finance .wep-build-promotions:not(:empty),.wep-build-finance .wep-build-finance-output:not(:empty){border:1px solid #bad0bb;border-radius:8px;background:#fff;padding:11px;margin:0}
+.wep-build-finance .wep-build-offer-join{text-align:center;font-size:12px;font-weight:800;color:#176a14;letter-spacing:.08em;margin:7px 0}
+.wep-build-offer-join[hidden]{display:none!important}
+.wep-build-offer-label{font-size:12px;margin:0 0 3px;color:#526154}
+.wep-build-finance .wep-build-offer-saving{font-size:24px;margin:0;line-height:1.2}
+.wep-build-finance .wep-build-promotions:empty{display:none}
+
+/* WEP_CENTER_FACTORY_PROMOTIONS_V12 */
+.wep-build-finance>h3,.wep-build-finance .wep-build-promotions,.wep-build-finance .wep-build-finance-output,.wep-build-finance .wep-build-finance-program,.wep-build-finance .wep-build-finance-monthly,.wep-build-finance .wep-build-offer-label,.wep-build-finance .wep-build-offer-saving{text-align:center!important}
+
+/* WEP_STOCK_BETWEEN_PRICE_PROMOTIONS_V13 */
+.wep-finance-hero-details{grid-template-columns:minmax(0,.8fr) minmax(0,1fr) minmax(0,1.1fr);gap:12px}
+.wep-finance-hero-details>.wep-build-product-info{grid-column:1;grid-row:2}
+.wep-finance-hero-details>.wep-build-stock{grid-column:2;grid-row:2;padding:0}
+.wep-finance-hero-details>.wep-build-finance{grid-column:3;grid-row:2/4}
+.wep-finance-hero-details>.wep-build-delivery{grid-column:1/3;grid-row:3}
+.wep-build-stock select,.wep-build-stock input{max-width:100%;box-sizing:border-box}
+@media(min-width:951px) and (max-width:1250px){.hero.wep-summary-hero:has(.wep-build-finance){grid-template-columns:150px minmax(0,1fr)}.hero:has(.wep-build-finance) .wep-compact-actions{grid-column:1/-1}}
+@media(max-width:760px){.wep-finance-hero-details{grid-template-columns:minmax(0,1fr)}.wep-finance-hero-details>.wep-build-product-info{grid-column:1;grid-row:2}.wep-finance-hero-details>.wep-build-stock{grid-column:1;grid-row:3}.wep-finance-hero-details>.wep-build-finance{grid-column:1;grid-row:4}.wep-finance-hero-details>.wep-build-delivery{grid-column:1;grid-row:5}}
+/* WEP_HIDE_DUPLICATE_STOCK_MESSAGES_V14 */
+.wep-build-stock .stock-details>[data-wep-before-stock-hidden][hidden],.wep-option-stock-content>[data-wep-before-stock-hidden][hidden],.stock-details>[data-wep-before-stock-hidden][hidden]{display:none!important}
+
+/* WEP_THREE_PAYMENT_PREVIEWS_V16 */
+.wep-package-payment-previews{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.wep-package-payment-card{border:1px solid #bad0bb;border-radius:8px;background:#fff;padding:10px;text-align:center;min-width:0}
+.wep-package-payment-card h4{font-size:14px;margin:0 0 5px;color:#173c1e}
+.wep-package-payment-card.is-selected{border:2px solid #176a14;background:#eff8ee;padding:9px;box-shadow:0 0 0 1px #176a14}
+.wep-package-payment-card .wep-payment-selected{font-size:11px;font-weight:800;color:#176a14;margin:2px 0 5px}
+.wep-payment-selected[hidden]{display:none!important}
+.wep-build-finance .wep-package-payment-card .wep-build-promotions,.wep-build-finance .wep-package-payment-card .wep-build-finance-output{border:0;background:transparent;padding:0;margin:0}
+.wep-package-payment-card .wep-package-payment-total{font-size:23px;font-weight:800;color:#173c1e;margin:3px 0}
+.wep-package-payment-caption{font-size:11px;margin:3px 0;color:#526154}
+.wep-build-finance .wep-package-payment-card .wep-build-offer-saving{font-size:11px;font-weight:600;margin:5px 0 0}
+.wep-package-payment-card .wep-build-finance-program{font-size:13px!important}
+.wep-package-payment-card .wep-build-finance-monthly{font-size:11px}
+.wep-package-payment-card .wep-build-finance-monthly strong{font-size:23px}
+@media(max-width:760px) and (min-width:540px){.wep-package-payment-previews{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* WEP_ALIGNED_PAYMENT_COLUMNS_V17 */
+.hero.wep-summary-hero:has(>.wep-build-finance){grid-template-columns:minmax(140px,200px) minmax(0,1fr) minmax(220px,260px) minmax(250px,290px);align-items:stretch}
+.hero.wep-summary-hero>.wep-finance-hero-details{grid-column:2;grid-row:1;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-self:start}
+.hero>.wep-finance-hero-details>.wep-build-stock{grid-column:2;grid-row:2}
+.hero>.wep-finance-hero-details>.wep-build-delivery{grid-column:1/-1;grid-row:3}
+.hero.wep-summary-hero>.wep-build-finance{grid-column:3;grid-row:1;margin:0;min-width:0;box-sizing:border-box;display:flex;flex-direction:column;padding:13px;align-self:stretch}
+.hero.wep-summary-hero>.wep-compact-actions{grid-column:4;grid-row:1;align-self:stretch;margin:0;min-width:0;box-sizing:border-box}
+.wep-build-finance>.wep-package-payment-previews{flex:1;grid-template-rows:repeat(3,minmax(min-content,1fr))}
+.wep-package-payment-card{display:flex;flex-direction:column;justify-content:center}
+.wep-compact-actions .wep-build-totals dl{font-size:14px;line-height:1.35}
+.wep-compact-actions .wep-build-totals dl>div{margin:7px 0}
+.wep-compact-actions .wep-build-totals dl>div:last-child{font-size:19px}
+@media(max-width:1250px){
+ .hero.wep-summary-hero:has(>.wep-build-finance){grid-template-columns:repeat(2,minmax(0,1fr))}
+ .hero.wep-summary-hero>.media{grid-column:1;grid-row:1}
+ .hero.wep-summary-hero>.wep-finance-hero-details{grid-column:2;grid-row:1}
+ .hero.wep-summary-hero>.wep-build-finance{grid-column:1;grid-row:2}
+ .hero.wep-summary-hero>.wep-compact-actions{grid-column:2;grid-row:2}
+}
+@media(max-width:760px){
+ .hero.wep-summary-hero:has(>.wep-build-finance){grid-template-columns:minmax(0,1fr)}
+ .hero.wep-summary-hero>.media{grid-column:1;grid-row:1}
+ .hero.wep-summary-hero>.wep-finance-hero-details{grid-column:1;grid-row:2;grid-template-columns:minmax(0,1fr)}
+ .hero>.wep-finance-hero-details>.wep-build-stock{grid-column:1;grid-row:3}
+ .hero>.wep-finance-hero-details>.wep-build-delivery{grid-column:1;grid-row:4}
+ .hero.wep-summary-hero>.wep-build-finance{grid-column:1;grid-row:3}
+ .hero.wep-summary-hero>.wep-compact-actions{grid-column:1;grid-row:4}
+ .wep-build-finance>.wep-package-payment-previews{grid-template-columns:minmax(0,1fr);grid-template-rows:auto;flex:initial}
+}
+
+/* WEP_PAYMENT_OPTIONS_ACROSS_BOTTOM_V18 */
+.hero.wep-summary-hero:has(>.wep-build-finance){grid-template-columns:minmax(140px,200px) minmax(0,1fr) minmax(250px,290px);grid-template-rows:auto auto;align-items:stretch}
+.hero.wep-summary-hero>.media{grid-column:1;grid-row:1;align-self:start}
+.hero.wep-summary-hero>.wep-finance-hero-details{grid-column:2;grid-row:1;grid-template-columns:minmax(0,.9fr) minmax(0,1fr) minmax(0,1.1fr);align-self:start}
+.hero>.wep-finance-hero-details>.wep-build-product-info{grid-column:1;grid-row:2}
+.hero>.wep-finance-hero-details>.wep-build-stock{grid-column:2;grid-row:2}
+.hero>.wep-finance-hero-details>.wep-build-delivery{grid-column:3;grid-row:2;min-width:0;display:block;margin:0}
+.hero .wep-build-delivery label{display:block;margin:6px 0;min-width:0}
+.hero .wep-build-delivery select,.hero .wep-build-delivery input{width:100%;min-width:0;box-sizing:border-box}
+.hero.wep-summary-hero>.wep-build-finance{grid-column:1/3;grid-row:2}
+.hero.wep-summary-hero>.wep-compact-actions{grid-column:3;grid-row:1/3}
+.wep-build-finance>.wep-package-payment-previews{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto;align-items:stretch}
+@media(max-width:1100px){
+ .hero.wep-summary-hero:has(>.wep-build-finance){grid-template-columns:150px minmax(0,1fr);grid-template-rows:auto auto auto}
+ .hero.wep-summary-hero>.wep-finance-hero-details{grid-column:2;grid-row:1}
+ .hero.wep-summary-hero>.wep-build-finance{grid-column:1/-1;grid-row:2}
+ .hero.wep-summary-hero>.wep-compact-actions{grid-column:1/-1;grid-row:3}
+}
+@media(max-width:760px){
+ .hero.wep-summary-hero:has(>.wep-build-finance){grid-template-columns:minmax(0,1fr)}
+ .hero.wep-summary-hero>.media{grid-column:1;grid-row:1}
+ .hero.wep-summary-hero>.wep-finance-hero-details{grid-column:1;grid-row:2;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .hero>.wep-finance-hero-details>.wep-build-product-info{grid-column:1;grid-row:2}
+ .hero>.wep-finance-hero-details>.wep-build-stock{grid-column:2;grid-row:2}
+ .hero>.wep-finance-hero-details>.wep-build-delivery{grid-column:1/-1;grid-row:3}
+ .hero.wep-summary-hero>.wep-build-finance{grid-column:1;grid-row:3}
+ .hero.wep-summary-hero>.wep-compact-actions{grid-column:1;grid-row:4}
+}
+@media(max-width:540px){
+ .hero.wep-summary-hero>.wep-finance-hero-details{grid-template-columns:minmax(0,1fr)}
+ .hero>.wep-finance-hero-details>.wep-build-stock{grid-column:1;grid-row:3}
+ .hero>.wep-finance-hero-details>.wep-build-delivery{grid-column:1;grid-row:4}
+ .wep-build-finance>.wep-package-payment-previews{grid-template-columns:minmax(0,1fr)}
+}
+
+/* WEP_DELIVERY_CONTROLS_V19 */
+.wep-build-product-info>.wep-spec-link{display:block;font-size:13px;margin-top:8px}
+.wep-build-stock>#wep-empty-cart{display:block;margin:5px 0 8px;border:1px solid #a8b5aa;border-radius:5px;background:#fff;color:#273b2b;padding:6px 12px;font-size:12px;cursor:pointer}
+.wep-build-stock>#wep-undo-empty-cart{display:block;margin:4px 0;font-size:11px}
+.wep-build-stock>#wep-undo-empty-cart[hidden]{display:none!important}
+.hero.wep-summary-hero>.wep-finance-hero-details{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(135px,.75fr)}
+.hero .wep-build-delivery h3{font-size:14px;margin-top:0}
+.hero .wep-build-delivery [hidden]{display:none!important}
+@media(max-width:760px){.hero.wep-summary-hero>.wep-finance-hero-details{grid-template-columns:repeat(2,minmax(0,1fr))}.hero>.wep-finance-hero-details>.wep-build-delivery{max-width:240px}}
+@media(max-width:540px){.hero.wep-summary-hero>.wep-finance-hero-details{grid-template-columns:minmax(0,1fr)}}
+
+/* WEP_COMPACT_AVAILABILITY_V20 */
+.wep-build-stock:has(.wep-build-stock-choice:not([hidden])){display:grid;grid-template-columns:minmax(0,1fr) 62px;gap:6px 9px;align-content:start}
+.wep-build-stock:has(.wep-build-stock-choice:not([hidden]))>.stock-details{grid-column:1;min-width:0}
+.wep-build-stock:has(.wep-build-stock-choice:not([hidden]))>label:has(#equipment-qty){grid-column:2;font-size:12px;margin:9px 0 0}
+.wep-build-stock #equipment-qty{display:block;width:62px;min-height:38px;margin-top:4px;padding:6px;box-sizing:border-box}
+.wep-build-stock .wep-build-stock-choice{font-size:12px;gap:4px;margin-bottom:0}
+.wep-build-stock .wep-build-stock-choice select{width:100%;font-size:12px}
+.wep-build-stock>#wep-empty-cart{grid-column:1/-1;justify-self:start;margin:0 0 4px}
+.wep-build-stock>#wep-undo-empty-cart,.wep-build-stock>.wep-build-inventory-status{grid-column:1/-1}
+.hero.wep-summary-hero>.wep-finance-hero-details{grid-template-columns:minmax(0,.8fr) minmax(210px,1.25fr) minmax(130px,.7fr)}
+@media(max-width:760px){.hero.wep-summary-hero>.wep-finance-hero-details{grid-template-columns:minmax(0,1fr) minmax(210px,1.2fr)}}
+@media(max-width:540px){.hero.wep-summary-hero>.wep-finance-hero-details{grid-template-columns:minmax(0,1fr)}}
+
+/* WEP_STACK_AVAILABILITY_AND_SPECS_V21 */
+.hero.wep-summary-hero>.wep-finance-hero-details{grid-template-columns:minmax(0,.8fr) minmax(150px,.95fr) minmax(240px,1.2fr);gap:12px 18px}
+.hero>.wep-finance-hero-details>.wep-build-product-info{grid-column:1;grid-row:2}
+.wep-build-quick-specs{grid-column:2;grid-row:2;min-width:0;padding:6px 0}
+.wep-build-quick-specs[hidden]{display:none!important}
+.wep-build-quick-specs dl{margin:0}
+.wep-build-quick-specs dl>div{padding:7px 0;border-bottom:1px solid #dce5dd}
+.wep-build-quick-specs dl>div:last-child{border-bottom:0}
+.wep-build-quick-specs dt{font-size:12px;line-height:1.3;color:#59645d}
+.wep-build-quick-specs dd{font-size:14px;line-height:1.35;font-weight:700;color:#213d28;margin:2px 0 0;overflow-wrap:anywhere}
+.wep-build-fulfillment-stack{grid-column:3;grid-row:2;min-width:0;display:flex;flex-direction:column;gap:12px;align-self:start}
+.wep-build-fulfillment-stack>.wep-build-stock{padding:0}
+.wep-build-fulfillment-stack>.wep-build-delivery{width:100%;max-width:none;box-sizing:border-box;margin:0}
+@media(max-width:1400px) and (min-width:1101px){.hero.wep-summary-hero:has(>.wep-build-finance){grid-template-columns:150px minmax(0,1fr) 250px}.hero.wep-summary-hero>.wep-finance-hero-details{grid-template-columns:minmax(0,.8fr) minmax(130px,.8fr) minmax(210px,1.2fr);gap:12px}}
+@media(max-width:1100px) and (min-width:761px){.hero.wep-summary-hero>.wep-finance-hero-details{grid-template-columns:minmax(0,1fr) minmax(135px,1fr) minmax(210px,1.25fr)}}
+@media(max-width:760px){.hero.wep-summary-hero>.wep-finance-hero-details{grid-template-columns:repeat(2,minmax(0,1fr))}.wep-build-quick-specs{grid-column:2;grid-row:2}.wep-build-fulfillment-stack{grid-column:1/-1;grid-row:3;display:flex;gap:12px}}
+@media(max-width:540px){.hero.wep-summary-hero>.wep-finance-hero-details{grid-template-columns:minmax(0,1fr)}.wep-build-quick-specs{grid-column:1;grid-row:3}.wep-build-fulfillment-stack{grid-column:1;grid-row:4;display:flex}}
+
+/* WEP_COMPACT_CHECKOUT_LAYOUT_V23 */
+.hero.wep-summary-hero:has(>.wep-build-finance){gap:12px 16px;align-items:start;padding:14px}
+.hero.wep-summary-hero>.wep-finance-hero-details{gap:8px 16px}
+.hero>.wep-finance-hero-details>.wep-build-heading{grid-column:1/3;grid-row:1;margin:0}
+.hero>.wep-finance-hero-details>.wep-build-fulfillment-stack{grid-column:3;grid-row:1/3;gap:8px;align-self:start}
+.wep-build-fulfillment-stack .wep-build-stock-choice{margin-top:0}
+.wep-build-fulfillment-stack>.wep-build-stock>label:has(#equipment-qty){margin-top:0}
+.wep-build-fulfillment-stack>.wep-build-delivery{padding:10px 12px}
+.hero .wep-build-delivery h3{margin:0 0 6px}
+.hero .wep-build-delivery label{margin:4px 0}
+.hero:has(.wep-build-finance)>.media{height:220px;align-self:start}
+.hero:has(.wep-build-finance)>.media img{max-height:220px}
+.hero.wep-summary-hero>.wep-compact-actions{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:12px;align-self:start;padding:13px;margin:0}
+.hero .wep-compact-actions>.wep-build-payment-choices{margin:0}
+.hero .wep-compact-actions .wep-build-totals{width:100%;flex:0 0 auto}
+.hero .wep-compact-actions .wep-build-totals dl>div{margin:5px 0}
+.hero .wep-compact-actions .summary-actions{display:flex;flex-direction:column;gap:7px;margin:0;width:100%}
+.hero .wep-compact-actions .summary-actions>*{box-sizing:border-box;text-align:center;width:100%}
+.hero .wep-compact-actions #wep-build-checkout{background:#cf0036;color:#fff;font-size:14px;padding:10px 12px}
+.hero .wep-compact-actions #review-package{background:#fff;color:#176a14;border:1px solid #b9cbbb}
+.hero.wep-summary-hero>.wep-build-finance{padding:10px 12px;align-self:start}
+.wep-build-finance>.wep-package-payment-previews{flex:initial;gap:9px}
+.wep-package-payment-card{padding:11px;min-height:0}
+.wep-package-payment-card.is-selected{padding:10px}
+.wep-build-quick-specs{padding:0}.wep-build-quick-specs dl>div{padding:5px 0}
+@media(max-width:760px){.hero>.wep-finance-hero-details>.wep-build-heading{grid-column:1/-1;grid-row:1}.hero>.wep-finance-hero-details>.wep-build-fulfillment-stack{grid-column:1/-1;grid-row:3}.hero.wep-summary-hero>.wep-compact-actions{align-self:start}}
+@media(max-width:540px){.hero>.wep-finance-hero-details>.wep-build-fulfillment-stack{grid-column:1;grid-row:4}.hero:has(.wep-build-finance)>.media{height:170px}.hero:has(.wep-build-finance)>.media img{max-height:170px}}
+
+/* WEP_EQUAL_PAYMENT_OPTIONS_V24 */
+.wep-package-payment-card,.wep-package-payment-card.is-selected{background:#f3f5f4;border:1px solid #c1cbc4;box-shadow:none;padding:11px}
+.wep-package-payment-card[hidden]{display:none!important}
+.wep-package-payment-card .wep-payment-selected{display:none!important}
+.wep-package-payment-card h4,.wep-package-payment-card .wep-package-payment-total,.wep-package-payment-card .wep-build-finance-program,.wep-package-payment-card .wep-build-finance-monthly,.wep-package-payment-card .wep-build-finance-monthly strong{color:#283a30!important}
+.wep-package-payment-card .wep-build-offer-saving{font-size:11px!important;color:#37543e!important}
+.wep-package-payment-previews:has(>[data-payment-preview="cash"][hidden]){grid-template-columns:minmax(0,1fr)}
+.wep-payment-table-wrap .cash,.wep-payment-table-wrap .credit,.wep-payment-table-wrap .finance{background:#f3f5f4}
+.wep-payment-table-wrap thead .cash,.wep-payment-table-wrap thead .credit,.wep-payment-table-wrap thead .finance{border-top-color:#87978d}
+
+/* WEP_ALIGNED_AVAILABILITY_QTY_V25 */
+#app .wep-build-stock .wep-build-stock-choice,#app .wep-build-stock>label:has(#equipment-qty){display:flex!important;flex-direction:column;gap:4px!important;margin:0!important;padding:0!important;font-size:12px!important;line-height:16px!important;font-weight:400}
+#app .wep-build-stock:has(.wep-build-stock-choice:not([hidden]))>.stock-details{grid-row:1;margin:0;padding:0}
+#app .wep-build-stock:has(.wep-build-stock-choice:not([hidden]))>label:has(#equipment-qty){grid-row:1;align-self:start}
+#app .wep-build-stock .wep-build-stock-choice select,#app .wep-build-stock #equipment-qty{height:38px!important;min-height:38px!important;margin:0!important;padding:6px!important;box-sizing:border-box;font-size:12px!important;line-height:normal}
+#app .wep-build-delivery>label:first-of-type{margin-top:0}
+#app .wep-build-stock .wep-build-stock-choice[hidden]{display:none!important}
+
+/* WEP_CHARCOAL_PAYMENTS_AND_ITEM_REMOVE_V26 */
+.hero.wep-summary-hero>.wep-build-finance{background:transparent;border:0;box-shadow:none;padding:0;border-radius:0}
+#app .wep-package-payment-card,#app .wep-package-payment-card.is-selected{background:#353c40;border:1px solid #546359;color:#fff;box-shadow:none;padding:12px}
+#app .wep-package-payment-card h4,#app .wep-package-payment-card .wep-package-payment-total,#app .wep-package-payment-card .wep-build-finance-program,#app .wep-package-payment-card .wep-build-finance-monthly,#app .wep-package-payment-card .wep-build-finance-monthly strong{color:#fff!important}
+#app .wep-package-payment-card .wep-build-finance-note,#app .wep-package-payment-card .wep-package-payment-caption,#app .wep-package-payment-card .wep-build-offer-saving{color:#e3e9e3!important}
+.wep-build-media-column{grid-column:1;grid-row:1;min-width:0;align-self:start;display:flex;flex-direction:column;align-items:center;gap:6px}
+.wep-build-media-column>.media{height:220px;width:100%;background:#fff}
+.wep-build-media-column>.media img{max-height:220px;object-fit:contain}
+#app .wep-build-media-column>#wep-empty-cart{display:inline-block;border:0;border-radius:0;background:transparent;color:#59635d;font-size:12px;font-weight:400;line-height:1.4;text-decoration:underline;text-underline-offset:2px;padding:4px;margin:0;cursor:pointer}
+#app .wep-build-media-column>#wep-empty-cart:hover{color:#a21724}
+#app .wep-build-media-column>#wep-empty-cart:focus-visible{outline:2px solid #176a14;outline-offset:2px}
+#app .wep-build-media-column>#wep-undo-empty-cart[hidden]{display:none!important}
+@media(max-width:760px){.hero.wep-summary-hero>.wep-build-media-column{grid-column:1;grid-row:1}}
+@media(max-width:540px){.wep-build-media-column>.media{height:170px}.wep-build-media-column>.media img{max-height:170px}}
+
+/* WEP_AVAILABILITY_ALIGNED_WITH_SPECS_V27 */
+@media(min-width:761px){
+ .hero>.wep-finance-hero-details>.wep-build-heading{grid-column:1/-1;grid-row:1}
+ .hero>.wep-finance-hero-details>.wep-build-fulfillment-stack{grid-column:3;grid-row:2;align-self:start;margin:0;padding-top:5px}
+}
+
+/* WEP_MATCH_AVAILABILITY_DELIVERY_V28 */
+#app .wep-build-fulfillment-stack>.wep-build-delivery{display:block;background:transparent;border:0;border-radius:0;box-shadow:none;padding:0!important;margin:0!important;width:100%;max-width:none}
+#app .wep-build-delivery>h3{font-size:12px!important;font-weight:400!important;line-height:16px!important;margin:0 0 4px!important;padding:0;color:#172b1c;text-transform:none;letter-spacing:normal}
+#app .wep-build-delivery>label{display:flex;flex-direction:column;gap:4px;margin:0!important;padding:0;font-size:12px;font-weight:400;line-height:16px}
+#app .wep-build-delivery>label:first-of-type{width:calc(100% - 71px);max-width:none}
+#app .wep-build-delivery select,#app .wep-build-delivery input{width:100%;max-width:none;height:38px!important;min-height:38px!important;border:1px solid #9eaaa0;border-radius:5px;margin:0!important;padding:6px!important;background:#fff;color:#173c1e;font-size:12px!important;font-weight:400;line-height:normal;box-sizing:border-box}
+#app .wep-build-delivery #wep-build-zip-label{margin-top:8px!important;width:calc(100% - 71px)}
+
+/* WEP_PAYMENT_SELECTION_AND_SAVINGS_V30 */
+#app .wep-compact-actions .wep-payment-selection-note{font-size:12px;line-height:1.4;font-weight:400;color:#e3e9e3;margin:6px 0 0}
+#app .wep-package-payment-card .wep-build-offer-saving{font-size:11px!important;line-height:1.4;margin-top:5px!important}

@@ -40,7 +40,7 @@
   }catch(_error){reference='Q-'+crypto.randomUUID().slice(0,12).toUpperCase();}
   save.disabled=false;showDetails();
  });
- window.addEventListener('wep:quote-cleared',()=>{current=null;save.disabled=true;});
+ window.addEventListener('wep:quote-cleared',()=>{current=null;save.disabled=true;preview.replaceChildren();});
  save.addEventListener('click',()=>{
   try{
    if(!form.reportValidity())return;
@@ -49,7 +49,19 @@
    $('status').textContent='Quote copy saved. Open it to view, print or save as PDF. No order or reservation was created.';
   }catch(error){$('status').textContent=error.message;}
  });
- $('print').addEventListener('click',event=>{try{if(!form.reportValidity())throw Error('Review customer details before printing.');documentSnapshot();showDetails();}catch(error){event.stopImmediatePropagation();$('status').textContent=error.message;}},true);
+ // Print the same document used by Save Quote Copy, without the checkout controls.
+ $('print').addEventListener('click',event=>{
+  event.preventDefault();event.stopImmediatePropagation();
+  try{
+   if(!form.reportValidity())throw Error('Review customer details before printing.');
+   const s=documentSnapshot();showDetails();
+   document.getElementById('quote-print-frame')?.remove();
+   const frame=document.createElement('iframe');frame.id='quote-print-frame';frame.title='Printable equipment quote';
+   frame.style.cssText='position:fixed;left:-10000px;top:0;width:850px;height:1100px;border:0';
+   frame.onload=()=>{try{frame.contentWindow.focus();frame.contentWindow.print();}catch(_error){$('status').textContent='Unable to open printing. Use Save Quote Copy, then open the saved file to print.';}};
+   frame.srcdoc=D.html(s);document.body.appendChild(frame);
+  }catch(error){$('status').textContent=error.message;}
+ },true);
  $('email').addEventListener('click',event=>{try{if(!form.reportValidity())throw Error('Review customer details before requesting your quote.');documentSnapshot();showDetails();}catch(error){event.preventDefault();$('status').textContent=error.message;}});
  window.addEventListener('beforeprint',showDetails);
 })();

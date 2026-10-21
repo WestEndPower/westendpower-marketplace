@@ -1,0 +1,83 @@
+/* WEP_COMPACT_OPTION_CAROUSELS_V1 */
+.wep-option-nav.wep-floating-options{position:static;top:auto;z-index:50;flex-wrap:wrap;gap:8px;margin:16px 0 10px;padding:10px;background:#fff;border:1px solid #d6ded7;border-radius:9px;box-shadow:0 3px 12px #0002}
+.wep-floating-options button[aria-expanded=true]{background:#287a32;color:#fff;border-color:#287a32;box-shadow:inset 0 -2px #154c1d}
+.wep-option-panel{scroll-margin-top:85px}
+.wep-option-panel .wep-carousel-section{padding:12px;margin:10px 0}
+.wep-carousel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.wep-carousel-section .wep-carousel-heading h2{margin:0;font-size:19px}
+.wep-carousel-controls{display:flex;gap:7px;flex-shrink:0}
+.wep-carousel-controls[hidden]{display:none!important}
+.wep-carousel-controls button{width:36px;height:36px;border:1px solid #9bae9e;border-radius:50%;background:#fff;color:#176a14;font-size:22px;line-height:1;cursor:pointer}
+.wep-carousel-controls button:disabled{opacity:.35;cursor:default}
+.wep-option-panel .grid.wep-options-carousel{display:flex;gap:12px;overflow-x:auto;align-items:stretch;padding:2px 2px 10px;scroll-snap-type:x proximity;overscroll-behavior-x:contain;scrollbar-width:thin}
+.wep-options-carousel>.card.wep-carousel-card{flex:0 0 320px;max-width:320px;scroll-snap-align:start;border-radius:9px;overflow:visible}
+.wep-carousel-card>.card-body{padding:10px;gap:7px;min-width:0}
+.wep-option-card-top{display:grid;grid-template-columns:108px minmax(0,1fr);gap:10px;align-items:start}
+.wep-carousel-card .wep-option-card-top .card-media{width:108px;height:100px;min-height:0;border-radius:5px;overflow:hidden;background:#fff}
+.wep-carousel-card .card-media img{width:100%;height:100%;max-width:108px;object-fit:contain}
+.wep-carousel-card .placeholder{font-size:10px;text-align:center;line-height:1.3;color:#777}
+.wep-option-card-info{min-width:0}
+.wep-option-card-title{display:flex;align-items:start;justify-content:space-between;gap:7px}
+.wep-carousel-card h3{font-size:15px;line-height:1.25;margin:0 0 3px}
+.wep-option-card-info>small{font-size:10px;color:#687069;overflow-wrap:anywhere}
+.wep-option-card-info>p:not(.card-price){font-size:12px;line-height:1.3;margin:4px 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wep-carousel-card .card-price{font-size:19px;margin:4px 0 0;line-height:1.25}
+.wep-card-select{display:none!important}
+.wep-card-select .option-check{width:17px;height:17px;margin:0;accent-color:#287a32}
+.wep-carousel-card .note{font-size:11px;line-height:1.35;margin:0}
+.wep-carousel-card label.note{display:flex;align-items:start;gap:5px}
+.wep-carousel-card .setup-choice{margin:1px 0 0;flex-shrink:0}
+.wep-carousel-card .wep-option-actions{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:nowrap;margin-top:auto;padding-top:6px}
+.wep-carousel-card .wep-option-actions button{margin:0;padding:7px 8px;min-height:34px;white-space:nowrap;font:700 11px Arial,sans-serif;cursor:pointer;border:1px solid #94a697;border-radius:5px;background:#fff;color:#202428}
+.wep-carousel-card .wep-option-actions .add-option-cart{background:#287a32;border-color:#287a32;color:#fff}
+.wep-option-qty{display:flex;align-items:center;gap:4px;font-size:11px;white-space:nowrap}
+.wep-carousel-card .wep-option-qty .qty{width:48px!important;height:34px;padding:5px;font:13px Arial,sans-serif;margin:0;border:1px solid #aaa;border-radius:5px}
+.wep-option-stock-content{font-size:12px;background:#f3f7f3;padding:8px;border:1px solid #d2ddd3;border-radius:5px}
+.wep-option-stock-content[hidden]{display:none!important}
+.wep-option-stock-content>div{margin:4px 0}.wep-option-stock-content a{display:block;margin:3px 0;color:#176a14;font-weight:700}
+.wep-option-stock-content>small{display:block;font-size:10px;color:#666;margin-top:6px}
+.wep-options-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.wep-floating-options button:focus-visible,.wep-carousel-controls button:focus-visible,.wep-options-carousel:focus-visible,.wep-option-actions button:focus-visible{outline:3px solid #287a32;outline-offset:2px}
+@media(max-width:600px){.wep-option-nav.wep-floating-options{top:0;gap:5px;padding:7px}.wep-floating-options button{padding:8px!important;font-size:12px!important}.wep-option-panel .wep-carousel-section{padding:9px}.wep-options-carousel>.card.wep-carousel-card{flex-basis:min(320px,calc(100vw - 60px));max-width:320px}.wep-carousel-section .wep-carousel-heading h2{font-size:17px}}
+@media print{.wep-option-nav.wep-floating-options,.wep-carousel-controls{display:none!important}}
+/* WEP_OPTION_IMAGE_PREVIEW_V2 */
+.wep-option-image-zoom{display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:0;border:0;background:#fff;cursor:zoom-in;border-radius:5px}
+.wep-option-image-zoom:focus-visible{outline:3px solid #287a32;outline-offset:-3px}
+.wep-option-image-dialog{width:min(980px,92vw);max-height:90vh;padding:18px;border:1px solid #aaa;border-radius:12px;background:#fff;color:#202428;font:16px/1.4 Arial,sans-serif;box-shadow:0 12px 45px #0006}
+.wep-option-image-dialog::backdrop{background:#000b}
+.wep-option-image-dialog-head{display:flex;align-items:start;justify-content:space-between;gap:16px;margin-bottom:12px}
+.wep-option-image-dialog-head h2{margin:0;font-size:20px}
+.wep-option-image-dialog-head button{flex-shrink:0;padding:8px 14px;border:1px solid #aaa;border-radius:6px;background:#fff;color:#202428;font:700 14px Arial;cursor:pointer}
+.wep-option-image-dialog>img{display:block;width:100%;height:auto;max-height:70vh;object-fit:contain}
+.wep-option-image-dialog>img[hidden],.wep-option-image-dialog p[hidden]{display:none!important}
+@media print{.wep-option-image-dialog{display:none!important}}
+/* WEP_RESPONSIVE_OPTIONS_FLOW_V5 */
+.wep-option-nav.wep-floating-options{position:static;top:auto;bottom:auto;left:auto;right:auto;z-index:auto;display:flex;flex-wrap:wrap;max-width:100%;width:100%;margin:16px 0 10px;padding:10px;gap:8px;box-sizing:border-box}
+.wep-option-nav.wep-floating-options button{flex:1 1 130px;min-width:0;min-height:44px;white-space:normal;overflow-wrap:anywhere;line-height:1.3;text-align:center;padding:9px 8px!important}
+.wep-option-panel{position:static;max-height:none;max-width:100%;margin:0;overflow:visible}
+@media screen{.wep-package-review{display:none!important}}
+@media(max-width:600px){.wep-option-nav.wep-floating-options{padding:7px;gap:5px}.wep-option-nav.wep-floating-options button{flex-basis:110px;font-size:12px!important;padding:8px!important}}
+@media print{.wep-option-nav.wep-floating-options{display:none!important}}
+
+/* Uniform full-list view; Close restores each section's compact browsing view. */
+.wep-view-all-options{flex-shrink:0;margin-left:auto;padding:6px 12px;border:1px solid #287a32;border-radius:6px;background:#fff;color:#176a14;font:700 13px Arial,sans-serif;cursor:pointer}
+.wep-view-all-options:focus-visible,.wep-inline-implement-tile:focus-visible{outline:3px solid #287a32;outline-offset:3px}
+.wep-option-panel.wep-view-all-active .grid.wep-options-carousel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;scroll-snap-type:none;align-items:stretch}
+.wep-option-panel.wep-view-all-active .wep-options-carousel>.card.wep-carousel-card{width:100%;max-width:none;min-width:0}
+.wep-option-panel.wep-view-all-active .wep-carousel-controls{display:none!important}
+.wep-implement-type-row{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 12px;scroll-snap-type:x proximity;overscroll-behavior-x:contain;scrollbar-width:thin}
+.wep-inline-implement-tile{flex:0 0 210px;display:flex;flex-direction:column;gap:5px;align-items:center;padding:10px;border:1px solid #c4d0c6;border-radius:9px;background:#fff;color:#202428;text-align:center;cursor:pointer;font:14px/1.4 Arial,sans-serif;scroll-snap-align:start}
+.wep-inline-implement-tile:hover{border-color:#287a32}.wep-inline-implement-tile strong{font-size:16px}.wep-inline-implement-tile>span:last-child{font-size:12px;color:#555}
+.wep-inline-implement-image{height:115px;width:100%;display:flex;align-items:center;justify-content:center}.wep-inline-implement-image img{height:100%;width:100%;object-fit:contain}
+#wep-panel-implement .wep-inline-implements{padding:12px;margin:10px 0}#wep-panel-implement .wep-inline-implements>.wep-carousel-heading h2{font-size:19px;margin:0}
+#wep-panel-implement .wep-implement-freight-note{padding:8px 10px;margin:8px 0 12px;border-left:4px solid #a56916;border-radius:4px;background:#fff5df;color:#513b18;font:600 12px/1.4 Arial,sans-serif}
+[data-wep-implement-group-content][hidden],[data-wep-implement-types][hidden],.wep-implement-back[hidden]{display:none!important}
+@media(max-width:1000px){.wep-option-panel.wep-view-all-active .grid.wep-options-carousel{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.wep-option-panel.wep-view-all-active .grid.wep-options-carousel{grid-template-columns:minmax(0,1fr)}.wep-inline-implement-tile{flex-basis:170px}.wep-inline-implement-image{height:100px}.wep-implements-main-heading{flex-wrap:wrap}}
+@media print{.wep-view-all-options,.wep-implement-type-row,.wep-implement-back{display:none!important}}
+
+/* Clear card separation in both the scrolling and View All layouts. */
+#app .wep-option-panel .wep-options-carousel>.card.wep-carousel-card{border:3px solid #41664b;background:#e7efe8;box-shadow:0 2px 7px rgba(25,55,30,.16)}
+#app .wep-option-panel .wep-carousel-card>.card-body{background:#e7efe8;border-radius:7px}
+#app .wep-option-panel .wep-carousel-card .wep-option-card-top .card-media{background:#fff;border:1px solid #bdccbf}
+#app .wep-option-panel .wep-inline-implement-tile{border:3px solid #41664b;background:#e7efe8;box-shadow:0 2px 7px rgba(25,55,30,.12)}

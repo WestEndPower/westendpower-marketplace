@@ -1,0 +1,30 @@
+#wep-build-header{box-sizing:border-box;max-width:1740px;margin:0 auto 18px;padding:18px;background:#176a14;font:16px/1.4 Arial,Helvetica,sans-serif;color:#fff}
+#wep-build-header *{box-sizing:border-box}
+#wep-build-header .market-header{position:relative;display:grid;grid-template-columns:minmax(140px,210px) minmax(0,1fr) minmax(250px,370px) auto;align-items:center;gap:20px;border:1px solid #ffffff35;border-radius:12px;background:#d0d6d9;padding:18px 14px 18px 20px;color:#171a1d}
+#wep-build-header .market-branding{display:contents}
+#wep-build-header .market-home-link{grid-column:1;display:flex;align-items:center}
+#wep-build-header .market-home-link img{width:100%;max-width:210px;max-height:75px;object-fit:contain}
+#wep-build-header .market-brand-text{grid-column:2;min-width:0;text-align:center}
+#wep-build-header h1{margin:0;color:#176a14;font-size:clamp(20px,1.75vw,30px);font-weight:900;line-height:1.2;text-wrap:balance}
+#wep-build-header .shop-header-slogan{margin:8px 0 0;color:#333936;font-size:clamp(13px,1.1vw,17px);font-weight:700;line-height:1.35;text-wrap:balance}
+#wep-build-header .market-searchbox{grid-column:3;display:flex;align-items:center;gap:8px;min-width:0;margin:0}
+#wep-build-header input{min-width:0;width:100%;min-height:44px;padding:11px 13px;border:1px solid #aeb6bf;border-radius:9px;font:inherit;background:#fff;color:#202428}
+#wep-build-header .market-clear{min-height:44px;border:1px solid #333;border-radius:8px;background:#fff;color:#111;padding:10px 12px;font:700 15px Arial;cursor:pointer}
+#wep-build-header .wep-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:28px;padding:0 10px 12px;border-bottom:1px solid #ffffff35}
+#wep-build-header .wep-nav>a,#wep-build-header summary{display:block;padding:11px 14px;color:#fff;font-weight:700;text-decoration:none;border-radius:7px;cursor:pointer;list-style:none}
+#wep-build-header .wep-nav>a:hover,#wep-build-header summary:hover{background:#ffffff20}
+#wep-build-header a:focus-visible,#wep-build-header summary:focus-visible,#wep-build-header button:focus-visible,#wep-build-header input:focus-visible{outline:3px solid #efce65;outline-offset:3px}
+#wep-build-header details{position:relative}
+#wep-build-header summary::-webkit-details-marker{display:none}
+#wep-build-header summary::after{content:'';display:inline-block;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor;margin-left:7px;vertical-align:middle}
+#wep-build-header details[open] summary::after{border-top:0;border-bottom:5px solid currentColor}
+#wep-build-header .wep-menu{position:absolute;z-index:1100;top:100%;left:0;min-width:180px;max-height:65vh;overflow:auto;padding:7px;background:#176a14;border:1px solid #ffffff50;border-radius:8px;box-shadow:0 8px 20px #0003}
+#wep-build-header .wep-menu a{display:block;padding:10px 14px;color:#fff!important;text-decoration:none;font-weight:700;white-space:nowrap;border-radius:4px}
+#wep-build-header .wep-menu a:hover{background:#ffffff20}
+#wep-build-header .wep-cart{border:1px solid #ffffff60}
+#wep-header-cart{grid-column:4;display:flex;align-items:center;justify-content:center;gap:9px;min-height:50px;padding:11px 17px;border:2px solid #333936;border-radius:999px;background:#fff;color:#173c1a;text-decoration:none;font-size:18px;font-weight:900;box-shadow:0 5px 18px #0003;white-space:nowrap}
+#wep-header-cart svg{width:23px;height:23px}
+#wep-header-cart-count{display:inline-flex;align-items:center;justify-content:center;min-width:23px;height:23px;padding:0 5px;border-radius:999px;background:#333936;color:#fff;font-size:12px}
+@media(max-width:1200px){#wep-build-header .market-header{grid-template-columns:170px minmax(0,1fr) auto;gap:14px}#wep-build-header .market-searchbox{grid-row:2;grid-column:1/-1;max-width:650px;width:100%;justify-self:center}#wep-header-cart{grid-row:1;grid-column:3}#wep-build-header .wep-nav{justify-content:flex-start}}
+@media(max-width:600px){#wep-build-header{padding:10px}#wep-build-header .market-header{grid-template-columns:115px minmax(0,1fr);padding:14px;gap:14px 10px}#wep-build-header h1{font-size:20px}#wep-build-header .shop-header-slogan{font-size:13px}#wep-header-cart{grid-column:1/-1;grid-row:2;justify-self:end;font-size:15px;min-height:44px;padding:8px 13px}#wep-build-header .market-searchbox{grid-row:3}#wep-build-header .wep-nav{margin-top:15px;gap:4px;padding:0 0 10px}#wep-build-header .wep-nav>a,#wep-build-header summary{font-size:13px;padding:10px}#wep-build-header .wep-menu{max-width:calc(100vw - 30px)}}
+@media print{#wep-build-header{display:none!important}}

@@ -1,0 +1,177 @@
+/* WEP_ITEMIZED_QUOTE_V1: the selected package stays visible below the options. */
+#app #wep-itemized-quote{display:block!important;clear:both;scroll-margin-top:24px;margin:28px 0 18px;padding:0;border:1px solid #ccd6ce;border-top:5px solid #287a32;border-radius:12px;background:#fff;box-shadow:0 4px 18px #203a240c;overflow:hidden}
+#wep-itemized-quote:focus{outline:2px solid #287a32;outline-offset:4px}
+#wep-itemized-quote .wep-itemized-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px;background:#f1f6f1;border-bottom:1px solid #d8e2d8}
+#wep-itemized-quote .eyebrow{color:#526a55;letter-spacing:.07em;font-size:11px}
+#wep-itemized-quote h2{font-size:25px;margin:3px 0 0;color:#203a24}
+#wep-itemized-quote .wep-itemized-badge{font-size:12px;line-height:1.4;color:#287a32;background:white;border:1px solid #c9dac9;border-radius:20px;padding:7px 12px}
+#wep-itemized-quote #wep-package-lines{padding:0 24px 20px}
+#wep-itemized-quote .wep-itemized-status{font-size:13px;color:#416548;padding:14px 0}
+#wep-itemized-quote .wep-itemized-pending{color:#705919}
+#wep-itemized-quote .wep-package-table-scroll{overflow-x:auto}
+#wep-itemized-quote .wep-package-table{min-width:720px;font-size:14px}
+#wep-itemized-quote .wep-package-table thead th{background:#f6f7f6;color:#4e5d50;font-weight:700;font-size:12px;padding:12px}
+#wep-itemized-quote .wep-package-table th,#wep-itemized-quote .wep-package-table td{padding:15px 12px;vertical-align:top;border-bottom:1px solid #e3e8e3}
+#wep-itemized-quote .wep-package-table tbody th{width:38%;min-width:220px;color:#202d23;font-size:15px}
+#wep-itemized-quote .wep-package-table td:nth-child(3),#wep-itemized-quote .wep-package-table td:nth-child(4){font-variant-numeric:tabular-nums}
+#wep-itemized-quote .wep-package-table td:nth-child(4){font-weight:700}
+#wep-itemized-quote .wep-package-table td:last-child{white-space:normal;min-width:180px}
+#wep-itemized-quote .wep-package-table small{margin-top:4px}
+#wep-itemized-quote .wep-itemized-source{color:#287a32}
+#wep-itemized-quote input[type=number]{width:65px;min-height:40px;background:#fff}
+#wep-itemized-quote input[type=checkbox]{width:18px;height:18px;vertical-align:middle;accent-color:#287a32}
+#wep-itemized-quote [data-review-remove-type]{color:#a52030;background:#fff;border:0;padding:5px 0;text-decoration:underline;min-height:32px}
+#wep-itemized-quote .wep-itemized-footer{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,420px);gap:32px;padding-top:22px}
+#wep-itemized-quote .wep-itemized-payment{padding:15px 18px;background:#f6f8f5;border:1px solid #dde5da;border-radius:9px;align-self:start}
+#wep-itemized-quote h3{font-size:16px;margin:0 0 8px;color:#203a24}
+#wep-itemized-quote .wep-itemized-payment p{margin:6px 0;font-size:14px}
+#wep-itemized-quote .wep-itemized-finance{font-weight:700;color:#287a32}
+#wep-itemized-quote .wep-itemized-totals dl{margin:0;font-size:14px}
+#wep-itemized-quote .wep-itemized-totals dl>div{display:flex;justify-content:space-between;gap:20px;padding:7px 0}
+#wep-itemized-quote .wep-itemized-totals dd{margin:0;font-weight:700;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+#wep-itemized-quote .wep-itemized-totals dl>div:last-child{border-top:2px solid #287a32;margin-top:8px;padding:14px 0 4px;font-size:21px;color:#203a24;font-weight:800}
+#wep-itemized-quote .note{font-size:12px;color:#637066;margin:18px 0 0}
+.wep-visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+@media(max-width:700px){#wep-itemized-quote .wep-itemized-heading{align-items:flex-start;flex-direction:column;padding:16px}#wep-itemized-quote h2{font-size:22px}#wep-itemized-quote #wep-package-lines{padding:0 16px 16px}#wep-itemized-quote .wep-itemized-footer{grid-template-columns:minmax(0,1fr);gap:18px}#wep-itemized-quote .wep-itemized-badge{font-size:11px}}
+@media print{#app #wep-itemized-quote{box-shadow:none;border:0;overflow:visible;margin:12px 0}#wep-itemized-quote .wep-itemized-heading{padding:10px 0;background:white}#wep-itemized-quote #wep-package-lines{padding:0}#wep-itemized-quote .wep-package-table{min-width:0;font-size:10px}#wep-itemized-quote .wep-package-table tbody th{font-size:11px;min-width:0}#wep-itemized-quote .wep-package-table th,#wep-itemized-quote .wep-package-table td{padding:8px 4px;min-width:0}#wep-itemized-quote .wep-itemized-badge{display:none}#wep-itemized-quote .wep-itemized-footer{grid-template-columns:1fr 1fr;gap:20px}#wep-itemized-quote .wep-itemized-totals dl{font-size:11px}#wep-itemized-quote .wep-itemized-totals dl>div:last-child{font-size:16px}#wep-itemized-quote .wep-itemized-payment{break-inside:avoid}}
+
+/* Compact item metadata and installation controls. */
+#wep-itemized-quote .wep-itemized-meta{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;margin-top:4px;font-size:12px;line-height:1.4;font-weight:400;color:#637066}
+#wep-itemized-quote .wep-itemized-meta [data-review-remove-type]{display:inline-block;min-height:24px;margin:0;padding:0;font-size:12px}
+#wep-itemized-quote .wep-itemized-install{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;font-size:13px;line-height:1.4}
+#wep-itemized-quote .wep-itemized-install input{margin:0;flex-shrink:0}
+#wep-itemized-quote .wep-package-table td:last-child{min-width:150px}
+/* Tighter rows for packages containing many items. */
+#wep-itemized-quote .wep-package-table tbody th,#wep-itemized-quote .wep-package-table tbody td{padding:8px 12px;line-height:1.3;vertical-align:middle}
+#wep-itemized-quote .wep-itemized-meta{margin-top:2px;line-height:1.25;gap:2px 10px}
+#wep-itemized-quote .wep-itemized-meta [data-review-remove-type]{min-height:20px}
+#wep-itemized-quote input[type=number]{min-height:34px;padding:5px 7px}
+@media print{#wep-itemized-quote .wep-package-table tbody th,#wep-itemized-quote .wep-package-table tbody td{padding:5px 4px}}
+/* Shared selectable payment cards, including the three-card stack below. */
+#app .wep-package-payment-card{position:relative;isolation:isolate;transition:box-shadow .15s,border-color .15s}
+#app .wep-package-payment-card .wep-payment-card-choice{position:absolute;inset:0;z-index:1;display:block;width:100%;height:100%;padding:0;border:0!important;border-radius:inherit;background:transparent!important;cursor:pointer}
+#app .wep-package-payment-card:has(.wep-payment-card-choice:hover){box-shadow:inset 0 0 0 2px #afcbb6}
+#app .wep-package-payment-card.is-selected{border-color:#8bd59a;box-shadow:inset 0 0 0 2px #8bd59a}
+#app .wep-package-payment-card:has(.wep-payment-card-choice:focus-visible){outline:3px solid #e5c45b;outline-offset:3px}
+#app .wep-package-payment-card .wep-payment-selected:not([hidden]){display:inline-block!important;font-size:10px!important;font-weight:700;line-height:1.3;padding:2px 6px;margin:0 0 4px!important;border-radius:4px;color:#fff;background:#287a32}
+#app .wep-package-payment-card .wep-view-all-payments{position:relative;z-index:2;display:block;margin:8px 0 0;padding:7px 9px;min-height:34px;max-width:100%;border:1px solid #a4b6aa;border-radius:5px;background:#fff;color:#1e542c;font:700 12px/1.3 Arial,sans-serif;cursor:pointer}
+#app .wep-view-all-payments:focus-visible{outline:3px solid #e5c45b;outline-offset:2px}
+#wep-itemized-quote .wep-itemized-payment{padding:0;background:transparent;border:0;border-radius:0;min-width:0}
+#wep-itemized-quote .wep-itemized-payment h3{margin:0 0 10px;font-size:16px}
+#wep-itemized-quote .wep-itemized-payment-cards{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+#wep-itemized-quote .wep-package-payment-card{margin:0;width:100%;padding:10px 14px;border-radius:8px;min-width:0;box-sizing:border-box}
+#wep-itemized-quote .wep-package-payment-card h4{font-size:14px;margin:0 0 4px;line-height:1.3}
+#wep-itemized-quote .wep-package-payment-card p{font-size:12px;line-height:1.35;margin:3px 0}
+#wep-itemized-quote .wep-package-payment-card .wep-package-payment-total{font-size:21px;font-weight:800;margin:2px 0}
+#wep-itemized-quote .wep-package-payment-card .wep-build-finance-monthly strong{font-size:21px}
+#wep-itemized-quote .wep-package-payment-card .wep-build-finance-program{font-size:13px;font-weight:700}
+#wep-itemized-quote .wep-package-payment-card .wep-package-payment-caption{font-size:11px}
+@media print{#app .wep-payment-card-choice,#app .wep-view-all-payments{display:none!important}#wep-itemized-quote .wep-itemized-payment-cards{break-inside:avoid}}
+#app .wep-package-payment-card .wep-payment-selected:not([hidden]){align-self:center}
+#wep-itemized-quote .wep-package-payment-card .wep-build-promotions{border:0;padding:0;margin:0;background:transparent}
+#wep-itemized-quote .wep-package-payment-card .wep-build-finance-output{display:block;text-align:center}
+#wep-itemized-quote .wep-package-payment-card .wep-build-finance-monthly{text-align:center}
+
+/* Keep the lower choices compact, with the financing link below its payment. */
+#wep-itemized-quote .wep-itemized-payment-cards{display:flex;flex-direction:column;align-items:flex-start;width:fit-content;max-width:min(100%,320px)}
+#wep-itemized-quote .wep-package-payment-card{width:fit-content;min-width:240px;max-width:100%;padding:10px 12px}
+#wep-itemized-quote .wep-itemized-selected-payment{margin:0 0 10px;font-size:12px;line-height:1.4;color:#287a32;font-weight:700}
+#app .wep-package-payment-card .wep-view-all-payments{width:fit-content;align-self:center;max-width:100%}
+@media(max-width:380px){#wep-itemized-quote .wep-package-payment-card{min-width:0;width:100%}}
+
+/* A green border carries selection without repeated Selected labels. */
+#app .wep-package-payment-card .wep-payment-selected:not([hidden]){display:none!important}
+
+/* Hover and keyboard focus must not look like a selected payment. */
+#app .wep-package-payment-card:not(.is-selected):has(.wep-payment-card-choice:hover){box-shadow:none;border-color:#839087;filter:brightness(1.04)}
+#app .wep-package-payment-card:has(.wep-payment-card-choice:focus-visible){outline:2px dotted #83b9ed;outline-offset:3px}
+
+/* Strong selection contrast; smaller upper payment cards. */
+#app .wep-package-payment-card.is-selected{background:#176534;border:2px solid #75db94;box-shadow:0 0 0 3px #bce7c7;filter:none}
+#app .wep-package-payment-card.is-selected h4::before{content:'✓ ';font-size:18px;font-weight:900;color:#fff}
+#app .hero .wep-package-payment-card{padding:8px 10px}
+#app .hero .wep-package-payment-card h4{font-size:13px;margin:0 0 3px}
+#app .hero .wep-package-payment-card .wep-package-payment-total{font-size:21px;margin:2px 0}
+#app .hero .wep-package-payment-card .wep-build-finance-monthly strong{font-size:21px}
+#app .hero .wep-package-payment-card .wep-view-all-payments{padding:5px 8px;min-height:30px;margin-top:6px}
+#app .wep-package-payment-card a.wep-view-all-payments{text-decoration:none;text-align:center;box-sizing:border-box}
+#app .wep-package-payment-card .wep-view-all-payments:disabled{cursor:default;opacity:.65}
+
+/* Lower payment row: equal cards beside the totals, aligned at the bottom. */
+#wep-itemized-quote .wep-itemized-footer{grid-template-columns:minmax(0,1fr) minmax(300px,360px);gap:24px;align-items:end}
+#wep-itemized-quote .wep-itemized-payment{align-self:end}
+#wep-itemized-quote .wep-itemized-payment-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:12px;width:100%;max-width:none}
+#wep-itemized-quote .wep-package-payment-card{width:100%;min-width:0;max-width:none;height:100%;padding:10px 12px}
+#app .wep-package-payment-card.is-selected[data-payment-preview="finance"] .wep-build-finance-program::before{content:'✓ ';font-size:18px;font-weight:900;color:#fff}
+@media(max-width:1100px){
+ #wep-itemized-quote .wep-itemized-footer{grid-template-columns:minmax(0,1fr);align-items:start;gap:20px}
+ #wep-itemized-quote .wep-itemized-payment{align-self:start}
+ #wep-itemized-quote .wep-itemized-payment-cards{grid-template-columns:minmax(0,1fr);width:100%;max-width:320px;gap:8px}
+ #wep-itemized-quote .wep-package-payment-card{height:auto}
+}
+@media print{#wep-itemized-quote .wep-itemized-footer{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end}#wep-itemized-quote .wep-itemized-payment-cards{grid-template-columns:minmax(0,1fr);max-width:none}}
+
+/* Compact lower payment choices and a shared right edge for item/quote totals. */
+#wep-itemized-quote .wep-itemized-payment-cards{max-width:630px;gap:8px}
+#wep-itemized-quote .wep-package-payment-card{padding:7px 9px}
+#wep-itemized-quote .wep-package-payment-card h4{font-size:13px;margin-bottom:3px}
+#wep-itemized-quote .wep-package-payment-card .wep-package-payment-total{font-size:19px;margin:2px 0}
+#wep-itemized-quote .wep-package-payment-card .wep-build-finance-monthly strong{font-size:19px}
+#wep-itemized-quote .wep-package-payment-card .wep-build-finance-program{font-size:12px}
+#wep-itemized-quote .wep-package-payment-card .wep-view-all-payments{font-size:11px;min-height:28px;margin-top:5px;padding:5px 7px}
+#wep-itemized-quote .wep-package-table thead th:nth-child(3),#wep-itemized-quote .wep-package-table td:nth-child(3){min-width:150px;white-space:normal}
+#wep-itemized-quote .wep-package-table td:nth-child(4){font-weight:400}
+#wep-itemized-quote .wep-package-table thead th:nth-child(4),#wep-itemized-quote .wep-package-table td:nth-child(4){text-align:right;white-space:nowrap}
+#wep-itemized-quote .wep-package-table thead th:last-child,#wep-itemized-quote .wep-package-table tbody td:last-child{padding-right:0;min-width:110px;text-align:right;white-space:nowrap}
+#wep-itemized-quote .wep-package-table tbody td:last-child{font-weight:700}
+@media(max-width:1100px){#wep-itemized-quote .wep-itemized-payment-cards{max-width:260px}}
+@media print{#wep-itemized-quote .wep-package-table thead th:nth-child(3),#wep-itemized-quote .wep-package-table td:nth-child(3){min-width:0}#wep-itemized-quote .wep-package-table thead th:last-child,#wep-itemized-quote .wep-package-table tbody td:last-child{min-width:0}}
+/* Narrow the upper payment cards without changing their existing gaps. */
+@media(min-width:1101px){#app .hero>.wep-build-finance>.wep-package-payment-previews{padding-inline:48px}}
+@media(min-width:761px) and (max-width:1100px){#app .hero>.wep-build-finance>.wep-package-payment-previews{padding-inline:24px}}
+/* One best offer per rebate group; show a fourth card only when both apply. */
+#app .hero .wep-package-payment-previews:has(>[data-payment-preview="finance-inlieu"]:not([hidden])){grid-template-columns:repeat(4,minmax(0,1fr))}
+#wep-itemized-quote .wep-itemized-payment-cards:has(>[data-payment-preview="finance-inlieu"]:not([hidden])){grid-template-columns:repeat(4,minmax(0,1fr));max-width:840px}
+#app .wep-package-payment-card [hidden]{display:none!important}
+#app .wep-package-payment-card .wep-finance-rebate-note{font-size:11px;line-height:1.35;color:#e3e9e3;margin:4px 0}
+#app .wep-package-payment-card .wep-change-financing{position:relative;z-index:2;width:fit-content;align-self:center;margin:5px 0 0;padding:3px 5px;border:0;background:transparent;color:#fff;font:11px/1.3 Arial,sans-serif;text-decoration:underline;cursor:pointer}
+#app .wep-change-financing:focus-visible{outline:2px dotted #83b9ed;outline-offset:2px}
+#app .wep-package-payment-card[data-payment-preview="finance"]:has(h4) .wep-build-finance-program::before{content:none}
+.wep-payment-table-wrap .wep-finance-group-head th{background:#e7eee8;color:#24412c;font-size:13px;text-align:center;padding:10px;border-bottom:2px solid #87978d}
+@media(max-width:1100px){#wep-itemized-quote .wep-itemized-payment-cards:has(>[data-payment-preview="finance-inlieu"]:not([hidden])){grid-template-columns:minmax(0,1fr);max-width:260px}}
+@media(max-width:760px){#app .hero .wep-package-payment-previews:has(>[data-payment-preview="finance-inlieu"]:not([hidden])){grid-template-columns:minmax(0,1fr)}}
+#app .wep-package-payment-card .wep-change-financing{min-height:20px;padding:2px 4px}
+
+/* Invoice price columns: plain regular/sale amounts, final line total bold. */
+#wep-itemized-quote .wep-package-table .wep-itemized-money,
+#wep-itemized-quote .wep-package-table thead th:nth-child(5){text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:400}
+#wep-itemized-quote .wep-package-table thead th:nth-child(5){font-weight:700}
+#wep-itemized-quote .wep-package-table tbody th{width:34%}
+#wep-itemized-quote .wep-package-table td:last-child{min-width:100px}
+
+/* Rebate amounts finish the applicable payment boxes. */
+#app .wep-package-payment-card .wep-payment-rebate-footer{margin-top:auto;padding-top:6px;text-align:center}
+#app .wep-package-payment-card .wep-payment-rebate-footer p{font-size:11px;line-height:1.35;margin:2px 0}
+#app .wep-package-payment-card .wep-payment-rebate-footer .wep-build-offer-saving{font-weight:700}
+
+/* Financing in lieu uses its own program end date. */
+#app .wep-package-payment-card .wep-finance-expiry-footer{margin-top:auto;padding-top:6px;text-align:center}
+#app .wep-package-payment-card .wep-finance-expiry-footer p{font-size:11px;line-height:1.35;margin:2px 0}
+
+/* Product identity at left, included package equipment at the top right. */
+#app .hero .wep-build-heading{display:grid;grid-template-columns:subgrid;align-items:start;gap:8px 16px}
+#app .hero .wep-build-heading .wep-build-identity{grid-column:1/3;min-width:0}
+#app .hero .wep-build-heading .wep-build-description{font-size:20px;line-height:1.3;margin:0 0 5px}
+#app .hero .wep-build-heading .wep-build-sku{display:block;font-size:12px;line-height:1.4}
+#app .hero .wep-build-heading>#wep-package-includes{grid-column:3;margin:0;align-self:start;font-size:13px;line-height:1.5;color:#34483b;overflow-wrap:anywhere}
+@media(max-width:760px){#app .hero .wep-build-heading{grid-template-columns:minmax(0,1fr)}#app .hero .wep-build-heading .wep-build-identity,#app .hero .wep-build-heading>#wep-package-includes{grid-column:1}}
+
+#app .wep-build-fulfillment-stack>#wep-package-includes{margin:0;font-size:13px;line-height:1.4;color:#34483b;overflow-wrap:anywhere}
+
+/* Included equipment sits between the description and SKU. */
+#app .hero .wep-build-heading .wep-build-identity{grid-column:1/-1}
+#app .wep-build-identity>#wep-package-includes{margin:2px 0 5px;font-size:13px;line-height:1.4;color:#34483b;overflow-wrap:anywhere}
+
+/* Additional freight stays directly below its implement, on screen and in print. */
+#app #wep-itemized-quote .wep-package-table .wep-implement-freight-row>td{padding:6px 12px 8px;border-top:0;background:#fff5df;color:#513b18;font:600 12px/1.4 Arial,sans-serif;text-align:left;white-space:normal;min-width:0;overflow-wrap:anywhere}
+@media print{.wep-has-implement-freight{break-after:avoid}.wep-implement-freight-row{break-before:avoid;break-inside:avoid}}
