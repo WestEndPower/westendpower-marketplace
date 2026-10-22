@@ -510,7 +510,6 @@
   }).catch(()=>{if(id===shippingVersion){shippingKey='';shippingEligible=false;}});
  }
  function shippingStage(){
-  publishItemized(null,"Enter your shipping address at checkout for UPS shipping and tax totals.");
   updatePaymentSelection();
   ++generation;controller?.abort();clearTimeout(timer);stopOffers();lastResponse=null;lastSnapshot=null;disclaimer(null);highlightPayment(null);
   panel.hidden=false;output.setAttribute('aria-busy','false');
@@ -518,6 +517,7 @@
   creditOutput.replaceChildren(note('Enter your shipping address below to calculate shipping and tax.'));
   output.replaceChildren(note('Store pickup / local delivery only.'));
   totals.replaceChildren(note('Enter your shipping address below for your UPS shipping price and total.'));
+  publishItemized(null,"Enter your shipping address at checkout for UPS shipping and tax totals.");
  }
  function shippingCheckout(){
   try{
