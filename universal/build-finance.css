@@ -373,3 +373,55 @@
 /* WEP_PAYMENT_SELECTION_AND_SAVINGS_V30 */
 #app .wep-compact-actions .wep-payment-selection-note{font-size:12px;line-height:1.4;font-weight:400;color:#e3e9e3;margin:6px 0 0}
 #app .wep-package-payment-card .wep-build-offer-saving{font-size:11px!important;line-height:1.4;margin-top:5px!important}
+
+/* WEP_BUILD_UPDATE_FEEDBACK_V1 */
+.wep-package-update{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:1000;width:min(460px,calc(100vw - 32px));box-sizing:border-box;box-shadow:0 8px 30px #0003;margin:0;padding:15px 18px;border:1px solid #c9d9e7;border-left:4px solid #245d83;border-radius:10px;background:#f1f7fc;color:#193c55}
+.wep-package-update[hidden]{display:none}.wep-package-update strong{display:block;font-size:17px}.wep-package-update p{margin:4px 0;font-size:14px}.wep-package-update small{font-size:13px}
+.wep-package-update-track{height:7px;overflow:hidden;border-radius:8px;background:#d4e3ed;margin-top:12px}.wep-package-update-track span{display:block;width:35%;height:100%;border-radius:8px;background:#245d83;animation:wep-package-progress 1.4s ease-in-out infinite}
+@keyframes wep-package-progress{from{transform:translateX(-110%)}to{transform:translateX(390%)}}
+.wep-package-update[data-state="ready"]{border-color:#a4cbb2;background:#f0f8f2;color:#226039}.wep-package-update[data-state="ready"] .wep-package-update-track span{width:100%;background:#287a32;animation:none;transform:none}
+.wep-package-update[data-state="error"]{border-color:#d9bd87;background:#fff8e9;color:#694a13}
+.wep-package-updating .wep-package-payment-card,.wep-package-updating .wep-build-totals{opacity:.5}.wep-package-updating #wep-open-payment-options,.wep-package-updating #wep-build-checkout{opacity:.5;cursor:wait}
+@media(prefers-reduced-motion:reduce){.wep-package-update-track span{animation:none;width:100%;opacity:.5}}
+@media print{.wep-package-update{display:none!important}}
+
+/* WEP_MANUAL_FINANCE_COMPARISON_V1 */
+.wep-inline-finance-comparison{margin:20px 0;padding:20px;border:1px solid #bacdbb;border-radius:12px;background:#fff;color:#203b28;min-width:0;grid-column:1/-1;scroll-margin-top:20px}.wep-inline-finance-comparison[hidden]{display:none}
+.wep-finance-compare-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.wep-finance-compare-heading h2{margin:0;font-size:23px}.wep-finance-compare-heading button,.wep-finance-refresh,.wep-finance-compare-card button{padding:10px 14px;border:1px solid #287a32;border-radius:7px;background:#fff;color:#195a23;font-weight:700;cursor:pointer}.wep-finance-refresh{background:#287a32;color:#fff;margin-bottom:10px}.wep-finance-compare-status{margin:10px 0}
+.wep-finance-compare-groups{min-width:0}.wep-finance-compare-groups>section{min-width:0;margin-top:18px}.wep-finance-compare-groups h3{margin:0 0 8px;font-size:18px}.wep-finance-compare-row{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 14px;scroll-snap-type:x proximity;overscroll-behavior-x:contain}
+.wep-finance-compare-card{flex:0 0 250px;border:1px solid #c9d8ca;background:#f7faf7;border-radius:9px;padding:15px;scroll-snap-align:start}.wep-finance-compare-card h4{font-size:18px;margin:0 0 8px}.wep-finance-compare-card p{margin:6px 0;font-size:14px}.wep-finance-compare-card .wep-finance-compare-monthly{font-size:22px;font-weight:800}.wep-finance-compare-card details{margin:12px 0}.wep-finance-compare-card summary{cursor:pointer;text-decoration:underline}.wep-finance-compare-card dl{font-size:13px}.wep-finance-compare-card dl>div{padding:5px 0;border-bottom:1px solid #dce6dc}.wep-finance-compare-card dt{font-weight:700}.wep-finance-compare-card dd{margin:2px 0;overflow-wrap:anywhere}.wep-finance-compare-card button:disabled,.wep-finance-refresh:disabled{opacity:.5;cursor:default}.wep-finance-compare-groups.is-stale .wep-finance-compare-card{opacity:.48}
+@media(max-width:600px){.wep-inline-finance-comparison{padding:12px}.wep-finance-compare-card{flex-basis:235px}.wep-finance-compare-heading h2{font-size:20px}}
+@media print{.wep-inline-finance-comparison{display:none!important}}
+
+/* WEP_COMPACT_FINANCE_GROUPS_V1 */
+.wep-finance-compare-card{flex-basis:220px;padding:12px;align-self:flex-start}.wep-finance-compare-card h4{font-size:16px;white-space:nowrap;margin-bottom:5px}.wep-finance-compare-card .wep-finance-compare-monthly{font-size:20px;white-space:nowrap;margin:4px 0}.wep-finance-compare-card details{margin:8px 0}.wep-finance-compare-card summary{font-size:13px}.wep-finance-compare-card button{padding:7px 10px;font-size:13px}.wep-finance-compare-card p{font-size:12px}.wep-finance-next{padding:9px 14px;border:1px solid #287a32;border-radius:7px;background:#fff;color:#195a23;font-weight:700;cursor:pointer;margin-top:10px}.wep-finance-next:disabled{opacity:.5;cursor:default}.wep-finance-next[hidden]{display:none}
+@media(max-width:600px){.wep-finance-compare-card{flex-basis:220px}}
+
+/* WEP_FINANCE_CHART_V1 */
+.wep-finance-chart-host{display:flex;flex-wrap:wrap;gap:10px;grid-column:1/-1;margin:10px 0;min-width:0}.wep-finance-chart-host:empty{display:none}
+.wep-finance-chart-host .wep-inline-finance-comparison{flex:1 1 520px;margin:0;padding:9px 10px;border-radius:6px;min-width:0;max-width:100%;box-sizing:border-box}.wep-finance-chart-host .wep-inline-finance-comparison[hidden]{display:none}
+.wep-finance-chart-host .wep-finance-compare-heading{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-start;align-items:center;margin:0 0 7px}.wep-finance-chart-host .wep-finance-compare-heading h2{font-size:14px;font-weight:700;line-height:1.25;margin:0 auto 0 0}
+.wep-finance-chart-host .wep-finance-compare-heading button{font:12px/1.2 Arial,sans-serif;padding:4px 6px;margin:0;border-radius:4px;white-space:nowrap}.wep-finance-chart-host .wep-finance-refresh:disabled{opacity:1;color:#42624a;background:#edf4ed;border-color:#d5e2d5}.wep-finance-chart-host .wep-finance-compare-groups>section{margin:0}.wep-finance-chart-host .wep-finance-compare-groups h3{display:none}
+.wep-finance-chart-host .wep-finance-compare-row{gap:0;padding:0;align-items:stretch;border-top:1px solid #d9e1d9;scroll-snap-type:x proximity}.wep-finance-chart-host .wep-finance-compare-card{flex:1 0 160px;min-width:0;max-width:220px;padding:5px 8px;border:0;border-right:1px solid #d9e1d9;border-radius:0;background:transparent;align-self:stretch}.wep-finance-chart-host .wep-finance-compare-card:last-child{border-right:0}
+.wep-finance-chart-host .wep-chart-choice{display:block;width:100%;text-align:left;margin:0;padding:3px 0;border:0;background:transparent;color:#203b28;cursor:pointer;box-shadow:none}.wep-finance-chart-host .wep-chart-choice:hover:enabled{background:#eaf3eb}.wep-finance-chart-host .wep-chart-choice:focus-visible{outline:2px solid #287a32;outline-offset:2px}.wep-finance-chart-host .wep-chart-choice h4{font:400 14px/1.35 Arial,sans-serif;white-space:nowrap;margin:0}.wep-finance-chart-host .wep-chart-choice .wep-finance-compare-monthly{font:700 16px/1.35 Arial,sans-serif;white-space:nowrap;margin:3px 0 0}.wep-finance-chart-host .wep-finance-compare-card p{margin:2px 0;font-size:11px}
+.wep-finance-chart-host .wep-chart-details{margin:6px 0 0}.wep-chart-details[hidden]{display:none}.wep-finance-chart-host .wep-chart-details summary{display:none}.wep-finance-chart-host .wep-chart-details dl{font-size:12px;margin:0}.wep-finance-chart-host .wep-chart-details dl>div{padding:3px 0}.wep-finance-chart-host .wep-finance-next{padding:3px 7px;margin:5px 0 0;font-size:12px;line-height:1.25}.wep-finance-chart-host .wep-finance-compare-status{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.wep-finance-chart-host .wep-chart-status-visible{position:static;width:auto;height:auto;clip-path:none;white-space:normal;margin:3px 0 6px;font-size:12px}
+@media(max-width:650px){.wep-finance-chart-host .wep-inline-finance-comparison{flex-basis:100%}.wep-finance-chart-host .wep-finance-compare-card{flex:1 0 156px}.wep-finance-chart-host .wep-finance-compare-heading{gap:5px}}
+@media print{.wep-finance-chart-host{display:none!important}}
+
+/* WEP_STACKED_FINANCE_CHART_V1 */
+.wep-finance-chart-host{flex-direction:column;flex-wrap:nowrap;gap:8px}.wep-finance-chart-host .wep-inline-finance-comparison{flex:0 0 auto;width:100%}.wep-finance-chart-host [data-finance-group="compatible"]{order:0}.wep-finance-chart-host [data-finance-group="inlieu"]{order:1}.wep-finance-chart-host [data-finance-group="any"]{order:2}
+.wep-finance-chart-host .wep-finance-compare-card{flex:0 0 190px;max-width:none;text-align:center}.wep-finance-chart-host .wep-chart-choice{text-align:center}.wep-finance-chart-host .wep-chart-choice .wep-chart-out-the-door{font:400 13px/1.35 Arial,sans-serif;white-space:nowrap;margin:3px 0 0}.wep-finance-chart-host .wep-chart-details{text-align:left}
+@media(max-width:650px){.wep-finance-chart-host .wep-finance-compare-card{flex:0 0 175px}}
+
+/* Required down payment stays visible, including zero, for every financing choice. */
+.wep-finance-chart-host .wep-chart-choice .wep-chart-required-down{font:700 13px/1.35 Arial,sans-serif;text-align:center;white-space:nowrap;margin:3px 0 0}
+
+/* Confirm a full program comparison before requesting additional quotes. */
+.wep-finance-ranking-confirm{box-sizing:border-box;width:min(440px,calc(100% - 32px));max-width:calc(100% - 32px);padding:22px;border:1px solid #cad7cd;border-radius:12px;color:#203b28;background:#fff;font:14px/1.5 Arial,sans-serif;box-shadow:0 12px 45px #0003;text-align:center}
+.wep-finance-ranking-confirm::backdrop{background:#0006}
+.wep-finance-ranking-confirm h2{font:700 19px/1.3 Arial,sans-serif;margin:0 0 12px}
+.wep-finance-ranking-confirm p{font:400 14px/1.5 Arial,sans-serif;margin:0 0 18px;color:#203b28}
+.wep-ranking-confirm-actions{display:flex;justify-content:center;gap:10px}
+.wep-ranking-confirm-actions button{min-width:100px;padding:9px 14px;border:1px solid #287a32;border-radius:6px;font:700 14px Arial,sans-serif;cursor:pointer;background:#fff;color:#203b28}
+.wep-ranking-confirm-actions button:last-child{background:#287a32;color:#fff}
+.wep-ranking-confirm-actions button:focus-visible{outline:2px solid #203b28;outline-offset:3px}

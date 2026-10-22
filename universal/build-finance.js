@@ -9,15 +9,52 @@
  const validMoney=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
  let checkoutPending=false;
  let panel,output,generation=0,timer,controller,lastStarted=-Infinity,lastQuote=-Infinity,activeSignature='',lastApplied='';
- const spacing=450; // Debounce edits; quotes use the shared request budget below.
- const quoteCache=new Map(),quoteSessionKey='wepBuildQuoteCache:implement-freight-v3:'+api,quoteBudgetKey='wepBuildQuoteBudget',quoteBudgetWindow=61000;
+ // WEP_BUILD_UPDATE_FEEDBACK_V1: token ownership prevents stale requests finishing a newer build.
+ const updateJobs=new Map();let updateBox,updateTitle,updateBar,updateHideTimer,updateFailed=false;
+ function updateFeedback(){
+  if(!updateBox){
+   updateBox=document.createElement('section');updateBox.className='wep-package-update';updateBox.hidden=true;
+   updateBox.setAttribute('role','status');updateBox.setAttribute('aria-live','polite');updateBox.setAttribute('aria-atomic','true');
+   updateBox.innerHTML='<strong></strong><p>Recalculating pricing, rebates, and financing options.</p><small>This may take a moment.</small><div class="wep-package-update-track"><span></span></div>';
+   updateTitle=updateBox.querySelector('strong');updateBar=updateBox.querySelector('.wep-package-update-track');
+   (app.querySelector('.wep-build-finance')||app.firstElementChild)?.before(updateBox);
+  }
+  return updateBox;
+ }
+ function updateBusy(busy){
+  app.classList.toggle('wep-package-updating',busy);
+  // Configuration stays editable. Payment selection and checkout wait for current figures.
+  for(const el of app.querySelectorAll('.wep-package-payment-previews,.wep-itemized-payment-cards,#wep-open-payment-options,#wep-build-checkout')){
+   el.inert=busy;if(busy)el.setAttribute('aria-busy','true');else el.removeAttribute('aria-busy');
+  }
+ }
+ function beginUpdate(scope){
+  if(!updateJobs.size||scope==='pricing'||scope==='inventory')updateFailed=false;
+  const token={scope};updateJobs.set(scope,token);clearTimeout(updateHideTimer);
+  const box=updateFeedback();box.hidden=false;box.dataset.state='busy';updateTitle.textContent='Updating your custom package…';
+  box.querySelector('p').textContent='Recalculating pricing, rebates, and financing options.';box.querySelector('small').hidden=false;
+  updateBar.hidden=false;updateBar.setAttribute('role','progressbar');updateBar.setAttribute('aria-label','Updating your custom package');updateBar.removeAttribute('aria-valuenow');updateBusy([...updateJobs.keys()].some(scope=>!scope.startsWith('comparison:')));return token;
+ }
+ function endUpdate(token,result='ready'){
+  if(!token||updateJobs.get(token.scope)!==token)return;
+  updateJobs.delete(token.scope);updateBusy([...updateJobs.keys()].some(scope=>!scope.startsWith('comparison:')));if(result==='error')updateFailed=true;if(updateJobs.size)return;
+  updateBusy(false);const box=updateFeedback();box.querySelector('small').hidden=true;
+  if(updateFailed){box.dataset.state='error';updateTitle.textContent='Your package needs an update.';box.querySelector('p').textContent='Some pricing or payment information could not be confirmed. Please retry pricing or reopen payment options.';updateBar.hidden=true;return;}
+  if(result==='cancel'){box.hidden=true;return;}
+  box.dataset.state='ready';updateTitle.textContent='Your package is up to date.';box.querySelector('p').textContent='Pricing and payment options have been updated.';updateBar.setAttribute('aria-valuenow','100');
+  updateHideTimer=setTimeout(()=>{box.hidden=true;},1800);
+ }
+ let pricingUpdate;
+ app.addEventListener('click',event=>{if([...updateJobs.keys()].some(scope=>!scope.startsWith('comparison:'))&&event.target.closest('[data-payment-preview],#wep-open-payment-options,#wep-build-checkout')){event.preventDefault();event.stopImmediatePropagation();}},true);
+ const spacing=1200; // Debounce edits; quotes use the shared request budget below.
+ const quoteCache=new Map(),quoteSessionKey='wepBuildQuoteCache:implement-freight-v3:'+api,quoteBudgetKey='wepBuildQuoteBudget',quoteBudgetWindow=61000,quoteBudgetMax=9; // API route allows 10/minute; retain one request of headroom.
  let quoteCooldown=0,quoteBudgetMemory=[];
  try{const rows=JSON.parse(sessionStorage.getItem(quoteSessionKey)||'[]');if(Array.isArray(rows))for(const entry of rows.slice(-40)){if(!Array.isArray(entry)||entry.length!==2||typeof entry[0]!=='string')continue;const q=entry[1];if(q&&Array.isArray(q.lines)&&q.lines.length&&q.lines.every(l=>validMoney(l.unitPrice))&&Array.isArray(q.issues)&&!pricingIssues(q).length&&validMoney(q.total)&&Date.now()-Date.parse(q.createdAt)<120000)quoteCache.set(entry[0],q);}}catch(_){}
 
  function pricingIssues(q){return (q?.issues||[]).filter(message=>!(q?.excludedFactoryFreight?.length&&message==='Additional freight charges apply. We’ll contact you to confirm the freight charge before finalizing your order.'));}
  function budget(){quoteBudgetMemory=quoteBudgetMemory.filter(t=>t>Date.now()-quoteBudgetWindow);try{const raw=JSON.parse(sessionStorage.getItem(quoteBudgetKey)||'[]'),stored=Array.isArray(raw)?raw.filter(t=>Number.isFinite(t)&&t>Date.now()-quoteBudgetWindow):[];if(stored.length>quoteBudgetMemory.length)quoteBudgetMemory=stored;}catch(_){}return [...quoteBudgetMemory];}
  async function quoteSlot(signal){
-  for(;;){if(signal.aborted)throw new DOMException('Changed','AbortError');const now=Date.now(),recent=budget(),wait=Math.max(quoteCooldown-now,recent.length>=8?recent[0]+quoteBudgetWindow-now:0);
+  for(;;){if(signal.aborted)throw new DOMException('Changed','AbortError');const now=Date.now(),recent=budget(),wait=Math.max(quoteCooldown-now,recent.length>=quoteBudgetMax?recent[0]+quoteBudgetWindow-now:0);
    if(wait>0){await pause(Math.max(wait,1),signal);continue;}
    recent.push(now);quoteBudgetMemory=recent;try{sessionStorage.setItem(quoteBudgetKey,JSON.stringify(recent));}catch(_){}return;
   }
@@ -237,14 +274,21 @@
   const value=col.program?'finance:'+clean(col.program.ProgramID):col.method;
   if(![...paymentSelect.options].some(o=>o.value===value))paymentSelect.append(new Option(col.program?programLabel(col.program):col.method==='cash'?'Cash / Bank Check':'Credit Card',value));
   paymentSelect.value=value;paymentConfirmed=true;preferred=col.program?clean(col.program.ProgramID):'';
-  cartPaused=false;saveCurrentBuild();++generation;controller?.abort();clearTimeout(timer);
-  const snapshot=state();render(col.quote,col.quote.financePlans?.find(p=>clean(p.brandId).toUpperCase()===snapshot.brandId),snapshot);lastApplied=JSON.stringify(snapshot);
+  cartPaused=false;saveCurrentBuild();++generation;controller?.abort();clearTimeout(timer);endUpdate(pricingUpdate,'cancel');
+  const snapshot=state(),appliedPlan=col.quote.financePlans?.find(p=>clean(p.brandId).toUpperCase()===snapshot.brandId);render(col.quote,appliedPlan,snapshot);lastApplied=JSON.stringify(snapshot);
+  if(col.program&&appliedPlan){
+   if(!financeLayout.dual)setFinanceLayout(snapshot,{...financeLayout,primary:financeGroup(col.program)});
+   const method=financeLayout.dual&&!rebateCompatible(col.program)?'finance-inlieu':'finance';rememberPaymentPreview(method,col.quote,col.program,snapshot);financeDetails(col.quote,appliedPlan,snapshot,true,method==='finance-inlieu'?inLieuOutput:output);highlightPayment();syncPaymentCards();
+  }
  }
  function selectPaymentPreview(method){
   if(deliverySelect.value==='SHIP'&&method!=='credit')return;
   const selected=selectedPaymentCard();
   if(selected===method){
    paymentConfirmed=false;paymentSelect.value='';preferred='';checkoutPending=false;cartPaused=false;
+   // A chosen comparison plan replaced its preview. Rebuild the default offers
+   // from rate / term order instead of reusing that selected preview.
+   stopOffers();highlightPayment();syncPaymentCards();
    schedule(true);return;
   }
   try{
@@ -258,7 +302,7 @@
    paymentSelect.value=method;paymentConfirmed=true;preferred='';cartPaused=false;schedule(true);
   }catch(error){const message=document.getElementById('options-message');if(message)message.textContent=error.message;schedule(true);}
  }
- function comparisonGroup(method){return method==='finance-inlieu'?'inlieu':financeLayout.hasRebate?financeLayout.primary:'any';}
+ function comparisonGroup(method){if(method==='finance-inlieu')return 'inlieu';const program=paymentPreviews.get(method)?.program||offerPlan?.program;return program?financeGroup(program):financeLayout.primary==='inlieu'?'inlieu':'compatible';}
  // Both stacks use native buttons and the same confirmed payment responses.
  app.addEventListener('click',event=>{
   const change=event.target.closest('.wep-change-financing');if(change){event.preventDefault();event.stopImmediatePropagation();openComparison(true,comparisonGroup(change.closest('[data-payment-preview]')?.dataset.paymentPreview));return;}
@@ -327,7 +371,7 @@
   target.append(note(money(quote.total),'wep-package-payment-total'),note('Out the door price','wep-package-payment-caption'));
   appendManufacturerRebate(target,quote,rebate);
  }
- function stopOffers(){++offersVersion;offersController?.abort();offersBuildKey='';paymentPreviews.clear();}
+ function stopOffers(){endUpdate(updateJobs.get('offers'),'cancel');++offersVersion;offersController?.abort();offersBuildKey='';paymentPreviews.clear();}
  let offerDisclaimer;
  function disclaimer(plan){
   if(!offerDisclaimer){offerDisclaimer=document.createElement('footer');offerDisclaimer.className='wep-build-offer-disclaimer';app.after(offerDisclaimer);}
@@ -364,6 +408,7 @@
   const body=method=>({items:snapshot.items,paymentMethod:method,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:{}});
   highlightPayment(snapshot);promoOutput.replaceChildren(note('Calculating your total…'));creditOutput.replaceChildren(note('Calculating your total…'));
   panel.hidden=false;if(!restoreFinance(snapshot)){output.replaceChildren(note('Calculating financing for your package…'));output.setAttribute('aria-busy','true');}
+  const offersUpdate=beginUpdate('offers');let offersFailed=false;
   const previewQuotes=new Map();
   const getQuote=method=>{
    if(!previewQuotes.has(method))previewQuotes.set(method,(async()=>{const q=currentQuote.paymentMethod===method?currentQuote:await packageQuote(body(method),signal);if(snapshot.items.some(x=>x.inventoryId)&&q.stockPricingVersion!==1)throw Error('Stock pricing could not be verified.');return q;})());
@@ -373,11 +418,13 @@
    const quote=await getQuote(method);if(!fresh())return;rememberPaymentPreview(method,quote,null,snapshot);pricePreview(target,quote);
    // Rebate metadata must not block a valid package total.
    try{const base=await getQuote('standard');if(fresh())pricePreview(target,quote,includedRebate(base,quote));}catch(_){}
-  }catch(error){if(fresh())target.replaceChildren(note('Open payment options to retry.'));}};
+  }catch(error){if(fresh()){offersFailed=true;target.replaceChildren(note('Open payment options to retry.'));}}};
   const rebateTask=loadPrice('cash',promoOutput),creditTask=loadPrice('credit',creditOutput);
   const financeTask=(async()=>{try{
    const result=await eligiblePrograms(snapshot,signal);
-   if(!fresh())return;const candidates=validPrograms(result.programs);programs=candidates;
+   if(!fresh())return;const candidates=validPrograms(result.programs);programs=candidates.slice();
+   // Keep the chosen plan in its main payment box after a configuration change.
+   if(snapshot.programId)candidates.sort((a,b)=>Number(clean(b.ProgramID)===snapshot.programId)-Number(clean(a.ProgramID)===snapshot.programId));
    const findEligible=async rows=>{for(const p of rows){try{
     const q=await packageQuote({...body('finance'),financeProgramIds:{[snapshot.brandId]:clean(p.ProgramID)}},signal,p);if(!fresh())return null;
     if(snapshot.items.some(x=>x.inventoryId)&&q.stockPricingVersion!==1)throw Error('Stock pricing could not be verified.');
@@ -415,7 +462,7 @@
      highlightPayment();syncPaymentCards();return result;
     };
     const results=await Promise.allSettled([(compatibleTask||findEligible(candidates.filter(rebateCompatible))).then(result=>showReady(result,'finance')),(inlieuTask||findEligible(candidates.filter(p=>!rebateCompatible(p)))).then(result=>showReady(result,'finance-inlieu'))]);if(!fresh())return;
-    if(dualPending&&results.some(r=>r.status==='rejected')){
+    if(dualPending&&results.some(r=>r.status==='rejected')){offersFailed=true;
      for(const [index,method,target] of [[0,'finance',output],[1,'finance-inlieu',inLieuOutput]])if(results[index].status==='rejected'&&!paymentPreviews.has(method)){target.replaceChildren(note('Payment could not be loaded. View all financing options to retry.'));target.setAttribute('aria-busy','false');}
      highlightPayment();syncPaymentCards();return;
     }
@@ -432,8 +479,8 @@
    if(secondary){rememberPaymentPreview('finance-inlieu',secondary.quote,secondary.program,snapshot);financeDetails(secondary.quote,secondary.plan,snapshot,false,inLieuOutput);}
    else{paymentPreviews.delete('finance-inlieu');inLieuOutput.replaceChildren();}
    highlightPayment();syncPaymentCards();
-  }catch(error){if(fresh()){if(!restoreFinance(snapshot))output.replaceChildren(note('Financing options could not be loaded. View all financing options to retry.'));output.setAttribute('aria-busy','false');}}})();
-  await Promise.all([rebateTask,creditTask,financeTask]);
+  }catch(error){if(fresh()){offersFailed=true;if(!restoreFinance(snapshot))output.replaceChildren(note('Financing options could not be loaded. View all financing options to retry.'));output.setAttribute('aria-busy','false');}}})();
+  try{await Promise.all([rebateTask,creditTask,financeTask]);}finally{endUpdate(offersUpdate,!fresh()?'cancel':offersFailed?'error':'ready');}
  }
 
  function render(quote,plan,snapshot){
@@ -452,6 +499,7 @@
  }
  async function run(id){
   if(id!==generation||!panel?.isConnected)return;
+  const progress=pricingUpdate;let failed=false;
   try{
    let snapshot=state();activeSignature=JSON.stringify(snapshot);lastStarted=Date.now();controller=new AbortController();const signal=controller.signal;
    if(snapshot.paymentMethod!=='finance'){
@@ -459,7 +507,7 @@
     const quote=await packageQuote({items:snapshot.items,paymentMethod:snapshot.paymentMethod,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:{}},signal);
     if(id!==generation||activeSignature!==JSON.stringify(state()))return;
     if(snapshot.items.some(x=>x.inventoryId)&&quote.stockPricingVersion!==1)throw Error('Selected stock pricing could not be verified.');
-    render(quote,null,snapshot);lastApplied=activeSignature;return;
+    failed=pricingIssues(quote).length>0;render(quote,null,snapshot);lastApplied=activeSignature;return;
    }
    const result=await eligiblePrograms(snapshot,signal);
    if(id!==generation)return;
@@ -475,27 +523,27 @@
    if(id!==generation||activeSignature!==JSON.stringify(state()))return;
    if(snapshot.items.some(x=>x.inventoryId)&&quote.stockPricingVersion!==1)throw Error('The quote service must confirm in-stock pricing before displaying this build.');
    const plan=quote.financePlans?.find(p=>clean(p.brandId).toUpperCase()===snapshot.brandId);
-   preferred=snapshot.programId;render(quote,plan,snapshot);lastApplied=activeSignature;return;
+   preferred=snapshot.programId;failed=pricingIssues(quote).length>0;render(quote,plan,snapshot);lastApplied=activeSignature;return;
    }
    throw Error('No eligible financing program fits this package. Choose cash / bank check, credit card, or another program.');
-  }catch(error){if(id!==generation)return;console.error('WEP pricing failure: '+error.name+': '+error.message+'\n'+(error.stack||''));lastResponse=null;lastSnapshot=null;let preserve=false;try{preserve=offersBuildKey===JSON.stringify(previewBuild(compareState()))||!!savedFinance(compareState());}catch(_){}
+  }catch(error){if(id!==generation)return;failed=true;console.error('WEP pricing failure: '+error.name+': '+error.message+'\n'+(error.stack||''));lastResponse=null;lastSnapshot=null;let preserve=false;try{preserve=offersBuildKey===JSON.stringify(previewBuild(compareState()))||!!savedFinance(compareState());}catch(_){}
    showListedBuild(pricingFailure(error),preserve);output.setAttribute('aria-busy','false');if(preserve)restoreFinance(compareState());
    const message=document.getElementById('options-message');if(message){message.replaceChildren(document.createTextNode(pricingFailure(error)+' '));const retry=document.createElement('button');retry.type='button';retry.textContent='Retry current pricing';retry.onclick=()=>schedule(true);message.append(retry);}
-  }
+  }finally{endUpdate(progress,id!==generation?'cancel':failed?'error':'ready');}
  }
  function schedule(force=false,persist=true){
   if(!panel?.isConnected||departing||autoSaving)return;
   if(!inventoryReady){inventoryPricingStatus(inventoryPromise?'Checking stock before calculating payment prices…':'Stock check required before calculating payment prices.',!inventoryPromise);return;}
   refreshStockControls();
-  if(comparisonDialog?.open){comparisonController?.abort();comparisonDialog.close();}
-  let s;try{s=state();if(s.fulfillment==='DELIVERY'&&!/^\d{5}$/.test(s.zip))throw Error('Enter a five-digit ZIP for local delivery.');}catch(error){++generation;controller?.abort();clearTimeout(timer);invalidate(error.message);status(error.message);output.setAttribute('aria-busy','false');remember();return;}
+  markComparisonStale();
+  let s;try{s=state();if(s.fulfillment==='DELIVERY'&&!/^\d{5}$/.test(s.zip))throw Error('Enter a five-digit ZIP for local delivery.');}catch(error){++generation;controller?.abort();clearTimeout(timer);endUpdate(pricingUpdate,'cancel');invalidate(error.message);status(error.message);output.setAttribute('aria-busy','false');remember();return;}
   refreshShipping(s);
   try{if(persist)saveCurrentBuild();}catch(error){showListedBuild(error.message);return;}
   if(s.fulfillment==='SHIP'){shippingStage();return;}
   const signature=JSON.stringify(s);if(!force&&signature===lastApplied&&lastResponse)return;
   const preserveOffers=offersBuildKey===JSON.stringify(previewBuild(s));
-  ++generation;const id=generation;clearTimeout(timer);controller?.abort();invalidate('Updating this package…',preserveOffers);status('Updating current price and payment…',preserveOffers);remember();
-  timer=setTimeout(()=>run(id),450);
+  ++generation;const id=generation;pricingUpdate=beginUpdate('pricing');clearTimeout(timer);controller?.abort();invalidate('Updating this package…',preserveOffers);status('Updating current price and payment…',preserveOffers);remember();
+  timer=setTimeout(()=>run(id),spacing);
  }
  let shippingKey='',shippingEligible=false,shippingController,shippingVersion=0;
  function shippingSignature(s){return JSON.stringify(s.items);}
@@ -511,7 +559,7 @@
  }
  function shippingStage(){
   updatePaymentSelection();
-  ++generation;controller?.abort();clearTimeout(timer);stopOffers();lastResponse=null;lastSnapshot=null;disclaimer(null);highlightPayment(null);
+  ++generation;controller?.abort();clearTimeout(timer);endUpdate(pricingUpdate,'cancel');stopOffers();lastResponse=null;lastSnapshot=null;disclaimer(null);highlightPayment(null);
   panel.hidden=false;output.setAttribute('aria-busy','false');
   promoOutput.replaceChildren(note('Store pickup / local delivery only.'));
   creditOutput.replaceChildren(note('Enter your shipping address below to calculate shipping and tax.'));
@@ -529,88 +577,159 @@
    departing=true;location.assign('checkout.html'+(query.get('api')==='local'?'?api=local':''));
   }catch(error){const message=document.getElementById('options-message');if(message)message.textContent=error.message;}
  }
- let comparisonDialog,comparisonController,comparisonGeneration=0,comparisonColumns=[],comparisonSnapshot,comparisonTable,comparisonStatus,comparisonMore,comparisonNotice,comparisonBusy=false,comparisonOpener;
+ // WEP_FINANCE_CHART_V1: each open group keeps its own results, pagination and cancellation.
+ const comparisons=new Map();let financingComparisonHost;
  function validPrograms(rows){return (rows||[]).filter(p=>clean(p.ProgramID)&&clean(p.APR)!==''&&Number.isFinite(number(p.APR))&&number(p.APR)>=0&&Number.isInteger(number(p.TermMonths))&&number(p.TermMonths)>0).sort((a,b)=>number(a.APR)-number(b.APR)||number(b.TermMonths)-number(a.TermMonths));}
  function compareState(){const s=selection();return {...s,fulfillment:deliverySelect.value,zip:deliverySelect.value==='DELIVERY'?zipInput.value.trim():''};}
- function comparisonFresh(){return comparisonSnapshot&&JSON.stringify(comparisonSnapshot)===JSON.stringify(compareState());}
+ function comparisonHost(){
+  if(!financingComparisonHost){financingComparisonHost=document.createElement('div');financingComparisonHost.className='wep-finance-chart-host';panel.after(financingComparisonHost);}
+  return financingComparisonHost;
+ }
+ function closeAllComparisons(){for(const group of comparisons.values())group.close();}
+ function markComparisonStale(){for(const group of comparisons.values())group.stale();}
+ async function openComparison(financingOnly=false,group='any'){
+  if(deliverySelect.value==='SHIP'){shippingCheckout();return;}
+  const mode=financingOnly===true,filter=mode&&['compatible','inlieu'].includes(group)?group:'any';
+  if(!comparisons.has(filter))comparisons.set(filter,createFinancingComparison(filter,mode));
+  await comparisons.get(filter).open();
+ }
+ function createFinancingComparison(filter,mode){
+ // WEP_MANUAL_FINANCE_COMPARISON_V1
+ let comparisonDialog,comparisonController,comparisonGeneration=0,comparisonColumns=[],comparisonSnapshot,comparisonTable,comparisonStatus,comparisonMore,comparisonBusy=false,comparisonOpener,comparisonUpdate;
+ let comparisonStale=false,comparisonFinancingOnly=mode,comparisonGroupFilter=filter,comparisonLimit=3,comparisonNext,comparisonDetails,comparisonShowDetails=false,comparisonProgramRows=[],comparisonSort,comparisonSortBy='rate',comparisonRanked=false,rankingCancel;
+ const comparisonPageSize=3;
+ function comparisonPrograms(){return comparisonProgramRows.filter(p=>comparisonGroupFilter==='any'||financeGroup(p)===comparisonGroupFilter);}
+ function comparisonFresh(){try{return !!comparisonSnapshot&&JSON.stringify(comparisonSnapshot)===JSON.stringify(compareState());}catch(_){return false;}}
+ function comparisonPlan(col){return col.quote?.financePlans?.find(p=>clean(p.brandId).toUpperCase()===comparisonSnapshot?.brandId&&clean(p.program?.ProgramID)===clean(col.program?.ProgramID));}
+ function closeComparison(){
+  if(!comparisonDialog)return;
+  rankingCancel?.();++comparisonGeneration;comparisonController?.abort();endUpdate(comparisonUpdate,'cancel');comparisonBusy=false;comparisonDialog.open=false;comparisonDialog.hidden=true;
+  (comparisonOpener?.isConnected?comparisonOpener:document.getElementById('wep-open-payment-options'))?.focus({preventScroll:true});
+ }
+ function markComparisonStale(){
+  if(!comparisonDialog||!comparisonSnapshot||comparisonFresh())return;
+  rankingCancel?.();++comparisonGeneration;comparisonController?.abort();endUpdate(comparisonUpdate,'cancel');comparisonBusy=false;comparisonStale=true;
+  comparisonStatus.textContent='Your package has changed. Update payments to compare current financing.';renderComparison();
+ }
  function renderComparison(){
-  comparisonTable.replaceChildren();const head=document.createElement('thead');
-  if(comparisonColumns.some(c=>c.program&&rebateCompatible(c.program))&&comparisonColumns.some(c=>c.program&&!rebateCompatible(c.program))&&financeLayout.hasRebate){
-   const groups=document.createElement('tr');groups.className='wep-finance-group-head';const first=document.createElement('th');first.textContent='Financing choices';first.scope='col';groups.append(first);
-   for(const [label,cols] of [['Cash / Card',comparisonColumns.filter(c=>!c.program)],['Keep Your Rebate',comparisonColumns.filter(c=>c.program&&rebateCompatible(c.program))],['Financing in Lieu of Rebates',comparisonColumns.filter(c=>c.program&&!rebateCompatible(c.program))]]){if(!cols.length)continue;const th=document.createElement('th');th.scope='colgroup';th.colSpan=cols.length;th.textContent=label;groups.append(th);}head.append(groups);
+  if(!comparisonTable)return;
+  comparisonStatus.classList.toggle('wep-chart-status-visible',comparisonStale||comparisonSortBy==='payment'&&!comparisonRanked||!comparisonBusy&&comparisonSnapshot&&!comparisonColumns.some(c=>!c.ineligible));comparisonTable.replaceChildren();comparisonTable.classList.toggle('is-stale',comparisonStale);comparisonTable.setAttribute('aria-busy',String(comparisonBusy));
+  const groups=[...(!comparisonFinancingOnly?[['Cash / Credit Card',comparisonColumns.filter(c=>!c.program)]]:[]),['With Rebates',comparisonColumns.filter(c=>c.program&&rebateCompatible(c.program))],['In Lieu of Rebates',comparisonColumns.filter(c=>c.program&&!rebateCompatible(c.program))]];
+  for(const [label,cols] of groups){
+   if(!cols.length)continue;
+   cols.sort((a,b)=>{
+    if(comparisonSortBy==='payment'){
+     const av=a.program?comparisonPlan(a)?.monthlyPayment:a.quote?.total,bv=b.program?comparisonPlan(b)?.monthlyPayment:b.quote?.total;
+     const an=validMoney(av)?av:Infinity,bn=validMoney(bv)?bv:Infinity;
+     if(an!==bn)return an<bn?-1:1;
+    }
+    return number(a.program?.APR||0)-number(b.program?.APR||0)||number(b.program?.TermMonths||0)-number(a.program?.TermMonths||0);
+   });
+   const section=document.createElement('section'),heading=document.createElement('h3'),row=document.createElement('div');heading.textContent=label;row.className='wep-finance-compare-row';row.tabIndex=0;row.setAttribute('role','region');row.setAttribute('aria-label',label+' financing options. Scroll horizontally for more.');section.append(heading,row);
+   for(const col of cols.filter(c=>!c.ineligible).slice(0,comparisonLimit)){
+    if(comparisonSortBy==='payment'&&!comparisonRanked&&col.program)continue;
+    const card=document.createElement('article');card.className='wep-finance-compare-card';const title=document.createElement('h4');title.textContent=col.program?number(col.program.APR)+'% for '+number(col.program.TermMonths)+' mths':col.method==='cash'?'Cash / Bank Check':'Credit Card';card.append(title);
+    const plan=comparisonPlan(col),q=col.quote;
+    card.append(note(q?(col.program?(validMoney(plan?.monthlyPayment)?money(plan.monthlyPayment)+' /mo':'Payment needs confirmation'):(validMoney(q.total)?money(q.total):'Total needs confirmation')):col.error||'Waiting for current pricing…','wep-finance-compare-monthly'));
+    if(col.error)card.append(note('Could not confirm this option. Update financing payments to retry.'));
+    const details=document.createElement('details'),summary=document.createElement('summary'),dl=document.createElement('dl'),key=col.program?clean(col.program.ProgramID):col.method;summary.textContent='Details';details.append(summary,dl);details.open=comparisonShowDetails;details.className='wep-chart-details';details.hidden=!comparisonShowDetails;
+    if(q){
+     const base=cachedQuote({items:comparisonSnapshot.items,paymentMethod:'standard',fulfillment:comparisonSnapshot.fulfillment,zip:comparisonSnapshot.zip,financeProgramIds:{}},null);
+     for(const [label,value] of [['Merchandise',q.merchandise],['Installation / Set-Up',q.installation],['Freight',q.freight],['Local delivery',comparisonSnapshot.fulfillment==='DELIVERY'?q.delivery:0],['Tax',q.tax],['Out-the-Door Price',q.total],['Required down payment',plan?.requiredDown],['Application fee (financed)',plan?.applicationFee],['Amount financed including fee',plan?.principalWithFees],['Estimated Total of Payments',plan?estimateTotalPayments(plan):undefined]]){
+      if(!col.program&&/down payment|fee|financed|Total of Payments/.test(label))continue;dl.append(field(label,validMoney(value)?money(value):'Needs confirmation'));
+     }
+     if(col.program){
+      dl.append(field('Rebates',rebateCompatible(col.program)?(base?money(includedRebate(base,q))+' compatible rebates included':'Compatible rebates included in pricing'):'In lieu of customer rebates'));
+      dl.append(field('Term',number(col.program.TermMonths)+' months'));
+      const p=plan?.program||col.program;
+      for(const [label,value] of [['Lender',p.Lender],['Offer ends',p.EndDate],['Terms',[p.Disclaimer,p.Disclosure,p.Requirements,p.Terms].map(clean).filter(Boolean).join(' ')],['Pricing notes',(q.issues||[]).join(' ')]])if(clean(value))dl.append(field(label,clean(value)));
+     }
+    }else dl.append(field('Payment details',col.error||'Available when the calculation finishes.'));
+    card.append(details);
+    const select=document.createElement('button');select.type='button';select.className='wep-payment-select';select.setAttribute('aria-label','Select '+(col.program?programLabel(col.program):col.method));select.append(title,card.querySelector('.wep-finance-compare-monthly'));if(col.program){const total=note(q&&validMoney(q.total)?money(q.total)+' out the door':'Out-the-door price pending','wep-chart-out-the-door');select.append(total,note(plan&&validMoney(plan.requiredDown)?money(plan.requiredDown)+' required down':'Required down payment pending','wep-chart-required-down'));}select.classList.add('wep-chart-choice');select.disabled=comparisonStale||!q||pricingIssues(q).length>0||!validMoney(q.total)||!!col.program&&(!validMoney(plan?.monthlyPayment)||!validMoney(plan?.requiredDown));select.onclick=()=>acceptComparison(col);card.prepend(select);row.append(card);
+   }
+   comparisonTable.append(section);
   }
-  const tr=document.createElement('tr'),first=document.createElement('th');first.textContent='Price & Payment Details';first.scope='col';tr.append(first);
-  for(const col of comparisonColumns){const th=document.createElement('th');th.scope='col';th.className=col.method;const title=document.createElement('strong');title.textContent=col.program?programLabel(col.program):col.method==='cash'?'Cash / Bank Check':'Credit Card';th.append(title);
-   if(col.quote){const button=document.createElement('button');button.type='button';button.className='wep-payment-select';button.textContent='Select This Option';button.dataset.paymentChoice=col.program?'finance:'+clean(col.program.ProgramID):col.method;button.onclick=()=>acceptComparison(col);th.append(button);}
-   else if(!col.error&&!col.loading)th.append(note('Not loaded'));
-   if(col.error)th.append(note(col.error));else if(col.loading)th.append(note('Loading current pricing…'));
-   tr.append(th);
-  }head.append(tr);comparisonTable.append(head);
-  const body=document.createElement('tbody'),rows=[
-   ['Equipment price (each)',q=>q.lines.find(l=>l.type==='tool'&&clean(l.sku)===comparisonSnapshot.sku)?.unitPrice],
-   ['Merchandise',q=>q.merchandise],['Installation / Set-Up',q=>q.installation],['Freight',q=>q.freight],['Local delivery',q=>comparisonSnapshot.fulfillment==='DELIVERY'?q.delivery:0],['Package subtotal',q=>q.subtotal],['Tax',q=>q.tax],['Out-the-Door Price',q=>q.total],
-   ['Required down payment',q=>q.financePlans?.[0]?.requiredDown],['Application fee (financed)',q=>q.financePlans?.[0]?.applicationFee],['Amount financed including fee',q=>q.financePlans?.[0]?.principalWithFees],['Estimated Total of Payments',q=>pricingIssues(q).length?null:estimateTotalPayments(q.financePlans?.[0])],['Estimated monthly payment',q=>pricingIssues(q).length?null:q.financePlans?.[0]?.monthlyPayment]
-  ];
-  for(const [label,get,discount] of rows){const row=document.createElement('tr'),th=document.createElement('th');th.scope='row';th.textContent=label;row.append(th);if(label==='Out-the-Door Price'||label==='Estimated monthly payment')row.className='wep-payment-total';
-   for(const col of comparisonColumns){const td=document.createElement('td');td.className=col.method;const v=col.quote?get(col.quote):undefined;td.textContent=!col.quote?'—':!col.program&&label.match(/down payment|fee|financed|monthly payment|Total of Payments/)?'—':validMoney(v)?(discount&&v>0?'−':'')+money(v):'Needs confirmation';row.append(td);}body.append(row);
-  }
-  for(const label of ['Rebate compatibility','Program details','Application']){const row=document.createElement('tr'),th=document.createElement('th');th.scope='row';th.textContent=label;row.append(th);
-   for(const col of comparisonColumns){const td=document.createElement('td');td.className=col.method;const p=col.quote?.financePlans?.[0]?.program||col.program;
-    if(label==='Rebate compatibility')td.textContent=p?(/^(F|FALSE|NO|N|0)$/i.test(clean(p.RebateCompatible))?'In lieu of customer rebates':'Compatible rebates included'):'—';
-    else if(label==='Program details')td.textContent=[col.quote?.issues?.join(' '),p?clean(p.Lender):'',p?clean(p.EndDate)?'Ends '+clean(p.EndDate):'':'',...(p?[p.Disclaimer,p.Disclosure,p.Requirements,p.Terms].map(clean).filter(Boolean):[])].filter(Boolean).join(' · ')||'—';
-    else{td.textContent='—';try{const u=new URL(clean(p?.ApplicationURL));if(u.protocol==='https:'){const a=document.createElement('a');a.href=u.href;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Online Application ↗';a.onclick=remember;td.replaceChildren(a);}}catch(_){}}
-    row.append(td);
-   }body.append(row);
-  }comparisonTable.append(body);
-  const remaining=comparisonColumns.filter(c=>!c.quote&&!c.error&&!c.loading).length;comparisonMore.hidden=!remaining;comparisonMore.disabled=comparisonBusy;comparisonMore.textContent='Load More Payment Options ('+remaining+' remaining)';
+  const current=comparisonFresh()&&!comparisonStale&&comparisonColumns.length>0&&comparisonColumns.every(c=>c.ineligible||c.quote&&!c.error&&!pricingIssues(c.quote).length);
+  comparisonMore.disabled=comparisonBusy||current;comparisonMore.textContent=comparisonBusy?'Updating…':current?'Programs Updated':'Update Financing';comparisonMore.hidden=false;
+  comparisonDetails.textContent=comparisonShowDetails?'Hide Details':'View Details';comparisonDetails.setAttribute('aria-expanded',String(comparisonShowDetails));
+  comparisonSort.textContent=comparisonSortBy==='payment'?'Sort: Lowest Payment':'Sort: Rate / Term';comparisonSort.setAttribute('aria-pressed',String(comparisonSortBy==='payment'));
+  comparisonSort.disabled=comparisonBusy||comparisonStale||!comparisonFresh();
+  const available=comparisonSortBy==='payment'?comparisonColumns.filter(c=>c.program&&!c.ineligible).length:comparisonPrograms().length;
+  const remaining=Math.max(0,available-comparisonLimit);comparisonNext.hidden=!remaining;comparisonNext.disabled=comparisonBusy||comparisonStale||comparisonSortBy==='payment'&&!comparisonRanked;comparisonNext.textContent='View More ('+Math.min(comparisonPageSize,remaining)+' more)';
  }
  function acceptComparison(col){
   try{
-   if(!comparisonFresh())throw Error('Your build changed. Reopen payment options for current pricing.');
-   applyPaymentQuote(col,previewBuild(comparisonSnapshot));comparisonDialog.close();if(checkoutPending){queueMicrotask(()=>document.getElementById('review-package')?.click());}
-  }catch(error){comparisonStatus.textContent=error.message;}
+   if(comparisonStale||!comparisonFresh()||!col.quote)throw Error('Your package has changed. Update financing payments before selecting a plan.');
+   applyPaymentQuote(col,previewBuild(comparisonSnapshot));closeAllComparisons();if(checkoutPending)queueMicrotask(()=>document.getElementById('review-package')?.click());
+  }catch(error){comparisonStatus.textContent=error.message;comparisonStatus.classList.add('wep-chart-status-visible');}
  }
-
- async function loadComparisonBatch(batch,id){
-  if(comparisonBusy||!batch.length)return;comparisonBusy=true;comparisonNotice.hidden=false;renderComparison();
-  let cursor=0;
-  async function next(){for(;;){const col=batch[cursor++];if(!col||id!==comparisonGeneration||!comparisonDialog.open||!comparisonFresh())return;col.loading=true;renderComparison();comparisonStatus.textContent='Building prices and payments for your selected package. Choose any option as soon as it is ready.';
-   try{const signal=comparisonController.signal;if(id!==comparisonGeneration||!comparisonFresh())return;
-    const s=comparisonSnapshot,q=await packageQuote({items:s.items,paymentMethod:col.method,fulfillment:s.fulfillment,zip:s.zip,financeProgramIds:col.program?{[s.brandId]:clean(col.program.ProgramID)}:{}},signal,col.program);
-    if(id!==comparisonGeneration||!comparisonFresh()||!comparisonDialog.open)return;
-    if(!Array.isArray(q.lines)||!q.lines.length||!Array.isArray(q.issues)||!Number.isFinite(Date.parse(q.createdAt)))throw Error('Current pricing could not be confirmed.');
-    if(s.items.some(x=>x.inventoryId)&&q.stockPricingVersion!==1)throw Error('In-stock pricing needs confirmation.');
-    if(col.program&&!q.financePlans?.some(p=>clean(p.brandId).toUpperCase()===s.brandId&&clean(p.program?.ProgramID)===clean(col.program.ProgramID)))throw Error('This financing program could not be confirmed.');
-    col.quote=q;
-   }catch(error){if(id!==comparisonGeneration||comparisonController.signal.aborted)return;col.error=pricingFailure(error);}finally{col.loading=false;}
-   renderComparison();
-  }}
-  try{await Promise.all([next(),next()]);}finally{if(id===comparisonGeneration){comparisonBusy=false;comparisonNotice.hidden=true;renderComparison();comparisonStatus.textContent=comparisonColumns.some(col=>col.quote)?'Choose Select This Option to apply a payment method to your build.':'Current payment pricing could not be confirmed. Your build is saved. Close this window and retry.';}}
+ function confirmPaymentRanking(){
+  if(rankingCancel)return Promise.resolve(false);
+  return new Promise(resolve=>{
+   const dialog=document.createElement('dialog');dialog.className='wep-finance-ranking-confirm';
+   const heading=document.createElement('h2');heading.id='wep-ranking-confirm-title-'+filter;heading.textContent='Compare lowest payments?';dialog.setAttribute('aria-labelledby',heading.id);
+   const count=comparisonPrograms().length,group=filter==='compatible'?' with rebates':filter==='inlieu'?' in lieu of rebates':'';
+   const message=note('This package has '+count+' eligible financing '+(count===1?'option':'options')+group+'. Comparing every option may take a few minutes to load. Continue?');message.id='wep-ranking-confirm-message-'+filter;dialog.setAttribute('aria-describedby',message.id);
+   const actions=document.createElement('div'),cancel=document.createElement('button'),proceed=document.createElement('button');actions.className='wep-ranking-confirm-actions';cancel.type=proceed.type='button';cancel.textContent='Cancel';proceed.textContent='Continue';cancel.autofocus=true;
+   let settled=false;const finish=accepted=>{if(settled)return;settled=true;rankingCancel=null;dialog.close();dialog.remove();resolve(accepted);};
+   rankingCancel=()=>finish(false);cancel.onclick=rankingCancel;proceed.onclick=()=>finish(true);dialog.addEventListener('cancel',event=>{event.preventDefault();finish(false);});dialog.addEventListener('close',()=>finish(false));
+   actions.append(cancel,proceed);dialog.append(heading,message,actions);document.body.append(dialog);dialog.showModal();
+  });
  }
- async function openComparison(financingOnly=false,group='any'){
-  financingOnly=financingOnly===true;group=financingOnly&&['compatible','inlieu'].includes(group)?group:'any';comparisonOpener=document.activeElement;
-  if(deliverySelect.value==='SHIP'){shippingCheckout();return;}
-  if(!comparisonDialog){comparisonDialog=document.createElement('dialog');comparisonDialog.className='wep-payment-dialog';comparisonDialog.setAttribute('aria-labelledby','wep-payment-dialog-title');
-   const header=document.createElement('div');header.className='wep-payment-dialog-header';const title=document.createElement('h2');title.id='wep-payment-dialog-title';title.textContent='View Price & Payment Options';const close=document.createElement('button');close.type='button';close.textContent='Close';close.onclick=()=>{checkoutPending=false;comparisonDialog.close();};comparisonDialog.addEventListener('cancel',()=>{checkoutPending=false;});header.append(title,close);
-   comparisonStatus=note('','wep-payment-dialog-status');comparisonStatus.setAttribute('role','status');comparisonStatus.setAttribute('aria-live','polite');const wrap=document.createElement('div');wrap.className='wep-payment-table-wrap';wrap.tabIndex=0;wrap.setAttribute('role','region');wrap.setAttribute('aria-label','Payment options comparison. Scroll horizontally for more options.');comparisonTable=document.createElement('table');wrap.append(comparisonTable);
-   comparisonNotice=document.createElement('div');comparisonNotice.className='wep-package-loading';comparisonNotice.setAttribute('role','status');comparisonNotice.setAttribute('aria-live','polite');const loadingTitle=document.createElement('strong');loadingTitle.textContent='Building payment options for your package…';comparisonNotice.append(loadingTitle,note('We’re calculating prices and payments for the equipment, options, and delivery you selected. This may take a moment.'));
-   comparisonMore=document.createElement('button');comparisonMore.type='button';comparisonMore.onclick=()=>loadComparisonBatch(comparisonColumns.filter(c=>!c.quote&&!c.error).slice(0,2),comparisonGeneration);
-   comparisonDialog.append(header,note('Compare your complete build, including selected options, installation, freight, delivery and estimated tax. Select one payment option to continue.'),comparisonNotice,comparisonStatus,wrap,comparisonMore,note('Estimated Total of Payments excludes your down payment. The final lender payment may vary.'),note('Financing is subject to credit approval. Rates, eligibility and pricing are rechecked before purchase.'));document.body.append(comparisonDialog);
-   comparisonDialog.addEventListener('close',()=>{++comparisonGeneration;comparisonController?.abort();comparisonBusy=false;(comparisonOpener?.isConnected?comparisonOpener:document.getElementById('wep-open-payment-options'))?.focus({preventScroll:true});queueMicrotask(()=>{if(paymentConfirmed&&!lastResponse&&!comparisonDialog.open)schedule(true);});});
-  }
-  document.getElementById('wep-payment-dialog-title').textContent=group==='compatible'?'Financing + Rebates':group==='inlieu'?'Financing in Lieu of Rebates':financingOnly?'View All Financing Options':'View Price & Payment Options';
-  comparisonDialog.dataset.financingOnly=String(financingOnly);comparisonDialog.dataset.financeGroup=group;
+ function mountComparison(){
+  if(comparisonDialog)return;
+  comparisonDialog=document.createElement('section');comparisonDialog.className='wep-inline-finance-comparison';comparisonDialog.hidden=true;comparisonDialog.open=false;comparisonDialog.dataset.financeGroup=filter;comparisonDialog.setAttribute('aria-labelledby','wep-payment-dialog-title-'+filter);
+  const header=document.createElement('div');header.className='wep-finance-compare-heading';const title=document.createElement('h2');title.id='wep-payment-dialog-title-'+filter;title.textContent=filter==='compatible'?'Financing With Rebates':filter==='inlieu'?'Financing in Lieu of Rebates':'Payment Options';const close=document.createElement('button');close.type='button';close.textContent='×';close.setAttribute('aria-label','Close '+title.textContent);close.onclick=()=>{checkoutPending=false;closeComparison();};header.append(title,close);
+  comparisonStatus=note('','wep-finance-compare-status');comparisonStatus.setAttribute('role','status');comparisonStatus.setAttribute('aria-live','polite');
+  comparisonMore=document.createElement('button');comparisonMore.type='button';comparisonMore.className='wep-finance-refresh';comparisonMore.textContent='Update Financing Payments';comparisonMore.onclick=()=>refreshComparison();
+  comparisonNext=document.createElement('button');comparisonNext.type='button';comparisonNext.className='wep-finance-next';comparisonNext.hidden=true;comparisonNext.onclick=()=>{if(comparisonBusy||comparisonStale)return;comparisonLimit+=comparisonPageSize;if(comparisonSortBy==='payment'&&comparisonRanked)renderComparison();else refreshComparison(true);};
+  comparisonDetails=document.createElement('button');comparisonDetails.type='button';comparisonDetails.className='wep-finance-details-toggle';comparisonDetails.textContent='View Details';comparisonDetails.setAttribute('aria-expanded','false');comparisonDetails.onclick=()=>{comparisonShowDetails=!comparisonShowDetails;renderComparison();};
+  comparisonSort=document.createElement('button');comparisonSort.type='button';comparisonSort.className='wep-finance-sort';comparisonSort.textContent='Sort: Rate / Term';comparisonSort.title='Lowest payment compares every eligible program in this group.';comparisonSort.setAttribute('aria-label','Toggle all eligible programs between lowest rate / longest term and lowest monthly payment');comparisonSort.setAttribute('aria-pressed','false');comparisonSort.onclick=async()=>{if(comparisonBusy||comparisonStale||!comparisonFresh())return;if(comparisonSortBy==='rate'&&!await confirmPaymentRanking())return;if(comparisonBusy||comparisonStale||!comparisonFresh()||comparisonDialog.hidden)return;comparisonSortBy=comparisonSortBy==='rate'?'payment':'rate';comparisonLimit=comparisonPageSize;comparisonTable.querySelectorAll('.wep-finance-compare-row').forEach(row=>row.scrollLeft=0);if(comparisonStale||!comparisonFresh()){renderComparison();return;}refreshComparison(true);};
+  header.insertBefore(comparisonMore,close);header.insertBefore(comparisonSort,close);header.insertBefore(comparisonDetails,close);
+  comparisonTable=document.createElement('div');comparisonTable.className='wep-finance-compare-groups';
+  comparisonDialog.append(header,comparisonStatus,comparisonTable,comparisonNext);
+  comparisonHost().append(comparisonDialog);
+ }
+ async function refreshComparison(append=false){
+  if(comparisonBusy)return;
+  const previous=append&&comparisonFresh()?comparisonColumns.slice():[];
+  const id=++comparisonGeneration;comparisonController?.abort();comparisonController=new AbortController();const signal=comparisonController.signal;
+  let failed=false;comparisonBusy=true;comparisonStale=false;comparisonUpdate=beginUpdate('comparison:'+filter);const progress=comparisonUpdate;
   try{
-   if(!inventoryReady)throw Error('Wait for the stock check or retry Check Stock before comparing prices.');
-   comparisonSnapshot=compareState();if(comparisonSnapshot.fulfillment==='DELIVERY'&&!/^\d{5}$/.test(comparisonSnapshot.zip))throw Error('Enter a five-digit delivery ZIP before comparing payment options.');
-   ++generation;controller?.abort();clearTimeout(timer);comparisonController?.abort();comparisonController=new AbortController();const id=++comparisonGeneration;comparisonBusy=false;comparisonColumns=[];comparisonTable.replaceChildren();comparisonMore.hidden=true;comparisonNotice.hidden=false;comparisonStatus.textContent='Checking current offers for your selected package…';if(!comparisonDialog.open)comparisonDialog.showModal();
-   const s=comparisonSnapshot,main=s.items[0],selectionItems=s.items.slice(1).map(x=>({sku:x.sku,quantity:x.quantity}));let programError='';
-   const result=await eligiblePrograms(s,comparisonController.signal).catch(error=>{if(comparisonController.signal.aborted)throw error;programError='Financing could not be loaded. Close and reopen to retry.';return {programs:[]};});
-   if(id!==comparisonGeneration||!comparisonFresh())return;programs=validPrograms(result.programs);if(financeLayout.hasRebate)programs.sort((a,b)=>Number(rebateCompatible(b))-Number(rebateCompatible(a))||number(a.APR)-number(b.APR)||number(b.TermMonths)-number(a.TermMonths));comparisonColumns=[...(financingOnly?[]:[{method:'cash'},{method:'credit'}]),...programs.filter(program=>group==='any'||financeGroup(program)===group).map(program=>({method:'finance',program}))];renderComparison();
-   if(!comparisonColumns.length){comparisonNotice.hidden=true;comparisonStatus.textContent=programError||'No eligible financing programs are available for this package. Cash / Bank Check and Credit Card remain available on the page.';return;}
-   const starters=[comparisonColumns.find(c=>c.program&&rebateCompatible(c.program)),comparisonColumns.find(c=>c.program&&!rebateCompatible(c.program)),...comparisonColumns].filter((c,i,rows)=>c&&rows.indexOf(c)===i).slice(0,3);
-   await loadComparisonBatch(starters,id);if(programError&&id===comparisonGeneration)comparisonStatus.textContent+=' '+programError;
-  }catch(error){if(error.name==='AbortError')return;output.append(note(error.message));if(comparisonDialog.open){comparisonNotice.hidden=true;comparisonStatus.textContent=error.message;}}
+   if(!inventoryReady)throw Error('Wait for the stock check before comparing payments.');
+   const snapshot=compareState();if(snapshot.fulfillment==='DELIVERY'&&!/^\d{5}$/.test(snapshot.zip))throw Error('Enter a five-digit delivery ZIP before updating payments.');
+   comparisonColumns=[];comparisonRanked=false;comparisonSnapshot=snapshot;comparisonStatus.textContent=comparisonSortBy==='payment'?'Comparing all eligible payments… This may take a moment.':'Updating payments…';renderComparison();
+   const result=await eligiblePrograms(snapshot,signal);if(id!==comparisonGeneration||!comparisonFresh()||signal.aborted)return;
+   comparisonProgramRows=validPrograms(result.programs);comparisonColumns=[...(!comparisonFinancingOnly?[{method:'cash'},{method:'credit'}]:[]),...(comparisonSortBy==='payment'?comparisonPrograms():comparisonPrograms().slice(0,comparisonLimit)).map(program=>({method:'finance',program}))];
+   for(const col of comparisonColumns){const saved=previous.find(c=>c.method===col.method&&clean(c.program?.ProgramID)===clean(col.program?.ProgramID));if(saved?.quote&&Date.now()-Date.parse(saved.quote.createdAt)<120000)col.quote=saved.quote;}renderComparison();
+   let cursor=0;
+   const rankingStatus=()=>{if(comparisonSortBy==='payment')comparisonStatus.textContent='Comparing all eligible payments: '+comparisonColumns.filter(c=>c.quote||c.error||c.ineligible).length+' of '+comparisonColumns.length+'. This may take a moment.';};rankingStatus();
+   async function next(){for(;;){const col=comparisonColumns[cursor++];if(!col||id!==comparisonGeneration||signal.aborted||!comparisonFresh())return;if(col.quote)continue;
+    try{
+     const q=await packageQuote({items:snapshot.items,paymentMethod:col.method,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:col.program?{[snapshot.brandId]:clean(col.program.ProgramID)}:{}},signal,col.program);
+     if(id!==comparisonGeneration||signal.aborted||!comparisonFresh())return;
+     if(!Array.isArray(q.lines)||!q.lines.length||!Array.isArray(q.issues)||!Number.isFinite(Date.parse(q.createdAt)))throw Error('Current pricing could not be confirmed.');
+     if(snapshot.items.some(x=>x.inventoryId)&&q.stockPricingVersion!==1)throw Error('In-stock pricing needs confirmation.');
+     if(col.program&&!q.financePlans?.some(p=>clean(p.brandId).toUpperCase()===snapshot.brandId&&clean(p.program?.ProgramID)===clean(col.program.ProgramID)))throw Error('This financing program could not be confirmed.');
+     const plan=col.program?q.financePlans.find(p=>clean(p.brandId).toUpperCase()===snapshot.brandId&&clean(p.program?.ProgramID)===clean(col.program.ProgramID)):null;
+     if(!validMoney(q.total)||plan&&(!validMoney(plan.monthlyPayment)||!validMoney(plan.requiredDown)))throw Error('This payment needs confirmation.');
+     col.quote=q;if(pricingIssues(q).length)failed=true;
+    }catch(error){if(id!==comparisonGeneration||signal.aborted)return;if(col.program&&error.httpStatus===400&&/not eligible|financed amount.*limits|requires full payment upfront/i.test(error.message))col.ineligible=true;else{failed=true;col.error=pricingFailure(error);}}
+    rankingStatus();renderComparison();
+   }}
+   await Promise.all([next(),next()]);
+   if(id===comparisonGeneration&&comparisonFresh()){comparisonRanked=!failed;comparisonStatus.textContent=!comparisonColumns.some(c=>!c.ineligible)?'No eligible financing programs are available for this package.':failed?'Some options could not be confirmed. Update Financing to retry before comparing the lowest payments.':'Payments are current. Select a plan to apply it to your quote.';}
+  }catch(error){if(id!==comparisonGeneration||signal.aborted)return;failed=true;comparisonStale=true;comparisonStatus.textContent=pricingFailure(error);}
+  finally{if(id===comparisonGeneration){comparisonBusy=false;renderComparison();}endUpdate(progress,id!==comparisonGeneration||signal.aborted?'cancel':failed?'error':'ready');}
+ }
+ async function open(){
+  comparisonOpener=document.activeElement;mountComparison();comparisonDialog.hidden=false;comparisonDialog.open=true;
+  if(!comparisonSnapshot){await refreshComparison();return;}
+  if(!comparisonFresh()){comparisonStale=true;comparisonStatus.textContent='Package changed — update financing.';}
+  renderComparison();
+ }
+ return {open,close:closeComparison,stale:markComparisonStale};
  }
 
  let inventoryRows=null,inventoryPromise=null,inventoryReady=false,inventoryNotice,inventoryVersion=0,autoSaving=false,cartPaused=false,cartResetting=false,departing=false;
@@ -685,6 +804,7 @@
   const quiet=force&&inventoryReady,previous=JSON.stringify(inventoryRows),version=++inventoryVersion,identity=currentIdentity();
   if(!quiet){inventoryReady=false;if(inventoryNotice)inventoryNotice.textContent='Checking stock…';inventoryPricingStatus('Checking stock before calculating payment prices…');}
   const ac=new AbortController();let stage='stock service';
+  const inventoryUpdate=quiet?null:beginUpdate('inventory');let inventoryFailed=false;
   inventoryPromise=(async()=>{try{
    const result=await post('/inventory-availability',{brandId:identity.brandId},ac.signal);if(version!==inventoryVersion)return;
    if(!Array.isArray(result.availability))throw Error('Inventory could not be checked.');
@@ -693,11 +813,11 @@
    // An unchanged background check must not clear prices, restart offers, or close a customer's payment comparison.
    if(quiet&&JSON.stringify(inventoryRows)===previous)return;
    refreshStockControls();stage='start pricing';schedule(true);inventoryRetryCount=0;
-  }catch(error){if(version!==inventoryVersion)return;console.error('WEP inventory failure at '+stage+': '+error.name+': '+error.message+'\n'+(error.stack||''));
+  }catch(error){if(version!==inventoryVersion)return;inventoryFailed=true;console.error('WEP inventory failure at '+stage+': '+error.name+': '+error.message+'\n'+(error.stack||''));
    if(!quiet)inventoryReady=false;
    if(inventoryNotice){inventoryNotice.replaceChildren(document.createTextNode(quiet?'Stock refresh unavailable; please retry before continuing. ':'Stock check unavailable. '));const retry=document.createElement('button');retry.type='button';retry.textContent='Retry';retry.onclick=()=>loadInventory(true);inventoryNotice.append(retry);}
    if(!quiet){const retrying=inventoryRetryCount<2;inventoryPricingStatus(retrying?'Stock check interrupted. Retrying payment prices…':'Stock check unavailable. Retry payment prices to load cash, card and financing.',true);if(retrying){const delay=1500*(++inventoryRetryCount);inventoryRetryTimer=setTimeout(()=>loadInventory(true),delay);}}
-  }finally{if(version===inventoryVersion)inventoryPromise=null;}})();return inventoryPromise;
+  }finally{if(version===inventoryVersion)inventoryPromise=null;endUpdate(inventoryUpdate,inventoryFailed?'error':'ready');}})();return inventoryPromise;
  }
  function saveCurrentBuild(){
   if(autoSaving||cartPaused||departing||!inventoryReady)return;
@@ -712,7 +832,7 @@
  };
  function removeEquipment(){
   const s=currentIdentity(),rows=cart(),remaining=rows.filter(row=>!(clean(row.brandId).toUpperCase()===s.brandId&&row.packageId===s.brandId+':'+s.sku));
-  departing=true;cartPaused=true;++generation;controller?.abort();clearTimeout(timer);comparisonController?.abort();
+  departing=true;cartPaused=true;++generation;controller?.abort();clearTimeout(timer);closeAllComparisons();
   writeCart(remaining);sessionStorage.removeItem(draftKey());sessionStorage.removeItem('wepBuildCheckoutChoices');
   const back=document.getElementById('return-link')||app.querySelector('.summary-actions a[href]:not([href="cart.html"])');if(back)back.click();else location.assign('marketplace.html?'+new URLSearchParams({brand:s.brandId}));
  }
