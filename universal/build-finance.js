@@ -684,16 +684,16 @@
   clearTimeout(inventoryRetryTimer);panel?.querySelector('.wep-retry-payment-prices')?.remove();
   const quiet=force&&inventoryReady,previous=JSON.stringify(inventoryRows),version=++inventoryVersion,identity=currentIdentity();
   if(!quiet){inventoryReady=false;if(inventoryNotice)inventoryNotice.textContent='Checking stock…';inventoryPricingStatus('Checking stock before calculating payment prices…');}
-  const ac=new AbortController();
+  const ac=new AbortController();let stage='stock service';
   inventoryPromise=(async()=>{try{
    const result=await post('/inventory-availability',{brandId:identity.brandId},ac.signal);if(version!==inventoryVersion)return;
    if(!Array.isArray(result.availability))throw Error('Inventory could not be checked.');
-   inventoryRows=result.availability;inventoryReady=true;inventoryRetryCount=0;lastInventoryCheck=Date.now();
+   inventoryRows=result.availability;inventoryReady=true;lastInventoryCheck=Date.now();stage='stock controls';
    if(inventoryNotice)inventoryNotice.textContent='';
    // An unchanged background check must not clear prices, restart offers, or close a customer's payment comparison.
    if(quiet&&JSON.stringify(inventoryRows)===previous)return;
-   refreshStockControls();schedule(true);
-  }catch(error){if(version!==inventoryVersion)return;
+   refreshStockControls();stage='start pricing';schedule(true);inventoryRetryCount=0;
+  }catch(error){if(version!==inventoryVersion)return;console.error('WEP inventory failure at '+stage+': '+error.name+': '+error.message+'\n'+(error.stack||''));
    if(!quiet)inventoryReady=false;
    if(inventoryNotice){inventoryNotice.replaceChildren(document.createTextNode(quiet?'Stock refresh unavailable; please retry before continuing. ':'Stock check unavailable. '));const retry=document.createElement('button');retry.type='button';retry.textContent='Retry';retry.onclick=()=>loadInventory(true);inventoryNotice.append(retry);}
    if(!quiet){const retrying=inventoryRetryCount<2;inventoryPricingStatus(retrying?'Stock check interrupted. Retrying payment prices…':'Stock check unavailable. Retry payment prices to load cash, card and financing.',true);if(retrying){const delay=1500*(++inventoryRetryCount);inventoryRetryTimer=setTimeout(()=>loadInventory(true),delay);}}
