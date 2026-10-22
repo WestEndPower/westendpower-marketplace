@@ -44,7 +44,7 @@
    const nm=s.fulfillment==='NEW_MILFORD';return {firstName:nm?'Pickup - New Milford':'Pickup - Danbury',companyName:'West End Power Equipment',address1:nm?'265 Danbury Road':'56 Beaver Brook Road',city:nm?'New Milford':'Danbury',state:'CT',zip:nm?'06776':'06810',phone:nm?'(860) 355-8722':'(203) 792-3030',email:nm?'sales@westendpower.com':'dawepe@westendpower.com'};
   }
   const notes=wrap(s.customer.notes||'',470,9);if(notes.length>1)extra.push('Customer notes: '+s.customer.notes);
-  const widths=[25,64,201,68,66,66,66],labels=['QTY','SKU / BRAND','DESCRIPTION','MSRP','YOUR PRICE','INSTALL','TOTAL'];
+  const widths=[25,68,247,72,72,72],labels=['QTY','SKU','DESCRIPTION','MSRP','SALE PRICE','TOTAL'];
   function tableHeader(){let x=left;page.drawRectangle({x:left,y:792-tableTop-20,width,height:20,color:red});labels.forEach((label,i)=>{draw(label,x+4,tableTop+6,7.5,bold,white);x+=widths[i];});return tableTop+20;}
   function makePage(continuation=false){page=doc.addPage([612,792]);header();infoBox(left,'CUSTOMER INFO',s.customer);infoBox(312,'DELIVER TO',deliveryInfo());box(left,211,width,20);draw('Notes / Instructions:',left+6,216,9,bold);fit((notes[0]||'')+(notes.length>1?' (continued)':''),130,216,446,9);if(continuation)draw('Continued',520,83,8);return tableHeader();}
   const totalRows=D.totalRows(s),paymentLines=[{text:D.paymentLabel(s),size:12,bold:true},{text:D.fulfillmentLabel(s),size:9}];
@@ -64,18 +64,18 @@
    draw('Quote only. Does not reserve equipment. Confirm availability and final pricing with the store.',left,728,8);
   }
   const prepared=s.lines.map(item=>{
-   const sku=wrap(item.sku,56,7.5).concat(wrap(item.brandId,56,7.5));
-   const description=wrap(item.productName,193,9,bold);if(item.freightNote)description.push(...wrap(item.freightNote,193,8));
-   const cells=[[String(item.quantity)],sku,description,wrap(money(item.regularUnitPrice),60),wrap(money(item.unitPrice),58),wrap(item.setupTotal?money(item.setupTotal):'-',58),wrap(money(item.itemTotal),58)];
-   return {cells,height:Math.max(22,Math.max(...cells.map(c=>c.length))*9+4)};
+   const sku=wrap(item.sku,60,7.5);
+   const description=wrap(item.productName,239,9,bold);if(item.freightNote)description.push(...wrap(item.freightNote,239,8));
+   const cells=[[String(item.quantity)],sku,description,wrap(money(item.regularUnitPrice),64),wrap(money(item.unitPrice),64),wrap(money(item.itemTotal),64)];
+   return {cells,height:Math.max(18,Math.max(...cells.map(c=>c.length))*9+4)};
   });
   let y=makePage(),itemPages=[];
-  function endItems(final){while(y+22<=tableBottom){let x=left;widths.forEach(w=>{box(x,y,w,22);x+=w;});y+=22;}summary(final);itemPages.push(page);}
+  function endItems(final){while(y+18<=tableBottom){let x=left;widths.forEach(w=>{box(x,y,w,18);x+=w;});y+=18;}summary(final);itemPages.push(page);}
   for(const row of prepared){
    // Normal items stay together. Oversized descriptions continue with repeated headings.
    if(row.height<=tableBottom-tableTop-20&&y+row.height>tableBottom){endItems(false);y=makePage(true);}
    let offset=0,count=Math.max(...row.cells.map(c=>c.length));
-   while(offset<count){if(y+22>tableBottom){endItems(false);y=makePage(true);}const take=Math.min(count-offset,Math.max(1,Math.floor((tableBottom-y-4)/9))),height=Math.max(22,take*9+4);let x=left;
+   while(offset<count){if(y+18>tableBottom){endItems(false);y=makePage(true);}const take=Math.min(count-offset,Math.max(1,Math.floor((tableBottom-y-4)/9))),height=Math.max(18,take*9+4);let x=left;
     row.cells.forEach((lines,col)=>{box(x,y,widths[col],height);lines.slice(offset,offset+take).forEach((text,n)=>draw(text,x+4,y+3+n*9,col===1?7.5:col===2&&offset+n>0?8:9,col===2&&offset+n===0?bold:font));x+=widths[col];});y+=height;offset+=take;
    }
   }endItems(true);
