@@ -3109,10 +3109,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
 
   function cartMarkup(f){
     if(selectedStock(f))return '<div class="market-cart-controls"><a class="market-product-details" target="_blank" rel="noopener noreferrer" href="'+esc(paymentSelectionUrl(f))+'">Review In-Stock Unit</a></div>';
-    if(isYanmarTractor(f)){
-      const v=selectedPriceVariant(f),url='https://westendpower.github.io/yanmar-equipment-configurator/?'+new URLSearchParams({category:f.category,sku:v.sku||''});
-      return '<div class="market-cart-controls"><a class="market-product-details" href="'+esc(url)+'">Build &amp; Buy</a></div>';
-    }
+    if(isYanmarTractor(f))return '';
     return selectedCartMarkup(f);
   }
   function addFamilyToCart(key,buttonEl){
@@ -3229,7 +3226,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     const choices=selectedStock(f)?[{label:/kit|package/i.test(v.type)?'Package:':'MSRP:',v,variants:[v],isPackage:/kit|package/i.test(v.type)}]:priceChoices(f);
     const rows=choices.map(choice=>pricePanel(choice.label,choice.v,choice.isPackage,f,choice.variants));
     return '<div class="market-price-lines">'+rows.join('')+
-      '<a class="market-product-page-link" href="'+esc('product.html?'+params.toString())+'" style="display:block;text-align:center;margin:8px 0;padding:10px;border:1px solid #176c34;border-radius:8px;font-weight:800;color:#176c34;text-decoration:none">Open Product Page ↗</a></div>';
+      '<a class="market-product-page-link" href="'+esc('product.html?'+params.toString())+'" style="display:block;text-align:center;margin:8px 0;padding:10px;border:1px solid #176c34;border-radius:8px;font-weight:800;color:#176c34;text-decoration:none">Build Your Own ↗</a></div>';
   }
 
   function offerOverlay(f){
@@ -3269,14 +3266,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     const specs=familySpecs(f).slice(0,4);
     const heading=clean(first.description)||clean(f.model)||clean(first.sku);
     const equipmentMode=state.shopMode==='equipment';
-    const yanmarOptions=clean(f.brand).toUpperCase()==='YANMAR'&&clean(f.category)==='Compact Tractors';
-    // YANMAR_CONFIGURATOR_LINK_V1
-    const optionsVariant=first;
-    const optionsUrl=yanmarOptions
-      ? 'https://westendpower.github.io/yanmar-equipment-configurator/?'+new URLSearchParams({category:f.category,sku:optionsVariant.sku||''}).toString()
-      : 'product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+'&brand='+encodeURIComponent(f.brand)+'&return='+encodeURIComponent(location.pathname+location.search+location.hash);
-    // WEP_TORO_BUILD_LINK_V1: the configurator owns compatibility and pricing.
-    const buildUrl=f.brand==='TORO'?optionsUrl:''; // WEP_MARKET_OPTIONS_V1
+    const optionsUrl='product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+'&brand='+encodeURIComponent(f.brand)+'&return='+encodeURIComponent(location.pathname+location.search+location.hash);
     const runtimeUrl='product-options.html?brand='+encodeURIComponent(f.brand)+'&sku='+encodeURIComponent(first.sku||'')+'&view=runtime';
     const productParams=new URLSearchParams({brand:f.brand});
     if(isYanmarTractor(f)&&clean(first.sku)) productParams.set('sku',clean(first.sku));
@@ -3311,10 +3301,9 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
         '</section>'+
         '<section class="market-buy">'+
           familyPriceMarkup(f)+
-          (equipmentMode&&!selectedStock(f)
-            ? '<div class="market-actions"><a href="'+optionsUrl+'">'+(/battery/i.test(f.power)?'View Accessories':'View Options')+'</a>'+
-                (buildUrl?'<a href="'+esc(buildUrl)+'">Build Your Own</a>':'')+
-                (/battery/i.test(f.power)?'<a href="'+runtimeUrl+'">Run/Charge Times</a>':'')+
+          (equipmentMode&&!selectedStock(f)&&/battery/i.test(f.power)
+            ? '<div class="market-actions"><a href="'+optionsUrl+'">View Accessories</a>'+
+                '<a href="'+runtimeUrl+'">Run/Charge Times</a>'+
               '</div>'
             : '')+
           cartMarkup(f)+
