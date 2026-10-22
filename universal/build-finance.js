@@ -485,7 +485,7 @@
  }
  function schedule(force=false,persist=true){
   if(!panel?.isConnected||departing||autoSaving)return;
-  if(!inventoryReady){showListedBuild();return;}
+  if(!inventoryReady){inventoryPricingStatus(inventoryPromise?'Checking stock before calculating payment prices…':'Stock check required before calculating payment prices.',!inventoryPromise);return;}
   refreshStockControls();
   if(comparisonDialog?.open){comparisonController?.abort();comparisonDialog.close();}
   let s;try{s=state();if(s.fulfillment==='DELIVERY'&&!/^\d{5}$/.test(s.zip))throw Error('Enter a five-digit ZIP for local delivery.');}catch(error){++generation;controller?.abort();clearTimeout(timer);invalidate(error.message);status(error.message);output.setAttribute('aria-busy','false');remember();return;}
@@ -671,16 +671,24 @@
   window.WEPBuildSetIncludedEquipment?.(selected?.includedItems||[]);
   if(value!=='__unavailable__'&&window.WEPBuildSyncRequiredComponents?.(selected?.includedItems||[],main.quantity))refreshStockControls();
  }
- let lastInventoryCheck=0;
+ let lastInventoryCheck=0,inventoryRetryTimer,inventoryRetryCount=0;
+ function inventoryPricingStatus(message,retry=false){
+  showListedBuild(message);promoOutput?.replaceChildren(note(message));creditOutput?.replaceChildren(note(message));
+  panel?.querySelector('.wep-retry-payment-prices')?.remove();
+  if(retry){const button=document.createElement('button');button.type='button';button.className='wep-retry-payment-prices';button.textContent='Retry payment prices';button.onclick=()=>{inventoryRetryCount=0;loadInventory(true);};panel?.append(button);}
+  syncPaymentCards();
+ }
+
  async function loadInventory(force=false){
   if(inventoryPromise)return inventoryPromise;
+  clearTimeout(inventoryRetryTimer);panel?.querySelector('.wep-retry-payment-prices')?.remove();
   const quiet=force&&inventoryReady,previous=JSON.stringify(inventoryRows),version=++inventoryVersion,identity=currentIdentity();
-  if(!quiet){inventoryReady=false;if(inventoryNotice)inventoryNotice.textContent='Checking stock…';}
+  if(!quiet){inventoryReady=false;if(inventoryNotice)inventoryNotice.textContent='Checking stock…';inventoryPricingStatus('Checking stock before calculating payment prices…');}
   const ac=new AbortController();
   inventoryPromise=(async()=>{try{
    const result=await post('/inventory-availability',{brandId:identity.brandId},ac.signal);if(version!==inventoryVersion)return;
    if(!Array.isArray(result.availability))throw Error('Inventory could not be checked.');
-   inventoryRows=result.availability;inventoryReady=true;lastInventoryCheck=Date.now();
+   inventoryRows=result.availability;inventoryReady=true;inventoryRetryCount=0;lastInventoryCheck=Date.now();
    if(inventoryNotice)inventoryNotice.textContent='';
    // An unchanged background check must not clear prices, restart offers, or close a customer's payment comparison.
    if(quiet&&JSON.stringify(inventoryRows)===previous)return;
@@ -688,7 +696,7 @@
   }catch(error){if(version!==inventoryVersion)return;
    if(!quiet)inventoryReady=false;
    if(inventoryNotice){inventoryNotice.replaceChildren(document.createTextNode(quiet?'Stock refresh unavailable; please retry before continuing. ':'Stock check unavailable. '));const retry=document.createElement('button');retry.type='button';retry.textContent='Retry';retry.onclick=()=>loadInventory(true);inventoryNotice.append(retry);}
-   if(!quiet)showListedBuild();
+   if(!quiet){const retrying=inventoryRetryCount<2;inventoryPricingStatus(retrying?'Stock check interrupted. Retrying payment prices…':'Stock check unavailable. Retry payment prices to load cash, card and financing.',true);if(retrying){const delay=1500*(++inventoryRetryCount);inventoryRetryTimer=setTimeout(()=>loadInventory(true),delay);}}
   }finally{if(version===inventoryVersion)inventoryPromise=null;}})();return inventoryPromise;
  }
  function saveCurrentBuild(){
