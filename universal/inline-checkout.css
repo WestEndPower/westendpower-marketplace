@@ -3,3 +3,5 @@
 @media(max-width:800px){#app .wep-inline-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:500px){#app .wep-inline-fields{grid-template-columns:minmax(0,1fr)}#app .wep-inline-customer{padding:16px}#app .wep-inline-actions{flex-wrap:wrap}#app #wep-inline-submit{width:100%}#app .wep-inline-delivery-editor label{display:block;margin:0 0 12px}}@media print{#app .wep-inline-customer,#app .wep-inline-delivery-editor,#app .wep-inline-edit-delivery{display:none!important}}
 
 #wep-inline-delivery-zip-label[hidden]{display:none!important}
+
+#app .wep-inline-quote-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px}#app .wep-inline-quote-actions button{min-width:0;padding:10px 8px;border:0;border-radius:5px;background:#c70931;color:#fff;font-size:13px;font-weight:700;cursor:pointer}#app .wep-inline-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#app .wep-inline-actions button{min-width:0;padding:10px 8px;font-size:13px}@media print{#app .wep-inline-quote-actions{display:none!important}}

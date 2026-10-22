@@ -30,7 +30,10 @@
  function mount(){
   const app=$('app'),invoice=$('wep-itemized-quote'),actions=app?.querySelector('.summary-actions');if(!invoice||!actions)return;
   $('review-package')?.setAttribute('hidden','');
-  if(!$('wep-inline-print')){const button=document.createElement('button');button.id='wep-inline-print';button.type='button';button.textContent='Print Quote';button.onclick=printQuote;actions.prepend(button);}
+  if(!$('wep-inline-review')){const button=document.createElement('button');button.id='wep-inline-review';button.type='button';button.textContent='Review Quote';button.onclick=()=>{invoice.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});invoice.focus({preventScroll:true});};actions.prepend(button);}
+  if(!$('wep-inline-print')){const button=document.createElement('button');button.id='wep-inline-print';button.type='button';button.textContent='Print Quote';button.onclick=printQuote;$('wep-inline-review').after(button);}
+  const totals=invoice.querySelector('.wep-itemized-totals');
+  if(totals&&!totals.querySelector('.wep-inline-quote-actions')){const buttons=document.createElement('div');buttons.className='wep-inline-quote-actions';const print=document.createElement('button'),checkout=document.createElement('button');print.type=checkout.type='button';print.textContent='Print Quote';checkout.textContent='Checkout';print.onclick=printQuote;checkout.onclick=()=>WEPBuilderCheckout.review();buttons.append(print,checkout);totals.append(buttons);}
   if(!$('wep-inline-customer')){
    const section=document.createElement('section');section.id='wep-inline-customer';section.className='wep-inline-customer';section.hidden=true;section.innerHTML=formMarkup();invoice.after(section);
    try{const saved=JSON.parse(sessionStorage.getItem('wepCheckoutCustomer')||sessionStorage.getItem('wepQuoteCustomer')||'{}');for(const key of fields)if(typeof saved[key]==='string')$('wep-inline-form').elements.namedItem(key).value=saved[key];}catch(_){}
@@ -51,8 +54,16 @@
   $('wep-inline-delivery-choice').replaceChildren(...[...source.options].map(option=>option.cloneNode(true)));$('wep-inline-delivery-choice').value=source.value;$('wep-inline-delivery-zip').value=$('wep-build-zip')?.value||'';$('wep-inline-delivery-zip-label').hidden=source.value!=='DELIVERY';panel.hidden=false;panel.scrollIntoView({behavior:'smooth',block:'center'});
  }
  function open(){mount();opened=true;$('wep-inline-customer').hidden=false;update();$('wep-inline-customer').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});$('wep-inline-form').elements.namedItem('firstName').focus({preventScroll:true});queueShipping();}
- function printQuote(){
-  try{const s=fresh(),snapshot=WEPQuoteDocument.snapshot(s.quote,customer(),reference());$('wep-inline-print-frame')?.remove();const frame=document.createElement('iframe');frame.id='wep-inline-print-frame';frame.title='Printable equipment quote';frame.style.cssText='position:fixed;left:-10000px;top:0;width:850px;height:1100px;border:0';frame.onload=()=>{frame.contentWindow.focus();frame.contentWindow.print();};frame.srcdoc=WEPQuoteDocument.html(snapshot);document.body.append(frame);}catch(error){message(error.message);try{WEPBuilderCheckout.review();}catch(_){}}
+ async function printQuote(){
+  let preview;
+  try{
+   const s=fresh(),snapshot=WEPQuoteDocument.snapshot(s.quote,customer(),reference());
+   preview=window.open('about:blank','_blank');
+   if(!preview)throw Error('Allow pop-ups to open your printable quote PDF.');
+   preview.document.title='Preparing quote PDF';preview.document.body.textContent='Preparing your printable quote PDF…';
+   const bytes=await WEPQuotePDF.create(snapshot),url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+   preview.location.replace(url);setTimeout(()=>URL.revokeObjectURL(url),600000);
+  }catch(error){preview?.close();message(error.message);}
  }
  function shippingAddress(){const c=customer();return Object.fromEntries(['address1','address2','city','state','zip'].map(k=>[k,c[k]]));}
  function queueShipping(){
