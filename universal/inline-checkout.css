@@ -9,3 +9,81 @@
 .wep-inline-print-status{font-size:13px;line-height:1.4;margin:8px 0 0}.wep-inline-print-status:empty{display:none}#wep-inline-pdf-preview{box-sizing:border-box;width:min(1100px,96vw);max-width:none;height:94vh;max-height:94vh;padding:14px;border:1px solid #839087;border-radius:10px;background:#fff;color:#233329}#wep-inline-pdf-preview::backdrop{background:rgba(0,0,0,.55)}.wep-inline-pdf-header{display:flex;align-items:center;gap:14px}.wep-inline-pdf-header h2{flex:1;font:700 18px Arial,sans-serif;margin:0}.wep-inline-pdf-header button,.wep-inline-pdf-header a{font:700 14px Arial,sans-serif;padding:9px 12px;border:1px solid #839087;border-radius:5px;color:#233329;background:#fff}.wep-inline-pdf-header a[hidden],#wep-inline-pdf-frame[hidden]{display:none!important}#wep-inline-pdf-status{font:14px/1.4 Arial,sans-serif;margin:12px 0}#wep-inline-pdf-frame{display:block;width:100%;height:calc(100% - 88px);border:1px solid #aaa}
 
 #wep-inline-receipt[hidden]{display:none!important}#wep-inline-receipt{margin-top:14px;padding:14px;border:1px solid #287a32;border-radius:6px;background:#f0f8f0;font-size:14px;line-height:1.5}
+
+/* WEP_CUSTOMER_FORM_ROWS_V3 — only the inline customer information section. */
+@media screen {
+  #app #wep-inline-customer.wep-inline-customer {
+    max-width:1120px;margin:16px auto;padding:16px 18px;scroll-margin-top:16px;
+  }
+  #app #wep-inline-customer h2 {font-size:21px;margin:0 0 5px;line-height:1.3;}
+  #app #wep-inline-customer>p {font-size:12px;line-height:1.4;margin:5px 0;}
+  #app #wep-inline-customer .wep-inline-fields {
+    grid-template-columns:repeat(12,minmax(0,1fr));gap:9px 12px;margin-top:12px;
+  }
+  #app #wep-inline-customer .wep-inline-fields label {min-width:0;font-size:12px;line-height:1.3;}
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name=firstName]),
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name=lastName]),
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name=companyName]) {grid-column:span 4;}
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name=phone]),
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name=cell]),
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name=city]) {grid-column:span 3;}
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name=email]),
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name=address1]) {grid-column:span 6;}
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name=state]) {grid-column:span 1;}
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name=zip]) {grid-column:span 2;}
+  #app #wep-inline-customer .wep-inline-fields input {
+    padding:7px 8px;margin-top:3px;min-height:36px;height:36px;font-size:14px;
+  }
+  #app #wep-inline-customer .wep-inline-notes {margin-top:10px;font-size:12px;line-height:1.3;}
+  #app #wep-inline-customer .wep-inline-notes textarea {
+    padding:7px 8px;margin-top:3px;min-height:54px;font-size:14px;
+  }
+  #app #wep-inline-customer .wep-inline-actions {margin-top:10px;gap:10px;}
+  #app #wep-inline-customer .wep-inline-actions button {padding:9px 12px;min-height:38px;}
+  #app #wep-inline-customer #wep-inline-status {font-size:12px;line-height:1.4;margin:7px 0 0;}
+  #app #wep-inline-customer #wep-inline-status:empty {display:none;}
+}
+@media screen and (max-width:750px) {
+  #app #wep-inline-customer.wep-inline-customer {padding:14px;}
+  #app #wep-inline-customer .wep-inline-fields {grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name]) {grid-column:auto;}
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name=address1]),
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name=companyName]),
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name=email]),
+  #app #wep-inline-customer .wep-inline-fields label:has(input[name=city]) {grid-column:1/-1;}
+  #app #wep-inline-customer .wep-inline-fields input {height:40px;min-height:40px;font-size:16px;}
+  #app #wep-inline-customer .wep-inline-notes textarea {font-size:16px;}
+}
+@media screen and (max-width:480px) {
+  #app #wep-inline-customer .wep-inline-fields {grid-template-columns:minmax(0,1fr);}
+  #app #wep-inline-customer .wep-inline-actions {grid-template-columns:minmax(0,1fr);}
+  #app #wep-inline-customer .wep-inline-actions button {min-height:42px;}
+}
+/* END_WEP_CUSTOMER_FORM_ROWS_V3 */
+
+@media screen {
+ #app #wep-inline-customer .wep-inline-actions {grid-template-columns:repeat(3,minmax(0,1fr));}
+ #app #wep-inline-customer #wep-inline-checkout-final {background:#287a32;color:white;border-color:#287a32;}
+ #app #wep-inline-customer .wep-inline-actions button {line-height:1.3;}
+ #app .wep-inline-quote-actions {grid-template-columns:repeat(3,minmax(0,1fr));}
+ #wep-inline-checkout-review {width:min(620px,94vw);max-height:90vh;overflow:auto;padding:22px;border:2px solid #839087;border-top:4px solid #287a32;border-radius:10px;background:white;color:#233329;font:14px/1.5 Arial,sans-serif;}
+ #wep-inline-checkout-review::backdrop {background:rgb(0 0 0 / 55%);}
+ #wep-inline-checkout-review h2 {font-size:21px;margin:0 0 14px;}
+ #wep-checkout-summary {font-weight:700;padding:12px;background:#eef5ec;border-radius:6px;}
+ #wep-checkout-common-terms {padding:12px;border:1px solid #a5b0a7;border-radius:6px;}
+ #wep-inline-checkout-review .wep-checkout-agreement {display:flex;gap:10px;align-items:flex-start;cursor:pointer;}
+ #wep-inline-checkout-review .wep-checkout-agreement input {width:18px;height:18px;margin:2px 0 0;flex-shrink:0;accent-color:#287a32;}
+ #wep-inline-checkout-review .wep-checkout-review-actions {display:flex;gap:10px;justify-content:space-between;margin-top:20px;}
+ #wep-inline-checkout-review button {padding:10px 14px;border:1px solid #839087;border-radius:6px;cursor:pointer;font:700 13px Arial,sans-serif;}
+ #wep-checkout-complete {background:#287a32;color:white;}
+ #wep-inline-checkout-review button:disabled {opacity:.5;cursor:default;}
+ #wep-checkout-result {font-size:13px;margin:12px 0 0;}
+ #wep-checkout-result:empty {display:none;}
+}
+@media screen and (max-width:650px) {
+ #app #wep-inline-customer .wep-inline-actions {grid-template-columns:minmax(0,1fr);}
+ #app .wep-inline-quote-actions {grid-template-columns:minmax(0,1fr);}
+ #wep-inline-checkout-review .wep-checkout-review-actions {flex-direction:column;}
+}
+@media print {#wep-inline-checkout-review {display:none!important;}}
+/* END_WEP_CUSTOMER_CHECKOUT_V3 */

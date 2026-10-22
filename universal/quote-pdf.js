@@ -36,10 +36,10 @@
   function infoBox(x,title,c){
    box(x,104,boxWidth,100);draw(title,x+7,110,11,bold);
    const phone=safe(c.phone||'');fit(phone,x+265-Math.min(129,font.widthOfTextAtSize(phone,10)),110,129,10);line(x+6,x+266,125);
-   [[c.firstName,c.lastName].filter(Boolean).join(' '),c.companyName||'', [c.address1,c.address2].filter(Boolean).join(' '),[c.city,c.state,c.zip].filter(Boolean).join(' - '),c.email||''].forEach((v,i)=>fit(v,x+7,129+i*14,258,11.5,i===0?bold:font));
+   const info=[[c.firstName,c.lastName].filter(Boolean).join(' '),c.companyName||'', [c.address1,c.address2].filter(Boolean).join(' '),[c.city,c.state,c.zip].filter(Boolean).join(' - '),...(c.cell?['Cell: '+c.cell]:[]),c.email||''];info.forEach((v,i)=>fit(v,x+7,129+i*(c.cell?12:14),258,c.cell?10.5:11.5,i===0?bold:font));
   }
   function deliveryInfo(){
-   if(s.fulfillment==='SHIP')return {...s.customer,...s.destination,firstName:s.customer.firstName,lastName:s.customer.lastName,companyName:s.customer.companyName,phone:s.customer.phone,email:s.customer.email};
+   if(s.fulfillment==='SHIP')return {...s.customer,...s.destination,firstName:s.customer.firstName,lastName:s.customer.lastName,companyName:s.customer.companyName,phone:s.customer.phone,cell:s.customer.cell,email:s.customer.email};
    if(s.fulfillment==='DELIVERY')return {...s.customer,city:s.customer.city||s.deliveryTown,state:s.customer.state||s.deliveryState,zip:s.customer.zip||s.zip};
    const nm=s.fulfillment==='NEW_MILFORD';return {firstName:nm?'Pickup - New Milford':'Pickup - Danbury',companyName:'West End Power Equipment',address1:nm?'265 Danbury Road':'56 Beaver Brook Road',city:nm?'New Milford':'Danbury',state:'CT',zip:nm?'06776':'06810',phone:nm?'(860) 355-8722':'(203) 792-3030',email:nm?'sales@westendpower.com':'dawepe@westendpower.com'};
   }
