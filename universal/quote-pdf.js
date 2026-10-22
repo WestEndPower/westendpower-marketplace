@@ -47,10 +47,18 @@
   const widths=[25,68,247,72,72,72],labels=['QTY','SKU','DESCRIPTION','MSRP','SALE PRICE','TOTAL'];
   function tableHeader(){let x=left;page.drawRectangle({x:left,y:792-tableTop-20,width,height:20,color:red});labels.forEach((label,i)=>{draw(label,x+4,tableTop+6,7.5,bold,white);x+=widths[i];});return tableTop+20;}
   function makePage(continuation=false){page=doc.addPage([612,792]);header();infoBox(left,'CUSTOMER INFO',s.customer);infoBox(312,'DELIVER TO',deliveryInfo());box(left,211,width,20);draw('Notes / Instructions:',left+6,216,9,bold);fit((notes[0]||'')+(notes.length>1?' (continued)':''),130,216,446,9);if(continuation)draw('Continued',520,83,8);return tableHeader();}
-  const totalRows=D.totalRows(s),paymentLines=[{text:D.paymentLabel(s),size:12,bold:true},{text:D.fulfillmentLabel(s),size:9}];
-  for(const plan of s.plans){paymentLines.push({text:plan.brandId+' - '+plan.name,bold:true},{text:plan.apr+'% APR / '+plan.termMonths+' months'});
-   for(const [label,value] of [['Required down payment',plan.requiredDown],['Application fee',plan.applicationFee],['Amount financed before fee',plan.amountFinanced],['Financed amount including fee',plan.principalWithFees],['Estimated monthly payment',plan.monthlyPayment]])paymentLines.push({text:label+': '+money(value)});
-   if(plan.minimumCreditScore)paymentLines.push({text:'Minimum credit score: '+plan.minimumCreditScore});paymentLines.push({text:plan.rebateCompatible?'Compatible customer rebates included':'In lieu of customer rebates'},{text:'Subject to credit approval. Final lender terms confirmed by the store.'});
+  const totalRows=D.totalRows(s),paymentLines=s.plans.length?[]:[{text:D.paymentLabel(s),size:12,bold:true}];
+  for(const plan of s.plans){
+   if(s.plans.length>1)paymentLines.push({text:plan.brandId,size:9,bold:true});
+   paymentLines.push({text:plan.apr+'% APR / '+plan.termMonths+' months',size:11,bold:true},
+    {text:money(plan.monthlyPayment)+' / month (estimated)',size:12,bold:true},
+    {text:'Amount financed'+(plan.applicationFee>0?' (including fee)':'')+': '+money(plan.principalWithFees),size:9},
+    {text:'Required down payment: '+money(plan.requiredDown),size:9});
+   if(plan.applicationFee>0)paymentLines.push({text:'Application fee: '+money(plan.applicationFee)+' (included above)'},
+    {text:'Amount financed before fee: '+money(plan.amountFinanced)});
+   if(plan.minimumCreditScore)paymentLines.push({text:'Minimum credit score: '+plan.minimumCreditScore});
+   paymentLines.push({text:plan.rebateCompatible?'Compatible customer rebates included':'In lieu of customer rebates'},
+    {text:'Subject to credit approval. Final lender terms confirmed by store.',size:7});
   }
   for(const r of s.rebates||[])paymentLines.push({text:r.name+' - '+money(r.amount)+' - '+r.status+(r.endDate?' - Ends '+r.endDate:'')});
   const expandedPayment=paymentLines.flatMap(row=>wrap(row.text,256,row.size||8,row.bold?bold:font).map(text=>({...row,text})));
