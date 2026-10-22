@@ -166,6 +166,11 @@
    if(lastGoodFinance.size>60)lastGoodFinance.delete(lastGoodFinance.keys().next().value);
   }
  }
+ // Carry customer quote snapshots, never dealer costs or payment credentials.
+ function checkoutCarry(){
+  const build=lastSnapshot?JSON.stringify(previewBuild(lastSnapshot)):'';
+  return {quote:lastResponse,selectedPaymentBox:selectedPaymentCard(),financeLayout:{...financeLayout},paymentBoxes:[...paymentPreviews.values()].filter(col=>JSON.stringify(col.build)===build).map(col=>({method:col.method,quote:col.quote,program:col.program,build:col.build}))};
+ }
  function selectedPaymentCard(){
   if(!paymentConfirmed)return '';if(!paymentSelect.value.startsWith('finance:'))return paymentSelect.value;
   const id=paymentSelect.value.slice(8),program=lastResponse?.financePlans?.find(p=>clean(p.program?.ProgramID)===id)?.program||programs.find(p=>clean(p.ProgramID)===id)||[...paymentPreviews.values()].find(p=>clean(p.program?.ProgramID)===id)?.program;
@@ -516,7 +521,7 @@
    if(cartPaused)throw Error('Choose equipment or options before continuing.');
    const snapshot=state();if(!shippingEligible||shippingKey!==shippingSignature(snapshot))throw Error('Shipping eligibility is still being checked. Please try again.');
    saveCurrentBuild();paymentSelect.value='credit';paymentConfirmed=true;preferred='';remember();
-   sessionStorage.setItem('wepBuildCheckoutChoices',JSON.stringify({paymentConfirmed:true,paymentMethod:'credit',fulfillment:'SHIP',zip:'',brandId:snapshot.brandId,sku:snapshot.sku,items:snapshot.items,financeProgramIds:{},updated:Date.now()}));
+   sessionStorage.setItem('wepBuildCheckoutChoices',JSON.stringify({paymentConfirmed:true,paymentMethod:'credit',fulfillment:'SHIP',zip:'',brandId:snapshot.brandId,sku:snapshot.sku,items:snapshot.items,financeProgramIds:{},...checkoutCarry(),updated:Date.now()}));
    departing=true;location.assign('checkout.html'+(query.get('api')==='local'?'?api=local':''));
   }catch(error){const message=document.getElementById('options-message');if(message)message.textContent=error.message;}
  }
@@ -780,7 +785,7 @@
    if(!paymentConfirmed){event.preventDefault();event.stopImmediatePropagation();openComparison();return;}
    if(!lastResponse||!lastSnapshot||JSON.stringify(state())!==JSON.stringify(lastSnapshot)||Date.now()-Date.parse(lastResponse.createdAt)>300000){event.preventDefault();event.stopImmediatePropagation();openComparison();return;}
    checkoutPending=false;
-   remember();sessionStorage.setItem('wepBuildCheckoutChoices',JSON.stringify({paymentConfirmed:true,paymentMethod:lastSnapshot.paymentMethod,fulfillment:lastSnapshot.fulfillment,zip:lastSnapshot.zip,brandId:lastSnapshot.brandId,sku:lastSnapshot.sku,items:lastSnapshot.items,financeProgramIds:lastSnapshot.paymentMethod==='finance'?{[lastSnapshot.brandId]:lastSnapshot.programId}:{},updated:Date.now()}));
+   remember();sessionStorage.setItem('wepBuildCheckoutChoices',JSON.stringify({paymentConfirmed:true,paymentMethod:lastSnapshot.paymentMethod,fulfillment:lastSnapshot.fulfillment,zip:lastSnapshot.zip,brandId:lastSnapshot.brandId,sku:lastSnapshot.sku,items:lastSnapshot.items,financeProgramIds:lastSnapshot.paymentMethod==='finance'?{[lastSnapshot.brandId]:lastSnapshot.programId}:{},...checkoutCarry(),updated:Date.now()}));
   }
  },true);
  function optionChoice(button){return [...app.querySelectorAll('.option-check')].find(c=>c.dataset.type===button.dataset.type&&c.dataset.sku===button.dataset.sku);}

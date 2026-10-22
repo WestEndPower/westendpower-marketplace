@@ -6,6 +6,8 @@
  if(!Array.isArray(cart)||!cart.length)return;
  const key=rows=>JSON.stringify(rows.map(x=>[String(x.brandId).toUpperCase(),x.type,x.sku,Number(x.quantity),x.setupSelected===true,String(x.inventoryId||'')]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))));
  const candidates=[saved];
+ try{const review=JSON.parse(sessionStorage.getItem('wepCheckoutReviewSelection')||'null');if(review?.cart===localStorage.getItem('wepCart')&&review.context){const ctx=review.context,main=ctx.items?.find(x=>x.type==='tool');candidates.push({...ctx,review:true,quote:review.quote,paymentConfirmed:true,brandId:main?.brandId,sku:main?.sku,updated:review.updated});}}catch(_){}
+
  // Existing saved packages also have a product-page draft; use it when the
  // customer reaches checkout from View Cart instead of the Checkout button.
  for(const main of cart.filter(x=>(x.type||'tool')==='tool')){try{
@@ -13,7 +15,7 @@
   if(draft)candidates.push({...draft,brandId:brand,sku:main.sku,financeProgramIds:draft.paymentMethod==='finance'?{[brand]:draft.programId}:{}});
  }catch(_){}}
  saved=candidates.filter(x=>x&&x.paymentConfirmed===true&&Number.isFinite(x.updated)&&Date.now()-x.updated<=1800000).sort((a,b)=>b.updated-a.updated).find(x=>{
-  try{const group=cart.filter(row=>String(row.brandId).toUpperCase()===x.brandId&&(row.packageId===x.brandId+':'+x.sku||(!row.packageId&&String(row.equipmentSku||row.sku)===String(x.sku))));return Array.isArray(x.items)&&key(group)===key(x.items);}catch(_){return false;}
+  try{if(x.review)return key(cart)===key(x.items);const group=cart.filter(row=>String(row.brandId).toUpperCase()===x.brandId&&(row.packageId===x.brandId+':'+x.sku||(!row.packageId&&String(row.equipmentSku||row.sku)===String(x.sku))));return Array.isArray(x.items)&&key(group)===key(x.items);}catch(_){return false;}
  });
  if(!saved)return;
  window.WEPCheckoutSelection=saved;
