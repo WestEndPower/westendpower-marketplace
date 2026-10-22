@@ -72,7 +72,8 @@
  function cachedQuote(body,program){const cached=quoteCache.get(JSON.stringify(body));if(!cached||Date.now()-Date.parse(cached.createdAt)>120000)return null;
   if(program){const p=cached.financePlans?.find(x=>clean(x.brandId).toUpperCase()===body.items[0].brandId)?.program;if(JSON.stringify(p)!==JSON.stringify(program))return null;}return cached;
  }
- async function packageQuote(body,signal,program){const cached=cachedQuote(body,program);if(cached)return cached;await quoteSlot(signal);lastQuote=Date.now();const q=await post('/marketplace-quote',body,signal);if(body.paymentMethod==='finance'&&Object.values(body.financeDownPayments||{}).some(v=>v>0)&&q.downPaymentVersion!==1)throw Error('Down-payment estimates need the updated quote service. Please contact the store.');
+ const quoteTransport=window.WEPQuoteTransport?.create({reserve:quoteSlot,send:(body,signal)=>{lastQuote=Date.now();return post('/marketplace-quote',body,signal);}});
+ async function packageQuote(body,signal,program){const cached=cachedQuote(body,program);if(cached)return cached;const q=quoteTransport?await quoteTransport.quote(body,signal):await (async()=>{await quoteSlot(signal);lastQuote=Date.now();return post('/marketplace-quote',body,signal);})();if(body.paymentMethod==='finance'&&Object.values(body.financeDownPayments||{}).some(v=>v>0)&&q.downPaymentVersion!==1)throw Error('Down-payment estimates need the updated quote service. Please contact the store.');
   if(!signal.aborted&&Array.isArray(q.lines)&&q.lines.length&&q.lines.every(l=>validMoney(l.unitPrice))&&Array.isArray(q.issues)&&!pricingIssues(q).length&&validMoney(q.total)&&(!body.items.some(x=>x.inventoryId)||q.stockPricingVersion===1)&&(!program||q.financePlans?.some(p=>clean(p.program?.ProgramID)===clean(program.ProgramID)))&&Number.isFinite(Date.parse(q.createdAt))){quoteCache.set(JSON.stringify(body),q);if(quoteCache.size>40)quoteCache.delete(quoteCache.keys().next().value);try{sessionStorage.setItem(quoteSessionKey,JSON.stringify([...quoteCache]));}catch(_){}}return q;
  }
  function note(text,cls='wep-build-finance-note'){const p=document.createElement('p');p.className=cls;p.textContent=text;return p;}
@@ -448,7 +449,8 @@
    // Keep the chosen plan in its main payment box after a configuration change.
    if(snapshot.programId)candidates.sort((a,b)=>Number(clean(b.ProgramID)===snapshot.programId)-Number(clean(a.ProgramID)===snapshot.programId));
    const findEligible=async rows=>{for(const p of rows){try{
-    const q=await packageQuote({...body('finance'),financeProgramIds:{[snapshot.brandId]:clean(p.ProgramID)}},signal,p);if(!fresh())return null;
+    const currentPlan=currentQuote.paymentMethod==='finance'&&currentQuote.financePlans?.find(plan=>clean(plan.brandId).toUpperCase()===snapshot.brandId&&clean(plan.program?.ProgramID)===clean(p.ProgramID));
+    const q=currentPlan?currentQuote:await packageQuote({...body('finance'),financeProgramIds:{[snapshot.brandId]:clean(p.ProgramID)}},signal,p);if(!fresh())return null;
     if(snapshot.items.some(x=>x.inventoryId)&&q.stockPricingVersion!==1)throw Error('Stock pricing could not be verified.');
     const plan=q.financePlans?.find(x=>clean(x.brandId).toUpperCase()===snapshot.brandId&&clean(x.program?.ProgramID)===clean(p.ProgramID));
     if(!plan||pricingIssues(q).length)continue;
@@ -558,7 +560,7 @@
   if(!inventoryReady){inventoryPricingStatus(inventoryPromise?'Checking stock before calculating payment prices…':'Stock check required before calculating payment prices.',!inventoryPromise);return;}
   refreshStockControls();
   markComparisonStale();
-  let s;try{s=state();if(s.fulfillment==='DELIVERY'&&!/^\d{5}$/.test(s.zip))throw Error('Enter a five-digit ZIP for local delivery.');}catch(error){++generation;controller?.abort();clearTimeout(timer);endUpdate(pricingUpdate,'cancel');invalidate(error.message);status(error.message);output.setAttribute('aria-busy','false');remember();return;}
+  let s;try{s=state();if(s.fulfillment==='DELIVERY'&&!/^\d{5}$/.test(s.zip))throw Error('Enter a five-digit ZIP for local delivery.');}catch(error){++generation;controller?.abort();stopOffers();clearTimeout(timer);endUpdate(pricingUpdate,'cancel');invalidate(error.message);status(error.message);output.setAttribute('aria-busy','false');remember();return;}
   if(offersBuildKey&&offersBuildKey!==JSON.stringify(previewBuild(s)))stopOffers();
   refreshShipping(s);
   try{if(persist)saveCurrentBuild();}catch(error){showListedBuild(error.message);return;}
