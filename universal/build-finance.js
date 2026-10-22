@@ -478,7 +478,7 @@
    preferred=snapshot.programId;render(quote,plan,snapshot);lastApplied=activeSignature;return;
    }
    throw Error('No eligible financing program fits this package. Choose cash / bank check, credit card, or another program.');
-  }catch(error){if(id!==generation)return;lastResponse=null;lastSnapshot=null;let preserve=false;try{preserve=offersBuildKey===JSON.stringify(previewBuild(compareState()))||!!savedFinance(compareState());}catch(_){}
+  }catch(error){if(id!==generation)return;console.error('WEP pricing failure: '+error.name+': '+error.message+'\n'+(error.stack||''));lastResponse=null;lastSnapshot=null;let preserve=false;try{preserve=offersBuildKey===JSON.stringify(previewBuild(compareState()))||!!savedFinance(compareState());}catch(_){}
    showListedBuild(pricingFailure(error),preserve);output.setAttribute('aria-busy','false');if(preserve)restoreFinance(compareState());
    const message=document.getElementById('options-message');if(message){message.replaceChildren(document.createTextNode(pricingFailure(error)+' '));const retry=document.createElement('button');retry.type='button';retry.textContent='Retry current pricing';retry.onclick=()=>schedule(true);message.append(retry);}
   }
