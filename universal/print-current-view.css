@@ -1,0 +1,8 @@
+.wep-print-sheet{display:none}
+.wep-print-sheet.wep-print-measuring{display:block;position:fixed;left:-10000px;top:0;width:max-content;background:#fff}
+@page wep-current-view{size:letter landscape;margin:.35in}
+@media print{
+ body.wep-print-current{display:block!important;margin:0!important;padding:0!important;background:#fff!important;min-width:0!important}
+ body.wep-print-current> :not(#wep-print-current-sheet){display:none!important}
+ body.wep-print-current>#wep-print-current-sheet{page:wep-current-view;display:block!important;position:relative!important;left:auto!important;top:auto!important;width:10.3in!important;margin:0!important;padding:0!important;border:0!important;break-inside:avoid;print-color-adjust:economy;-webkit-print-color-adjust:economy}
+}

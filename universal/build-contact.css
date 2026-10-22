@@ -1,0 +1,33 @@
+.hero.wep-tractor-compact>.wep-finance-hero-details>.wep-build-configuration-column{grid-column:3;grid-row:1/3;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:10px;align-self:stretch}
+.wep-build-configuration-column>.wep-factory-options{margin:0}
+.wep-build-print-prompt{text-align:center;padding:9px;border:1px solid #bfd0bf;border-radius:7px;background:#fff;color:#203b28}
+.wep-build-print-prompt p{margin:0 0 4px;font:600 13px/1.35 Arial,sans-serif}
+.wep-build-print-prompt button{padding:3px 6px;border:0;background:transparent;color:#176c34;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font:700 13px/1.4 Arial,sans-serif}
+#wep-build-contact-launch{position:fixed;right:24px;bottom:calc(110px + env(safe-area-inset-bottom,0px));z-index:1001;display:flex;align-items:center;gap:8px;min-height:46px;padding:10px 14px;border:1px solid #ffffff80;border-radius:24px;background:#333936;color:#fff;box-shadow:0 4px 18px #0003;font:700 14px/1.3 Arial,sans-serif;cursor:pointer}
+#wep-build-contact-dialog{box-sizing:border-box;width:min(480px,calc(100% - 28px));max-height:calc(100dvh - 28px);overflow:auto;border:1px solid #ccd3d8;border-radius:12px;padding:22px;background:#fff;color:#203b28;font:14px/1.45 Arial,sans-serif;box-shadow:0 16px 48px #0004}
+#wep-build-contact-dialog::backdrop{background:#0007}
+.wep-build-contact-head{display:flex;justify-content:space-between;align-items:start;gap:12px}
+.wep-build-contact-head h2{font-size:21px;line-height:1.3;margin:0}
+.wep-build-contact-head button{border:0;background:transparent;font-size:28px;line-height:1;padding:0 4px;cursor:pointer;color:#203b28}
+#wep-build-contact-dialog .wep-build-contact-context{font-size:13px;margin:12px 0}
+#wep-build-contact-dialog .wep-contact-store-label{display:flex;align-items:center;gap:8px;font-weight:700}
+#wep-build-contact-dialog select{flex:1;min-width:0;padding:8px;border:1px solid #aeb6bf;border-radius:6px;background:#fff;color:#203b28;font:inherit}
+#wep-build-contact-dialog fieldset{display:flex;gap:20px;flex-wrap:wrap;border:0;padding:10px 0;margin:12px 0}
+#wep-build-contact-dialog legend{font-weight:700}
+#wep-build-contact-dialog fieldset label{display:flex;flex-direction:column;align-items:start;gap:5px;max-width:100%}
+#wep-build-contact-dialog fieldset label span{display:flex;align-items:center;gap:6px;font-weight:700}
+#wep-build-contact-dialog a{color:#176c34;overflow-wrap:anywhere}
+#wep-build-contact-dialog>label[for]{display:block;font-weight:700;margin-bottom:6px}
+#wep-build-contact-dialog textarea{box-sizing:border-box;display:block;width:100%;padding:10px;border:1px solid #aeb6bf;border-radius:6px;font:inherit;resize:vertical}
+#wep-build-contact-dialog .wep-build-contact-hint{font-size:12px;color:#536056}
+.wep-build-contact-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+#wep-build-contact-dialog [data-contact-send]{display:inline-block;background:#176c34;color:#fff;padding:10px 14px;border-radius:7px;font-weight:700;text-decoration:none}
+.wep-build-contact-actions [data-contact-call]{font-weight:700;min-height:40px;display:inline-flex;align-items:center}
+#wep-build-contact-dialog :is(button,a,input,select,textarea):focus-visible,#wep-build-contact-launch:focus-visible,.wep-build-print-prompt button:focus-visible{outline:2px solid #176c34;outline-offset:3px}
+@media(max-width:760px){.hero.wep-tractor-compact>.wep-finance-hero-details>.wep-build-configuration-column{grid-column:1/-1;grid-row:3}}
+@media(max-width:540px){.hero.wep-tractor-compact>.wep-finance-hero-details>.wep-build-configuration-column{grid-row:4}#wep-build-contact-launch{right:14px;padding:10px 12px}body:has(.wep-package-update:not([hidden])) #wep-build-contact-launch{bottom:calc(190px + env(safe-area-inset-bottom,0px))}}
+@media print{#wep-build-contact-launch,#wep-build-contact-dialog,.wep-build-print-prompt{display:none!important}}
+
+#wep-build-contact-launch{width:50px;height:50px;min-height:50px;padding:0;justify-content:center;border-radius:50%}
+.wep-build-print-prompt .wep-print-status{font:400 12px/1.35 Arial,sans-serif;color:#8a311b;margin:5px 0 0}
+.wep-build-print-prompt .wep-print-status:empty{display:none}

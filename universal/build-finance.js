@@ -32,7 +32,7 @@
   if(!updateJobs.size||scope==='pricing'||scope==='inventory')updateFailed=false;
   const token={scope};updateJobs.set(scope,token);clearTimeout(updateHideTimer);
   const box=updateFeedback();box.hidden=false;box.dataset.state='busy';updateTitle.textContent='Updating your custom package…';
-  box.querySelector('p').textContent='Recalculating pricing, rebates, and financing options.';box.querySelector('small').hidden=false;
+  box.querySelector('p').textContent='Recalculating pricing, rebates, and financing options.';box.querySelector('small').hidden=false;box.querySelector('small').textContent='This may take a moment.';
   updateBar.hidden=false;updateBar.setAttribute('role','progressbar');updateBar.setAttribute('aria-label','Updating your custom package');updateBar.removeAttribute('aria-valuenow');updateBusy([...updateJobs.keys()].some(scope=>!scope.startsWith('comparison:')));return token;
  }
  function endUpdate(token,result='ready'){
@@ -55,7 +55,7 @@
  function budget(){quoteBudgetMemory=quoteBudgetMemory.filter(t=>t>Date.now()-quoteBudgetWindow);try{const raw=JSON.parse(sessionStorage.getItem(quoteBudgetKey)||'[]'),stored=Array.isArray(raw)?raw.filter(t=>Number.isFinite(t)&&t>Date.now()-quoteBudgetWindow):[];if(stored.length>quoteBudgetMemory.length)quoteBudgetMemory=stored;}catch(_){}return [...quoteBudgetMemory];}
  async function quoteSlot(signal){
   for(;;){if(signal.aborted)throw new DOMException('Changed','AbortError');const now=Date.now(),recent=budget(),wait=Math.max(quoteCooldown-now,recent.length>=quoteBudgetMax?recent[0]+quoteBudgetWindow-now:0);
-   if(wait>0){await pause(Math.max(wait,1),signal);continue;}
+   if(wait>0){const box=updateFeedback();if(updateJobs.size){box.querySelector('p').textContent='Waiting for the quote service before updating your payments.';box.querySelector('small').hidden=false;box.querySelector('small').textContent='This may take up to a minute. Your selections are saved.';}await pause(Math.max(wait,1),signal);continue;}
    recent.push(now);quoteBudgetMemory=recent;try{sessionStorage.setItem(quoteBudgetKey,JSON.stringify(recent));}catch(_){}return;
   }
  }
@@ -408,7 +408,7 @@
   const body=method=>({items:snapshot.items,paymentMethod:method,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:{}});
   highlightPayment(snapshot);promoOutput.replaceChildren(note('Calculating your total…'));creditOutput.replaceChildren(note('Calculating your total…'));
   panel.hidden=false;if(!restoreFinance(snapshot)){output.replaceChildren(note('Calculating financing for your package…'));output.setAttribute('aria-busy','true');}
-  const offersUpdate=beginUpdate('offers');let offersFailed=false;
+  const offersUpdate=beginUpdate('offers');let offersFailed=false;const deadline=setTimeout(()=>{if(id===offersVersion)offersController.abort();},90000);
   const previewQuotes=new Map();
   const getQuote=method=>{
    if(!previewQuotes.has(method))previewQuotes.set(method,(async()=>{const q=currentQuote.paymentMethod===method?currentQuote:await packageQuote(body(method),signal);if(snapshot.items.some(x=>x.inventoryId)&&q.stockPricingVersion!==1)throw Error('Stock pricing could not be verified.');return q;})());
@@ -480,7 +480,7 @@
    else{paymentPreviews.delete('finance-inlieu');inLieuOutput.replaceChildren();}
    highlightPayment();syncPaymentCards();
   }catch(error){if(fresh()){offersFailed=true;if(!restoreFinance(snapshot))output.replaceChildren(note('Financing options could not be loaded. View all financing options to retry.'));output.setAttribute('aria-busy','false');}}})();
-  try{await Promise.all([rebateTask,creditTask,financeTask]);}finally{endUpdate(offersUpdate,!fresh()?'cancel':offersFailed?'error':'ready');}
+  try{await Promise.all([rebateTask,creditTask,financeTask]);}finally{clearTimeout(deadline);const timedOut=id===offersVersion&&signal.aborted;if(timedOut){for(const target of [promoOutput,creditOutput,output,inLieuOutput])if(target?.textContent.includes('Calculating')){target.replaceChildren(note('Payment update timed out. Retry current pricing.'));target.setAttribute('aria-busy','false');}const message=document.getElementById('options-message');if(message){message.replaceChildren(document.createTextNode('Payment update took too long. Your selections are saved. '));const retry=document.createElement('button');retry.type='button';retry.textContent='Retry current pricing';retry.onclick=()=>schedule(true);message.append(retry);}offersBuildKey='';}endUpdate(offersUpdate,timedOut?'error':!fresh()?'cancel':offersFailed?'error':'ready');}
  }
 
  function render(quote,plan,snapshot){
@@ -499,9 +499,9 @@
  }
  async function run(id){
   if(id!==generation||!panel?.isConnected)return;
-  const progress=pricingUpdate;let failed=false;
+  const progress=pricingUpdate;let failed=false,deadline;
   try{
-   let snapshot=state();activeSignature=JSON.stringify(snapshot);lastStarted=Date.now();controller=new AbortController();const signal=controller.signal;
+   let snapshot=state();activeSignature=JSON.stringify(snapshot);lastStarted=Date.now();controller=new AbortController();const signal=controller.signal;deadline=setTimeout(()=>controller?.signal===signal&&controller.abort(),90000);
    if(snapshot.paymentMethod!=='finance'){
     eligiblePrograms(snapshot,signal).catch(()=>{});
     const quote=await packageQuote({items:snapshot.items,paymentMethod:snapshot.paymentMethod,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:{}},signal);
@@ -529,7 +529,7 @@
   }catch(error){if(id!==generation)return;failed=true;console.error('WEP pricing failure: '+error.name+': '+error.message+'\n'+(error.stack||''));lastResponse=null;lastSnapshot=null;let preserve=false;try{preserve=offersBuildKey===JSON.stringify(previewBuild(compareState()))||!!savedFinance(compareState());}catch(_){}
    showListedBuild(pricingFailure(error),preserve);output.setAttribute('aria-busy','false');if(preserve)restoreFinance(compareState());
    const message=document.getElementById('options-message');if(message){message.replaceChildren(document.createTextNode(pricingFailure(error)+' '));const retry=document.createElement('button');retry.type='button';retry.textContent='Retry current pricing';retry.onclick=()=>schedule(true);message.append(retry);}
-  }finally{endUpdate(progress,id!==generation?'cancel':failed?'error':'ready');}
+  }finally{clearTimeout(deadline);endUpdate(progress,id!==generation?'cancel':failed?'error':'ready');}
  }
  function schedule(force=false,persist=true){
   if(!panel?.isConnected||departing||autoSaving)return;
@@ -537,6 +537,7 @@
   refreshStockControls();
   markComparisonStale();
   let s;try{s=state();if(s.fulfillment==='DELIVERY'&&!/^\d{5}$/.test(s.zip))throw Error('Enter a five-digit ZIP for local delivery.');}catch(error){++generation;controller?.abort();clearTimeout(timer);endUpdate(pricingUpdate,'cancel');invalidate(error.message);status(error.message);output.setAttribute('aria-busy','false');remember();return;}
+  if(offersBuildKey&&offersBuildKey!==JSON.stringify(previewBuild(s)))stopOffers();
   refreshShipping(s);
   try{if(persist)saveCurrentBuild();}catch(error){showListedBuild(error.message);return;}
   if(s.fulfillment==='SHIP'){shippingStage();return;}
@@ -737,6 +738,35 @@
  function sourceKey(type,sku){return type+':'+sku;}
  function sourceChoice(type,sku,qty){const row=stockChoices.get(sourceKey(type,sku));if(!row)return undefined;if(row.quantity!==qty||row.value==='__unavailable__')throw Error('Choose in-stock or orderable pricing for the current quantity.');return row.value;}
  window.WEPBuildInventorySelection=(type,sku,qty)=>sourceChoice(type,clean(sku),Number(qty));
+ // Customer configuration changes retain the build, but require fresh stock and payment eligibility.
+ window.WEPBuildConfiguration={
+  layout(section){
+   const hero=section?.closest('.hero'),middle=hero?.querySelector('.wep-finance-hero-details'),stock=hero?.querySelector('.wep-build-stock'),controls=hero?.querySelector('.wep-build-fulfillment-stack');
+   if(!middle||!stock||!controls)return;
+   hero.classList.add('wep-tractor-compact');middle.append(section);controls.classList.add('wep-build-controls-row');
+   const details=stock.querySelector('.stock-details');
+   if(details){
+    const source=details.querySelector('.wep-build-stock-choice');if(source)details.after(source);
+    let menu=details.querySelector('.wep-inline-stock-menu');
+    if(!menu){menu=document.createElement('div');menu.className='wep-inline-stock-menu';for(const child of [...details.children])if(child.tagName!=='SUMMARY')menu.append(child);details.append(menu);}
+    for(const child of menu.children)if(child.hasAttribute('data-wep-before-stock-hidden')){child.hidden=child.getAttribute('data-wep-before-stock-hidden')==='true';child.removeAttribute('data-wep-before-stock-hidden');}
+    const summary=details.querySelector('summary');if(summary)summary.hidden=false;details.open=false;
+   }
+   const delivery=controls.querySelector('#wep-build-fulfillment');
+   if(delivery)for(const option of delivery.options)if(!option.textContent.startsWith('Delivery Options: '))option.textContent='Delivery Options: '+option.textContent;
+  },
+  status(){
+   let stocked=false;try{const main=buildLines()[0];stocked=!!sourceChoice('tool',main.sku,main.quantity);}catch(_){stocked=true;}
+   return {ready:inventoryReady&&!!panel?.isConnected&&!departing&&!cartPaused,stocked};
+  },
+  snapshot(){
+   if(!this.status().ready)throw Error('Please wait for availability to load, then try again.');
+   const snapshot=state();if(snapshot.items[0]?.inventoryId)throw Error('Select Order Unit before changing factory options or tires.');
+   return {...snapshot,items:snapshot.items.map(item=>({...item,autoRequiredComponent:item.type!=='tool'&&[...app.querySelectorAll('.option-check')].some(c=>c.dataset.type===item.type&&c.dataset.sku===item.sku&&c.dataset.wepAutoRequired==='true')}))};
+  },
+  leave(){departing=true;++generation;controller?.abort();clearTimeout(timer);stopOffers();closeAllComparisons();}
+ };
+
  function currentIdentity(){const p=new URL(app.querySelector('.wep-spec-link').href,location.href).searchParams;return {brandId:clean(p.get('brand')).toUpperCase(),sku:clean(p.get('sku'))};}
  function buildLines(){const s=currentIdentity();return [{type:'tool',sku:s.sku,quantity:Number(app.querySelector('#equipment-qty').value),target:app.querySelector('.wep-build-stock .stock-details'),name:app.querySelector('h1')?.textContent||s.sku},...[...app.querySelectorAll('.option-check')].map(c=>({type:c.dataset.type,sku:c.dataset.sku,quantity:Number([...app.querySelectorAll('[data-qty]')].find(q=>q.dataset.qty===c.dataset.sku)?.value),target:c.closest('.card')?.querySelector('.wep-option-stock-content,.stock-details'),name:c.dataset.name||c.dataset.sku}))];}
  function refreshStockControls(){
@@ -747,12 +777,13 @@
    const exact=inventoryRows.filter(x=>clean(x.sku).toUpperCase()===line.sku.toUpperCase());
    const all=exact.length===1?(exact[0].selections||[]).filter(x=>clean(x.selectionId)&&!/^INCOMING:/i.test(x.selectionId)):[];
    const available=all.filter(x=>Number(x.quantity)>=line.quantity&&(!x.serialized||line.quantity===1));
+   const inlineMain=line.type==='tool'&&!!app.querySelector('.hero.wep-tractor-compact');
    const key=sourceKey(line.type,line.sku),existing=stockChoices.get(key),stored=saved.find(x=>clean(x.brandId).toUpperCase()===identity.brandId&&x.packageId===identity.brandId+':'+identity.sku&&x.type===line.type&&clean(x.sku)===line.sku&&Number(x.quantity)===line.quantity);
    let value=existing?.value;
    if(!existing){if(line.type==='tool'&&query.has('inventoryId'))value=clean(query.get('inventoryId'));else if(line.type==='tool'&&query.get('unit'))value=clean(available.find(x=>clean(x.unitRef)===clean(query.get('unit')))?.selectionId)||'__unavailable__';else if(stored?.inventoryId)value=clean(stored.inventoryId);else if(stored?.quoteStockChoice==='orderable')value='';else value=available.length?clean(available[0].selectionId):'';}
    if(value&&(!available.some(x=>clean(x.selectionId)===value)||exact.length>1))value='__unavailable__';
    stockChoices.set(key,{value,quantity:line.quantity});
-   let wrap=line.target.querySelector('.wep-build-stock-choice');if(!wrap){wrap=document.createElement('label');wrap.className='wep-build-stock-choice';wrap.append(document.createTextNode('Availability'));const select=document.createElement('select');select.setAttribute('aria-label','Pricing source for '+line.name);wrap.append(select);line.target.append(wrap);select.addEventListener('change',()=>{stockChoices.set(key,{value:select.value,quantity:Number(line.type==='tool'?app.querySelector('#equipment-qty').value:[...app.querySelectorAll('[data-qty]')].find(q=>q.dataset.qty===line.sku)?.value)});cartPaused=false;schedule(true);});}
+   let wrap=inlineMain?line.target.parentElement.querySelector(':scope>.wep-build-stock-choice'):line.target.querySelector('.wep-build-stock-choice');if(!wrap){wrap=document.createElement('label');wrap.className='wep-build-stock-choice';wrap.append(document.createTextNode('Availability'));const select=document.createElement('select');select.setAttribute('aria-label','Pricing source for '+line.name);wrap.append(select);if(inlineMain)line.target.after(wrap);else line.target.append(wrap);select.addEventListener('change',()=>{stockChoices.set(key,{value:select.value,quantity:Number(line.type==='tool'?app.querySelector('#equipment-qty').value:[...app.querySelectorAll('[data-qty]')].find(q=>q.dataset.qty===line.sku)?.value)});cartPaused=false;schedule(true);});}
    const select=wrap.querySelector('select');select.replaceChildren();
    if(value==='__unavailable__'){const o=new Option('Previous stock unavailable — choose again','__unavailable__');o.disabled=true;select.append(o);}
    const groups=new Map();
@@ -777,13 +808,13 @@
 
    const showInventory=available.length>0;
    for(const child of [...line.target.children]){
-    if(child===wrap)continue;
+    if(child===wrap||inlineMain)continue;
     if(showInventory){if(!child.hasAttribute('data-wep-before-stock-hidden'))child.setAttribute('data-wep-before-stock-hidden',child.hidden?'true':'false');child.hidden=true;}
     else if(child.hasAttribute('data-wep-before-stock-hidden')){child.hidden=child.getAttribute('data-wep-before-stock-hidden')==='true';child.removeAttribute('data-wep-before-stock-hidden');}
    }
    // No serial numbers, cost data or raw inventory IDs are shown in labels.
    wrap.hidden=!all.length&&!value;
-   if(available.length&&line.target.matches('details')&&!line.target.dataset.wepStockOpened){line.target.open=true;line.target.dataset.wepStockOpened='true';}
+   if(!inlineMain&&available.length&&line.target.matches('details')&&!line.target.dataset.wepStockOpened){line.target.open=true;line.target.dataset.wepStockOpened='true';}
   }
   const main=buildLines()[0],value=stockChoices.get(sourceKey('tool',main.sku))?.value;
   const selected=inventoryRows.find(row=>clean(row.sku).toUpperCase()===main.sku.toUpperCase())?.selections?.find(row=>clean(row.selectionId)===value);
@@ -853,7 +884,7 @@
 
   middle.classList.add('wep-finance-hero-details');middle.append(heading,info);
   const stock=document.createElement('div');stock.className='wep-build-stock';
-  for(const el of [...info.children])if(el.matches('.stock-details')||el.querySelector('#equipment-qty')||el.id==='equipment-qty')stock.append(el);
+  for(const el of [...info.children])if(el.matches('.stock-details,.wep-factory-options')||el.querySelector('#equipment-qty')||el.id==='equipment-qty')stock.append(el);
   const quantity=stock.querySelector('#equipment-qty');if(quantity){quantity.setAttribute('aria-label','Equipment quantity');const label=quantity.closest('label');if(label){for(const node of [...label.childNodes])if(node.nodeType===3)node.textContent='';label.prepend(document.createTextNode('Qty '));}}
   const specs=info.querySelector('.wep-spec-link'),assembly=[...info.querySelectorAll('p.note')].find(n=>/Set-Up \/ Assembly Included/i.test(n.textContent));if(specs){if(assembly)assembly.after(specs);else info.append(specs);}
   middle.append(stock);
@@ -865,6 +896,7 @@
   }
   quickSpecs.hidden=!specsList.children.length;quickSpecs.append(specsList);middle.append(quickSpecs);
   const fulfillmentStack=document.createElement('div');fulfillmentStack.className='wep-build-fulfillment-stack';fulfillmentStack.append(stock,delivery);middle.append(fulfillmentStack);
+  window.WEPBuildConfiguration.layout(middle.querySelector('.wep-factory-options'));
 
   panel.querySelector('h3').remove();panel.setAttribute('aria-label','Configured package prices and financing');panel.hidden=false;
   promoOutput=document.createElement('div');promoOutput.className='wep-build-promotions';creditOutput=document.createElement('div');creditOutput.className='wep-build-credit-preview';
@@ -992,6 +1024,7 @@
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastInventoryCheck>300000)loadInventory(true);});
  // Public builder state shared with its own customer form; no separate review page.
  window.WEPBuilderCheckout={
+  printPreviews:()=>{const build=JSON.stringify(previewBuild(state()));return JSON.parse(JSON.stringify([...paymentPreviews.values()].filter(col=>JSON.stringify(col.build)===build)));},
   refresh:()=>schedule(true),
   current:()=>{
    const selection=state(),matches=lastSnapshot&&JSON.stringify(selection)===JSON.stringify(lastSnapshot);

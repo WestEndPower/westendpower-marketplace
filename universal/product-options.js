@@ -176,9 +176,9 @@ function implementGroups(items){
 function implementSections(items){
  return implementGroups(items).map(group=>optionSection(group.name+' ('+group.items.length+' '+(group.items.length===1?'Option':'Options')+')',group.items,'attachment')).join('');
 }
-function compatibilityChoice(row,toolSku){
+function compatibilityChoice(row,toolSku,product=selectedProduct||{}){
  const normalize=value=>clean(value).toUpperCase().replace(/[^A-Z0-9]/g,'');
- const product=selectedProduct||{},direct=[toolSku,product.Model].map(normalize).filter(Boolean);
+ const direct=[toolSku,product.Model].map(normalize).filter(Boolean);
  const groups=[product.Model,product.Series,product.System,product.Category,product.SubCategory].map(value=>'GROUP'+normalize(value)).filter(value=>value!=='GROUP');
  const brandGroup='GROUPALL'+normalize(product.BrandID||selectedBrand);
  const fields=new Map(Object.entries(row).map(([key,value])=>[normalize(key),clean(value)]));
@@ -186,13 +186,12 @@ function compatibilityChoice(row,toolSku){
  for(const key of [...direct,...groups,brandGroup,'ALLPRODUCTS'])if(fields.has(key)&&fields.get(key)!=='')return trueish(fields.get(key));
  return null;
 }
-function compatibleRows(rows,toolSku){
- return rows.filter(row=>(!clean(row.Active)||trueish(row.Active))&&compatibilityChoice(row,toolSku)===true);
+function compatibleRows(rows,toolSku,product=selectedProduct||{}){
+ return rows.filter(row=>(!clean(row.Active)||trueish(row.Active))&&compatibilityChoice(row,toolSku,product)===true);
 }
 const implementHPFields=['RequiredEngineHPMin','RequiredEngineHPMax','RequiredPTOHPMin','RequiredPTOHPMax'];
 function hasImplementHPLimits(row){return implementHPFields.some(key=>clean(row[key])!=='');}
-function horsepowerImplements(rows,toolSku){
- const product=selectedProduct||{};
+function horsepowerImplements(rows,toolSku,product=selectedProduct||{}){
  const positive=value=>{const n=Number(clean(value));return clean(value)!==''&&Number.isFinite(n)&&n>0?n:null;};
  const engineHP=positive(product.GrossEngineHP)??positive(product.NetEngineHP),ptoHP=positive(product.PTOHP);
  const inRange=(actual,min,max)=>{
@@ -205,7 +204,7 @@ function horsepowerImplements(rows,toolSku){
  const seen=new Set();
  return rows.filter(row=>{
   const key=clean(row.SKU).toUpperCase();
-  if(!key||seen.has(key)||(clean(row.Active)&&!trueish(row.Active))||!hasImplementHPLimits(row)||compatibilityChoice(row,toolSku)===false)return false;
+  if(!key||seen.has(key)||(clean(row.Active)&&!trueish(row.Active))||!hasImplementHPLimits(row)||compatibilityChoice(row,toolSku,product)===false)return false;
   if(!inRange(engineHP,row.RequiredEngineHPMin,row.RequiredEngineHPMax)||!inRange(ptoHP,row.RequiredPTOHPMin,row.RequiredPTOHPMax))return false;
   seen.add(key);return true;
  });
@@ -607,6 +606,29 @@ async function init(){
    '<section id="wep-itemized-quote" class="section wep-package-review" tabindex="-1" aria-labelledby="wep-itemized-title"><div class="wep-itemized-heading"><div><div class="eyebrow">Your selected equipment &amp; options</div><h2 id="wep-itemized-title">Your Itemized Quote</h2></div><span class="wep-itemized-badge">Updates with your selections</span></div><div id="wep-package-lines" aria-live="polite"></div></section><div class="summary wep-compact-actions" aria-label="Package subtotal and actions"><div class="wep-summary-hidden"><span id="selected-count"></span><span id="selected-merchandise"></span><span id="selected-setup"></span></div><div class="wep-subtotal">Cart subtotal: <strong id="wep-cart-subtotal">$0.00</strong><small>Saved items</small></div><div class="summary-actions"><button id="save-options" type="button">Save Options</button>'+(quoteEnabled()?'<button id="review-package" type="button">Review Quote</button><a class="back" href="cart.html">View Cart</a>':'')+'<button id="wep-print-build" type="button">Print</button></div></div><p id="options-message" role="status"></p><p class="note">Prices and availability are subject to change. Totals reflect your selected equipment, options, payment method and delivery choice. Financing is subject to credit approval. Availability is confirmed before order acceptance. Pricing errors are subject to correction.</p>';
   wireSummary(base);
   wireBuildPage();
+  if(!implementBrowser&&window.WEPFactoryOptions){
+   WEPFactoryOptions.mount({products,product,brand:selectedBrand,onChange:next=>{
+    const snapshot=window.WEPBuildConfiguration?.snapshot();
+    if(!snapshot)throw Error('Please wait for availability to load, then try again.');
+    const nextSku=clean(next.SKU),nextContext=WEPBuildBuy.context(next,runtime,batteries,chargers);
+    const nextAttachments=[...compatibleRows(attachments,nextSku,next).filter(row=>!hasImplementHPLimits(row)),...horsepowerImplements(attachments,nextSku,next)].filter(WEPBuildBuy.usable);
+    const allowed=[
+     ...nextAttachments.map(row=>({type:'attachment',row,included:factoryCategories.some(([flag,category])=>trueish(next[flag])&&category.test(clean(row.SubCategory)))})),
+     ...compatibleRows(accessories,nextSku,next).filter(WEPBuildBuy.usable).map(row=>({type:'accessory',row})),
+     ...compatibleRows(parts,nextSku,next).filter(WEPBuildBuy.usable).map(row=>({type:'part',row})),
+     ...nextContext.batteries.map(row=>({type:'battery',row})),...nextContext.chargers.map(row=>({type:'charger',row}))
+    ];
+    const cart=JSON.parse(localStorage.getItem('wepCart')||'[]');
+    const plan=WEPFactoryOptions.transfer({snapshot,current:product,next,brand:selectedBrand,cart,allowed});
+    WEPFactoryOptions.persist(plan,localStorage,sessionStorage);
+    const url=new URL(location.href);url.searchParams.set('sku',nextSku);url.searchParams.set('brand',selectedBrand);url.searchParams.delete('unit');url.searchParams.delete('inventoryId');url.hash='';
+    window.WEPBuildConfiguration.leave();location.replace(url.href);
+   }});
+   try{
+    const saved=JSON.parse(sessionStorage.getItem('wepBuildDraft:'+selectedBrand.toUpperCase()+':'+sku)||'null');
+    if(saved?.configurationNotice){const notice=document.createElement('p');notice.className='wep-configuration-notice';notice.setAttribute('role','status');notice.textContent=saved.configurationNotice+'. Pricing is being updated for this configuration; select a payment option when ready.';document.querySelector('.hero').after(notice);}
+   }catch(_){}
+  }
 
  }catch(e){$('app').innerHTML='<section class="section"><h2>Unable to load options</h2><p>'+esc(e.message)+'</p></section>'}
 }

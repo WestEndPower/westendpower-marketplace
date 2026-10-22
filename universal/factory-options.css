@@ -1,0 +1,60 @@
+.wep-factory-options{margin:0 0 9px;padding:8px;border:1px solid #bfd0bf;border-radius:8px;background:#f5f8f5;text-align:center}
+.wep-factory-options h3{font:700 13px/1.3 Arial,sans-serif;color:#203b28;margin:0 0 6px;white-space:nowrap}
+.wep-factory-options h3:not(:first-child){margin-top:10px}
+.wep-factory-buttons{display:flex;justify-content:center;flex-wrap:nowrap;gap:4px;overflow-x:auto}
+.wep-factory-buttons button{flex:0 0 auto;white-space:nowrap;min-height:28px;padding:4px 6px;border:1px solid #9ebda7;border-radius:5px;background:#fff;color:#155d2d;font:600 12px/1.3 Arial,sans-serif;cursor:pointer}
+.wep-factory-buttons button[aria-pressed="true"]{background:#d5efdc;border-color:#287a32;box-shadow:inset 0 0 0 1px #287a32}
+.wep-factory-buttons button:disabled{cursor:default;opacity:.5}
+.wep-factory-buttons button[aria-pressed="true"]:disabled{opacity:1}
+.wep-factory-buttons button:focus-visible{outline:2px solid #203b28;outline-offset:2px}
+.wep-factory-options .wep-factory-status,.wep-factory-options .wep-factory-notice{font:400 12px/1.4 Arial,sans-serif;margin:8px 0 0;color:#43564a}
+.wep-factory-options .wep-factory-notice{color:#8a311b}
+.wep-factory-options [hidden]{display:none!important}
+.wep-configuration-notice{margin:8px 0;padding:8px;border-left:3px solid #287a32;background:#f1f7f1;font:400 13px/1.4 Arial,sans-serif;color:#203b28}
+@media print{.wep-factory-options{display:none!important}}
+
+/* Compact desktop header: configuration at the top, then one control row. */
+.hero.wep-tractor-compact>.wep-finance-hero-details>.wep-factory-options{grid-column:3;grid-row:1/3;margin:0;align-self:start}
+#app .wep-tractor-compact .wep-build-controls-row{grid-column:1/-1;grid-row:3;display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:7px 10px;padding:0;margin:0}
+#app .wep-tractor-compact .wep-build-controls-row>.wep-build-stock,#app .wep-tractor-compact .wep-build-controls-row>.wep-build-delivery{display:contents!important}
+#app .wep-tractor-compact .wep-build-controls-row .wep-build-stock>label:has(#equipment-qty){display:flex!important;flex-direction:row!important;align-items:center;gap:4px!important;flex:0 0 auto}
+#app .wep-tractor-compact .wep-build-controls-row #equipment-qty{width:47px;height:32px!important;min-height:32px!important;padding:4px!important}
+#app .wep-tractor-compact .wep-build-controls-row .stock-details{position:relative;flex:0 0 auto;padding:0;margin:0}
+#app .wep-tractor-compact .wep-build-controls-row .stock-details>summary{display:block;margin:0;padding:7px 8px;box-sizing:border-box;min-height:32px;font-size:12px;line-height:16px;white-space:nowrap}
+#app .wep-tractor-compact .stock-details>.wep-inline-stock-menu{position:absolute;z-index:50;top:calc(100% + 5px);left:0;width:260px;max-width:calc(100vw - 56px);box-sizing:border-box;padding:12px;border:1px solid #9ebda7;border-radius:6px;background:#fff;box-shadow:0 5px 20px #0003;font-size:12px}
+#app .wep-tractor-compact .wep-build-controls-row .wep-build-stock-choice{display:flex!important;flex-direction:row!important;align-items:center;gap:0!important;font-size:0!important;line-height:0!important;flex:0 1 170px;min-width:130px}
+#app .wep-tractor-compact .wep-build-controls-row .wep-build-stock-choice[hidden]{display:none!important}
+#app .wep-tractor-compact .wep-build-controls-row .wep-build-stock-choice select{width:100%;max-width:none;height:32px!important;min-height:32px!important;padding:4px!important}
+#app .wep-tractor-compact .wep-build-controls-row .wep-stock-included{font-size:11px;line-height:1.3}
+#app .wep-tractor-compact .wep-build-controls-row .wep-build-delivery>h3{display:none}
+#app .wep-tractor-compact .wep-build-controls-row .wep-build-delivery>label:first-of-type{flex:0 1 245px;width:245px;min-width:180px}
+#app .wep-tractor-compact .wep-build-controls-row .wep-build-delivery select,#app .wep-tractor-compact .wep-build-controls-row .wep-build-delivery input{height:32px!important;min-height:32px!important;padding:4px!important}
+#app .wep-tractor-compact .wep-build-controls-row #wep-build-zip-label{display:flex;flex-direction:row;align-items:center;gap:4px;flex:0 0 auto;width:auto;margin:0!important;white-space:nowrap}
+#app .wep-tractor-compact .wep-build-controls-row #wep-build-zip-label[hidden]{display:none!important}
+#app .wep-tractor-compact .wep-build-controls-row #wep-build-zip{width:66px}
+#app .wep-tractor-compact .wep-build-controls-row .wep-build-inventory-status:empty{display:none}
+@media(min-width:761px){
+ .hero.wep-tractor-compact>.wep-finance-hero-details>.wep-build-heading{grid-column:1/3;grid-row:1}
+ .wep-tractor-compact .wep-build-media-column>.media{height:180px}
+ .wep-tractor-compact .wep-build-media-column>.media img{max-height:180px}
+}
+@media(min-width:1251px){#app .hero.wep-tractor-compact>.wep-compact-actions{align-self:stretch}}
+@media(max-width:760px){
+ .hero.wep-tractor-compact>.wep-finance-hero-details>.wep-factory-options{grid-column:1/-1;grid-row:3}
+ #app .wep-tractor-compact .wep-build-controls-row{grid-row:4}
+}
+@media(max-width:540px){
+ .hero.wep-tractor-compact>.wep-finance-hero-details>.wep-factory-options{grid-row:4}
+ #app .wep-tractor-compact .wep-build-controls-row{grid-row:5}
+}
+
+#app .wep-tractor-compact .wep-build-controls-row .wep-stock-included{display:none}
+
+/* Delivery follows the same desktop column edges as Configure Your Tractor. */
+@media(min-width:761px){
+ #app .wep-tractor-compact .wep-build-controls-row{display:grid;grid-template-columns:subgrid;column-gap:inherit;align-items:start}
+ #app .wep-tractor-compact .wep-build-controls-row>.wep-build-stock{display:flex!important;grid-column:1/3;grid-row:1;flex-wrap:wrap;align-items:center;gap:7px;min-width:0}
+ #app .wep-tractor-compact .wep-build-controls-row>.wep-build-delivery{display:flex!important;grid-column:3;grid-row:1;flex-direction:column;align-items:stretch;gap:7px;width:100%;min-width:0}
+ #app .wep-tractor-compact .wep-build-controls-row .wep-build-delivery>label:first-of-type{flex:0 0 auto;width:100%;min-width:0;max-width:none}
+ #app .wep-tractor-compact .wep-build-controls-row #wep-build-zip-label{align-self:flex-end}
+}
