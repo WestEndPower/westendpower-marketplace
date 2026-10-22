@@ -352,6 +352,9 @@
   if(target===output){offerPlan=plan;syncOfferJoin();disclaimer(lastResponse?.paymentMethod==='finance'?lastResponse.financePlans?.find(p=>clean(p.brandId).toUpperCase()===snapshot.brandId)||plan:plan);}
  }
  async function updateOffers(snapshot,currentQuote){
+  if(snapshot.fulfillment==='SHIP'){
+   stopOffers();pricePreview(creditOutput,currentQuote);rememberPaymentPreview('credit',currentQuote,null,snapshot);highlightPayment();syncPaymentCards();return;
+  }
   const buildKey=JSON.stringify(previewBuild(snapshot));
   // Payment choice changes the applied quote, not the other methods' offers.
   if(offersBuildKey===buildKey&&offersController&&!offersController.signal.aborted){highlightPayment();syncPaymentCards();return;}
@@ -512,15 +515,16 @@
   ++generation;controller?.abort();clearTimeout(timer);stopOffers();lastResponse=null;lastSnapshot=null;disclaimer(null);highlightPayment(null);
   panel.hidden=false;output.setAttribute('aria-busy','false');
   promoOutput.replaceChildren(note('Store pickup / local delivery only.'));
-  creditOutput.replaceChildren(note('Shipping and tax calculated on the quote page.'));
+  creditOutput.replaceChildren(note('Enter your shipping address below to calculate shipping and tax.'));
   output.replaceChildren(note('Store pickup / local delivery only.'));
-  totals.replaceChildren(note('Enter your shipping address on the quote page for your UPS shipping price and total.'));
+  totals.replaceChildren(note('Enter your shipping address below for your UPS shipping price and total.'));
  }
  function shippingCheckout(){
   try{
    if(cartPaused)throw Error('Choose equipment or options before continuing.');
    const snapshot=state();if(!shippingEligible||shippingKey!==shippingSignature(snapshot))throw Error('Shipping eligibility is still being checked. Please try again.');
    saveCurrentBuild();paymentSelect.value='credit';paymentConfirmed=true;preferred='';remember();
+   if(window.WEPInlineCheckout){window.WEPInlineCheckout.open();return;}
    sessionStorage.setItem('wepBuildCheckoutChoices',JSON.stringify({paymentConfirmed:true,paymentMethod:'credit',fulfillment:'SHIP',zip:'',brandId:snapshot.brandId,sku:snapshot.sku,items:snapshot.items,financeProgramIds:{},...checkoutCarry(),updated:Date.now()}));
    departing=true;location.assign('checkout.html'+(query.get('api')==='local'?'?api=local':''));
   }catch(error){const message=document.getElementById('options-message');if(message)message.textContent=error.message;}
@@ -785,6 +789,7 @@
    if(!paymentConfirmed){event.preventDefault();event.stopImmediatePropagation();openComparison();return;}
    if(!lastResponse||!lastSnapshot||JSON.stringify(state())!==JSON.stringify(lastSnapshot)||Date.now()-Date.parse(lastResponse.createdAt)>300000){event.preventDefault();event.stopImmediatePropagation();openComparison();return;}
    checkoutPending=false;
+   if(window.WEPInlineCheckout){event.preventDefault();event.stopImmediatePropagation();saveCurrentBuild();window.WEPInlineCheckout.open();return;}
    remember();sessionStorage.setItem('wepBuildCheckoutChoices',JSON.stringify({paymentConfirmed:true,paymentMethod:lastSnapshot.paymentMethod,fulfillment:lastSnapshot.fulfillment,zip:lastSnapshot.zip,brandId:lastSnapshot.brandId,sku:lastSnapshot.sku,items:lastSnapshot.items,financeProgramIds:lastSnapshot.paymentMethod==='finance'?{[lastSnapshot.brandId]:lastSnapshot.programId}:{},...checkoutCarry(),updated:Date.now()}));
   }
  },true);
@@ -857,6 +862,29 @@
  });
  setInterval(()=>{if(!document.hidden)loadInventory(true);},300000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastInventoryCheck>300000)loadInventory(true);});
+ // Public builder state shared with its own customer form; no separate review page.
+ window.WEPBuilderCheckout={
+  current:()=>{
+   const selection=state(),matches=lastSnapshot&&JSON.stringify(selection)===JSON.stringify(lastSnapshot);
+   const q=matches&&lastResponse&&Date.now()-Date.parse(lastResponse.createdAt)<300000?JSON.parse(JSON.stringify(lastResponse)):null;
+   if(q){for(const line of q.lines){
+    const option=[...app.querySelectorAll('.option-check')].find(c=>c.dataset.type===line.type&&clean(c.dataset.sku)===clean(line.sku));
+    const regular=line.type==='tool'?number(app.querySelector('.hero .price')?.dataset.wepMsrp):number(option?.dataset.regularPrice);
+    line.regularUnitPrice=Math.max(validMoney(regular)?regular:0,validMoney(line.baseUnitPrice)?line.baseUnitPrice:0,line.unitPrice);
+    const input=[...app.querySelectorAll('[data-review-qty-sku]')].find(el=>el.dataset.reviewQtyType===line.type&&el.dataset.reviewQtySku===line.sku),freight=input?.closest('tr')?.nextElementSibling;
+    if(freight?.classList.contains('wep-implement-freight-row'))line.freightNote=clean(freight.textContent);
+   }}
+   return {selection,quote:q,paymentConfirmed,api,testMode:local||query.get('test')==='1'};
+  },
+  review:()=>{checkoutPending=true;document.getElementById('review-package')?.click();},
+  shippingQuote:async(address,signal)=>{
+   paymentSelect.value='credit';paymentConfirmed=true;preferred='';remember();
+   const snapshot=state();if(snapshot.fulfillment!=='SHIP'||!shippingEligible||shippingKey!==shippingSignature(snapshot))throw Error('Choose an eligible shipping option.');
+   const q=await packageQuote({items:snapshot.items,paymentMethod:'credit',fulfillment:'SHIP',zip:'',financeProgramIds:{},shippingAddress:address},signal);
+   if(signal.aborted||JSON.stringify(snapshot)!==JSON.stringify(state()))throw new DOMException('Changed','AbortError');
+   render(q,null,snapshot);return q;
+  }
+ };
  window.addEventListener('resize',()=>syncPaymentCards());
  new MutationObserver(()=>{mount();syncOptionButtons();syncPaymentCards();}).observe(app,{childList:true,subtree:true});mount();syncOptionButtons();syncPaymentCards();
 })();
