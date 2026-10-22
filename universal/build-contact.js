@@ -74,9 +74,7 @@
  function placeHelp(){
   const factory=document.querySelector('.hero>.wep-finance-hero-details>.wep-factory-options');if(!factory)return;
   const column=document.createElement('div');column.className='wep-build-configuration-column';factory.before(column);column.append(factory);
-  const prompt=document.createElement('section');prompt.className='wep-build-print-prompt';prompt.setAttribute('aria-label','Print this equipment view');
-  const button=document.createElement('button');button.type='button';button.textContent='Print Current View';button.onclick=()=>window.WEPBuildPrintCurrent(button);
-  prompt.append(button);column.append(prompt);
+  const down=document.getElementById('wep-build-down-payment-control');if(down)column.append(down);
  }
  const app=document.getElementById('app');if(app)new MutationObserver(placeHelp).observe(app,{childList:true,subtree:true});placeHelp();
 })();

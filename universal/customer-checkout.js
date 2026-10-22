@@ -21,6 +21,7 @@ function clearQuote(){activeQuoteController?.abort();document.body.classList.add
 let financeLoad=0,financeSnapshot='',financeReady=false;
 function selectedFulfillment(){return new FormData($('choices')).get('fulfillment');}
 function shippingAddress(){const f=new FormData($('choices'));return {address1:String(f.get('shipAddress1')||'').trim(),address2:String(f.get('shipAddress2')||'').trim(),city:String(f.get('shipCity')||'').trim(),state:String(f.get('shipState')||'').trim().toUpperCase(),zip:String(f.get('shipZip')||'').trim()};}
+function financeDownPayments(){return window.WEPCheckoutSelection?.financeDownPayments||{};}
 function financeProgramIds(){const ids={};document.querySelectorAll('[data-finance-brand]').forEach(select=>{ids[select.dataset.financeBrand]=select.value;});return ids;}
 function changes(){
  clearQuote();const delivery=selectedFulfillment()==='DELIVERY',ship=selectedFulfillment()==='SHIP';
@@ -100,18 +101,19 @@ function acceptCarried(q,originalItems){
  if(quote||busy||stockPending()||!q||Date.now()-Date.parse(q.createdAt)>120000)return false;
  const items=readCart(),fingerprint=rows=>JSON.stringify(rows.map(x=>[x.brandId,x.type,x.sku,Number(x.quantity),x.setupSelected===true,String(x.inventoryId||'')]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))));
  if(fingerprint(items)!==fingerprint(originalItems)||q.paymentMethod!==new FormData($('choices')).get('paymentMethod')||q.fulfillment!==selectedFulfillment()||String(q.zip||'')!==String($('zip').value||''))return false;
+ if(JSON.stringify(q.financeDownPayments||{})!==JSON.stringify(financeDownPayments()))return false;
  if(items.some(x=>x.inventoryId)&&q.stockPricingVersion!==1)return false;
  if(q.fulfillment==='SHIP'){const address=a=>JSON.stringify(['address1','address2','city','state','zip'].map(k=>String(a?.[k]||'').trim()));if(address(q.shippingDetails?.destination)!==address(shippingAddress()))return false;}
  if(q.paymentMethod==='finance'&&!(q.financePlans||[]).every(p=>financeProgramIds()[p.brandId]===p.program.ProgramID))return false;
  const withoutInventory=rows=>fingerprint(rows.map(x=>({...x,inventoryId:''})));
  if(withoutInventory(items)!==withoutInventory(q.lines||[]))return false;
  WEPQuoteDocument.snapshot(q);WEPQuoteLayout.enrich(q);quote=q;
- autoSignature=JSON.stringify([cartText(),[...new FormData($('choices'))],financeProgramIds()]);
+ autoSignature=JSON.stringify([cartText(),[...new FormData($('choices'))],financeProgramIds(),financeDownPayments()]);
  render(q);showMarketplacePayment(q,cartText());return true;
 }
 window.WEPCheckout={
  quoteSlot,acceptCarried,
- context:()=>({items:readCart(),paymentMethod:new FormData($('choices')).get('paymentMethod'),fulfillment:selectedFulfillment(),zip:$('zip').value||'',financeProgramIds:new FormData($('choices')).get('paymentMethod')==='finance'?financeProgramIds():{},...(selectedFulfillment()==='SHIP'?{shippingAddress:shippingAddress()}:{})}),
+ context:()=>({items:readCart(),financeDownPayments:financeDownPayments(),paymentMethod:new FormData($('choices')).get('paymentMethod'),fulfillment:selectedFulfillment(),zip:$('zip').value||'',financeProgramIds:new FormData($('choices')).get('paymentMethod')==='finance'?financeProgramIds():{},...(selectedFulfillment()==='SHIP'?{shippingAddress:shippingAddress()}:{})}),
  api,
  preview:async q=>{await WEPQuoteLayout.ready;if(quote||!q)return;WEPQuoteDocument.snapshot(q);WEPQuoteLayout.enrich(q);render(q,true);},
  refresh:()=>{autoSignature='';scheduleAutoQuote();}
@@ -123,9 +125,10 @@ $('choices').addEventListener('submit',async e=>{
   const items=readCart();snapshot=cartText();const values=new FormData($('choices'));
   busy=true;$('update').disabled=true;$('status').textContent='Checking current prices and installation…';
   const controller=new AbortController();activeQuoteController=controller;await quoteSlot(controller.signal);if(number!==requestNumber)return;const timeout=setTimeout(()=>controller.abort(),60000);
-  let response;try{response=await fetch(api+'/marketplace-quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,paymentMethod:values.get('paymentMethod'),fulfillment:values.get('fulfillment'),zip:values.get('zip')||'',financeProgramIds:financeProgramIds(),shippingAddress:selectedFulfillment()==='SHIP'?shippingAddress():undefined}),signal:controller.signal});}finally{clearTimeout(timeout);}
+  let response;try{response=await fetch(api+'/marketplace-quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,financeDownPayments:financeDownPayments(),paymentMethod:values.get('paymentMethod'),fulfillment:values.get('fulfillment'),zip:values.get('zip')||'',financeProgramIds:financeProgramIds(),shippingAddress:selectedFulfillment()==='SHIP'?shippingAddress():undefined}),signal:controller.signal});}finally{clearTimeout(timeout);}
   const q=await response.json().catch(()=>({}));
   if(!response.ok||q.ok!==true)throw Error(q.error||'Current quote pricing is unavailable. Please contact either store.');
+  if(q.paymentMethod==='finance'&&Object.values(financeDownPayments()).some(v=>v>0)&&q.downPaymentVersion!==1)throw Error('Down-payment estimates need the updated quote service. Please contact the store.');
   if(number!==requestNumber)return;
   if(snapshot!==cartText())throw Error('Your cart changed. Review current pricing again.');
   if(!Array.isArray(q.lines)||!q.lines.length||!Array.isArray(q.issues))throw Error('Current quote pricing is unavailable. Please try again.');
@@ -241,7 +244,7 @@ function scheduleAutoQuote(){
   }
   if(!$('choices').checkValidity())return;
   const data=new FormData($('choices'));if(!data.get('fulfillment')||!data.get('paymentMethod'))return;
-  const signature=JSON.stringify([cartText(),[...data],financeProgramIds()]);
+  const signature=JSON.stringify([cartText(),[...data],financeProgramIds(),financeDownPayments()]);
   if(signature===autoSignature)return;autoSignature=signature;autoQueued=false;$('choices').requestSubmit();
  },400);
 }

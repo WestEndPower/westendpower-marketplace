@@ -425,3 +425,15 @@
 .wep-ranking-confirm-actions button{min-width:100px;padding:9px 14px;border:1px solid #287a32;border-radius:6px;font:700 14px Arial,sans-serif;cursor:pointer;background:#fff;color:#203b28}
 .wep-ranking-confirm-actions button:last-child{background:#287a32;color:#fff}
 .wep-ranking-confirm-actions button:focus-visible{outline:2px solid #203b28;outline-offset:3px}
+
+/* Customer-entered financing down payment; apply once after editing. */
+#app .wep-build-down-payment{display:flex;flex-wrap:wrap;align-items:end;gap:5px;margin-top:4px;width:100%;box-sizing:border-box}
+#app .wep-build-down-payment label{display:flex;flex:1 1 90px;flex-direction:column;font-size:11px;gap:3px;min-width:0}
+#app .wep-build-down-payment input{box-sizing:border-box;width:100%;min-height:30px;height:30px;font:13px Arial,sans-serif;padding:5px;border:1px solid #95a597;border-radius:4px;background:#fff;color:#172b1c}
+#app .wep-build-down-payment button{min-height:30px;padding:5px 7px;background:#fff;border:1px solid #95a597;border-radius:4px;font:12px Arial,sans-serif;color:#195a23;cursor:pointer}
+#app .wep-build-down-payment small{flex:1 0 100%;font-size:10px;line-height:1.25;color:#526154}
+
+#app .wep-build-down-fields{display:flex;flex-wrap:wrap;align-items:end;gap:5px;width:100%}
+#app .wep-build-down-fields[hidden],#app .wep-build-down-payment[hidden],#app .wep-build-down-payment button[hidden]{display:none!important}
+#app .wep-build-configuration-column>.wep-build-down-payment{margin-top:10px;padding:8px;border:1px solid #c6cdc7;border-radius:6px;background:#fff}
+#app .wep-build-down-payment>button{width:100%}

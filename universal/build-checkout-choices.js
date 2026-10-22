@@ -12,7 +12,7 @@
  // customer reaches checkout from View Cart instead of the Checkout button.
  for(const main of cart.filter(x=>(x.type||'tool')==='tool')){try{
   const brand=String(main.brandId).toUpperCase(),draft=JSON.parse(sessionStorage.getItem('wepBuildDraft:'+brand+':'+main.sku)||'null');
-  if(draft)candidates.push({...draft,brandId:brand,sku:main.sku,financeProgramIds:draft.paymentMethod==='finance'?{[brand]:draft.programId}:{}});
+  if(draft)candidates.push({...draft,financeDownPayments:draft.financeDownPayments||{},brandId:brand,sku:main.sku,financeProgramIds:draft.paymentMethod==='finance'?{[brand]:draft.programId}:{}});
  }catch(_){}}
  saved=candidates.filter(x=>x&&x.paymentConfirmed===true&&Number.isFinite(x.updated)&&Date.now()-x.updated<=1800000).sort((a,b)=>b.updated-a.updated).find(x=>{
   try{if(x.review)return key(cart)===key(x.items);const group=cart.filter(row=>String(row.brandId).toUpperCase()===x.brandId&&(row.packageId===x.brandId+':'+x.sku||(!row.packageId&&String(row.equipmentSku||row.sku)===String(x.sku))));return Array.isArray(x.items)&&key(group)===key(x.items);}catch(_){return false;}

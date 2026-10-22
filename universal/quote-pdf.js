@@ -53,7 +53,7 @@
    paymentLines.push({text:plan.apr+'% APR / '+plan.termMonths+' months',size:11,bold:true},
     {text:money(plan.monthlyPayment)+' / month (estimated)',size:12,bold:true},
     {text:'Amount financed'+(plan.applicationFee>0?' (including fee)':'')+': '+money(plan.principalWithFees),size:9},
-    {text:'Required down payment: '+money(plan.requiredDown),size:9});
+    {text:(plan.requestedDownPayment>0?'Down payment: ':'Required down payment: ')+money(plan.requiredDown),size:9});
    if(plan.applicationFee>0)paymentLines.push({text:'Application fee: '+money(plan.applicationFee)+' (included above)'},
     {text:'Amount financed before fee: '+money(plan.amountFinanced)});
    if(plan.minimumCreditScore)paymentLines.push({text:'Minimum credit score: '+plan.minimumCreditScore});
