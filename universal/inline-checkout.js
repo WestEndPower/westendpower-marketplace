@@ -7,7 +7,7 @@
  function state(){if(!window.WEPBuilderCheckout)throw Error('Wait for your package to finish loading.');return WEPBuilderCheckout.current();}
  function customer(){const form=$('wep-inline-form');return Object.fromEntries(fields.map(k=>[k,clean(form?.elements.namedItem(k)?.value)]));}
  function remember(){try{sessionStorage.setItem('wepCheckoutCustomer',JSON.stringify(customer()));}catch(_){}}
- function message(text){if($('wep-inline-status'))$('wep-inline-status').textContent=text;else if($('options-message'))$('options-message').textContent=text;}
+ function message(text){for(const target of document.querySelectorAll('#wep-inline-status,#options-message,.wep-inline-print-status'))target.textContent=text;}
  function fresh(){const s=state();if(!s.paymentConfirmed||!s.quote||!['cash','credit','finance'].includes(s.quote.paymentMethod))throw Error('Select a payment option and wait for your current quote.');return s;}
  function cardSupported(q){return q.paymentMethod==='credit'&&['NEW_MILFORD','DANBURY','SHIP'].includes(q.fulfillment)&&Number.isFinite(q.total)&&!q.issues.length&&!q.excludedFactoryFreight?.length&&!q.lines.some(l=>l.freightNote)&&q.fingerprint&&q.terms?.version;}
  function reference(){try{let saved=JSON.parse(sessionStorage.getItem('wepInlineReference')||'null');const s=state(),key=JSON.stringify(s.selection.items);if(saved?.key===key)return saved.reference;const id=crypto.randomUUID?crypto.randomUUID().slice(0,8):Array.from(crypto.getRandomValues(new Uint8Array(4)),n=>n.toString(16).padStart(2,'0')).join('');saved={key,reference:'Q-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+id.toUpperCase()};sessionStorage.setItem('wepInlineReference',JSON.stringify(saved));return saved.reference;}catch(_){return 'Equipment Quote';}}
@@ -34,6 +34,7 @@
   if(!$('wep-inline-print')){const button=document.createElement('button');button.id='wep-inline-print';button.type='button';button.textContent='Print Quote';button.onclick=printQuote;$('wep-inline-review').after(button);}
   const totals=invoice.querySelector('.wep-itemized-totals');
   if(totals&&!totals.querySelector('.wep-inline-quote-actions')){const buttons=document.createElement('div');buttons.className='wep-inline-quote-actions';const print=document.createElement('button'),checkout=document.createElement('button');print.type=checkout.type='button';print.textContent='Print Quote';checkout.textContent='Checkout';print.onclick=printQuote;checkout.onclick=()=>WEPBuilderCheckout.review();buttons.append(print,checkout);totals.append(buttons);}
+  for(const group of [actions,totals])if(group&&!group.querySelector('.wep-inline-print-status')){const status=document.createElement('p');status.className='wep-inline-print-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');group.append(status);}
   if(!$('wep-inline-customer')){
    const section=document.createElement('section');section.id='wep-inline-customer';section.className='wep-inline-customer';section.hidden=true;section.innerHTML=formMarkup();invoice.after(section);
    try{const saved=JSON.parse(sessionStorage.getItem('wepCheckoutCustomer')||sessionStorage.getItem('wepQuoteCustomer')||'{}');for(const key of fields)if(typeof saved[key]==='string')$('wep-inline-form').elements.namedItem(key).value=saved[key];}catch(_){}
@@ -54,16 +55,33 @@
   $('wep-inline-delivery-choice').replaceChildren(...[...source.options].map(option=>option.cloneNode(true)));$('wep-inline-delivery-choice').value=source.value;$('wep-inline-delivery-zip').value=$('wep-build-zip')?.value||'';$('wep-inline-delivery-zip-label').hidden=source.value!=='DELIVERY';panel.hidden=false;panel.scrollIntoView({behavior:'smooth',block:'center'});
  }
  function open(){mount();opened=true;$('wep-inline-customer').hidden=false;update();$('wep-inline-customer').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});$('wep-inline-form').elements.namedItem('firstName').focus({preventScroll:true});queueShipping();}
+ let printBusy=false,printUrl='';
  async function printQuote(){
-  let preview;
+  if(printBusy)return;
+  let dialog=$('wep-inline-pdf-preview');
+  if(!dialog){
+   dialog=document.createElement('dialog');dialog.id='wep-inline-pdf-preview';dialog.setAttribute('aria-labelledby','wep-inline-pdf-title');
+   dialog.innerHTML='<div class="wep-inline-pdf-header"><h2 id="wep-inline-pdf-title">Printable Quote PDF</h2><a id="wep-inline-pdf-download" hidden download="Equipment-Quote.pdf">Save PDF</a><button type="button" id="wep-inline-pdf-close">Close</button></div><p id="wep-inline-pdf-status" role="status" aria-live="polite"></p><iframe id="wep-inline-pdf-frame" title="Printable equipment quote PDF" hidden></iframe>';
+   document.body.append(dialog);$('wep-inline-pdf-close').onclick=()=>dialog.close();
+   dialog.addEventListener('close',()=>{if(!printBusy){$('wep-inline-pdf-frame').src='about:blank';if(printUrl)URL.revokeObjectURL(printUrl);printUrl='';}});
+  }
+  if(!dialog.open)dialog.showModal();
+  const status=$('wep-inline-pdf-status'),frame=$('wep-inline-pdf-frame'),download=$('wep-inline-pdf-download');
+  frame.hidden=true;download.hidden=true;status.textContent='Preparing your printable quote PDF…';message('Preparing your printable quote PDF…');printBusy=true;
   try{
-   const s=fresh(),snapshot=WEPQuoteDocument.snapshot(s.quote,customer(),reference());
-   preview=window.open('about:blank','_blank');
-   if(!preview)throw Error('Allow pop-ups to open your printable quote PDF.');
-   preview.document.title='Preparing quote PDF';preview.document.body.textContent='Preparing your printable quote PDF…';
-   const bytes=await WEPQuotePDF.create(snapshot),url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
-   preview.location.replace(url);setTimeout(()=>URL.revokeObjectURL(url),600000);
-  }catch(error){preview?.close();message(error.message);}
+   let s=state();
+   if(!s.paymentConfirmed)throw Error('Choose Cash / Bank Check, Credit Card or Financing on the quote, then select Print Quote.');
+   if(!s.quote){
+    if(s.selection.fulfillment==='SHIP')throw Error('Enter your billing / shipping address under Checkout so shipping and tax can be calculated, then select Print Quote.');
+    status.textContent='Updating current quote prices…';
+    await new Promise((resolve,reject)=>{const ready=()=>{if(state().quote){clearTimeout(timer);window.removeEventListener('wep:build-pricing',ready);resolve();}},timer=setTimeout(()=>{window.removeEventListener('wep:build-pricing',ready);reject(Error('Current pricing is not ready. Please wait for the total to finish updating and try Print Quote again.'));},20000);window.addEventListener('wep:build-pricing',ready);try{WEPBuilderCheckout.refresh();ready();}catch(error){clearTimeout(timer);window.removeEventListener('wep:build-pricing',ready);reject(error);}});
+   }
+   s=fresh();const snapshot=WEPQuoteDocument.snapshot(s.quote,customer(),reference()),bytes=await WEPQuotePDF.create(snapshot);
+   if(printUrl)URL.revokeObjectURL(printUrl);printUrl=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+   if(!dialog.open){URL.revokeObjectURL(printUrl);printUrl='';return;}
+   frame.src=printUrl;frame.hidden=false;download.href=printUrl;download.download=(snapshot.reference||'Equipment-Quote')+'.pdf';download.hidden=false;
+   status.textContent='Use the PDF toolbar to print, or select Save PDF.';message('Your printable quote PDF is ready.');
+  }catch(error){status.textContent=error.message;message(error.message);}finally{printBusy=false;}
  }
  function shippingAddress(){const c=customer();return Object.fromEntries(['address1','address2','city','state','zip'].map(k=>[k,c[k]]));}
  function queueShipping(){

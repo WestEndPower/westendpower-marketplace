@@ -864,6 +864,7 @@
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastInventoryCheck>300000)loadInventory(true);});
  // Public builder state shared with its own customer form; no separate review page.
  window.WEPBuilderCheckout={
+  refresh:()=>schedule(true),
   current:()=>{
    const selection=state(),matches=lastSnapshot&&JSON.stringify(selection)===JSON.stringify(lastSnapshot);
    const q=matches&&lastResponse&&Date.now()-Date.parse(lastResponse.createdAt)<300000?JSON.parse(JSON.stringify(lastResponse)):null;
