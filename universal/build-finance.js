@@ -8,11 +8,12 @@
  const money=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(v);
  const validMoney=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
  let checkoutPending=false;
+ let buildDeadline=0;
  let customerDownPayment=0,downPaymentInput,downRow,downFields,addDown,downNote,downEdited=false,downExpanded=false;
  const downPayments=s=>s.financeDownPayments||{};
  let panel,output,generation=0,timer,controller,lastStarted=-Infinity,lastQuote=-Infinity,activeSignature='',lastApplied='';
  // WEP_BUILD_UPDATE_FEEDBACK_V1: token ownership prevents stale requests finishing a newer build.
- const updateJobs=new Map();let updateBox,updateTitle,updateBar,updateHideTimer,updateFailed=false;
+ const updateJobs=new Map();let updateBox,updateTitle,updateBar,updateHideTimer,updateFailed=false,updateProblem='';
  function updateFeedback(){
   if(!updateBox){
    updateBox=document.createElement('section');updateBox.className='wep-package-update';updateBox.hidden=true;
@@ -31,7 +32,7 @@
   }
  }
  function beginUpdate(scope){
-  if(!updateJobs.size||scope==='pricing'||scope==='inventory')updateFailed=false;
+  if(!updateJobs.size||scope==='pricing'||scope==='inventory'){updateFailed=false;updateProblem='';}
   const token={scope};updateJobs.set(scope,token);clearTimeout(updateHideTimer);
   const box=updateFeedback();box.hidden=false;box.dataset.state='busy';updateTitle.textContent='Updating your custom package…';
   box.querySelector('p').textContent='Recalculating pricing, rebates, and financing options.';box.querySelector('small').hidden=false;box.querySelector('small').textContent='This may take a moment.';
@@ -41,7 +42,7 @@
   if(!token||updateJobs.get(token.scope)!==token)return;
   updateJobs.delete(token.scope);updateBusy([...updateJobs.keys()].some(scope=>!scope.startsWith('comparison:')));if(result==='error')updateFailed=true;if(updateJobs.size)return;
   updateBusy(false);const box=updateFeedback();box.querySelector('small').hidden=true;
-  if(updateFailed){box.dataset.state='error';updateTitle.textContent='Your package needs an update.';box.querySelector('p').textContent='Some pricing or payment information could not be confirmed. Please retry pricing or reopen payment options.';updateBar.hidden=true;return;}
+  if(updateFailed){box.dataset.state='error';updateTitle.textContent='Your package needs an update.';box.querySelector('p').textContent=updateProblem||'Some pricing or payment information could not be confirmed. Please retry pricing or reopen payment options.';updateBar.hidden=true;return;}
   if(result==='cancel'){box.hidden=true;return;}
   box.dataset.state='ready';updateTitle.textContent='Your package is up to date.';box.querySelector('p').textContent='Pricing and payment options have been updated.';updateBar.setAttribute('aria-valuenow','100');
   updateHideTimer=setTimeout(()=>{box.hidden=true;},1800);
@@ -57,7 +58,7 @@
  function budget(){quoteBudgetMemory=quoteBudgetMemory.filter(t=>t>Date.now()-quoteBudgetWindow);try{const raw=JSON.parse(sessionStorage.getItem(quoteBudgetKey)||'[]'),stored=Array.isArray(raw)?raw.filter(t=>Number.isFinite(t)&&t>Date.now()-quoteBudgetWindow):[];if(stored.length>quoteBudgetMemory.length)quoteBudgetMemory=stored;}catch(_){}return [...quoteBudgetMemory];}
  async function quoteSlot(signal){
   for(;;){if(signal.aborted)throw new DOMException('Changed','AbortError');const now=Date.now(),recent=budget(),wait=Math.max(quoteCooldown-now,recent.length>=quoteBudgetMax?recent[0]+quoteBudgetWindow-now:0);
-   if(wait>0){const box=updateFeedback();if(updateJobs.size){box.querySelector('p').textContent='Waiting for the quote service before updating your payments.';box.querySelector('small').hidden=false;box.querySelector('small').textContent='This may take up to a minute. Your selections are saved.';}await pause(Math.max(wait,1),signal);continue;}
+   if(wait>0){const box=updateFeedback();if(updateJobs.size){box.querySelector('p').textContent='Waiting for the quote service before updating your payments.';box.querySelector('small').hidden=false;box.querySelector('small').textContent='Retrying in '+Math.ceil(wait/1000)+' seconds. Your selections are saved.';}await pause(Math.max(Math.min(wait,1000),1),signal);continue;}
    recent.push(now);quoteBudgetMemory=recent;try{sessionStorage.setItem(quoteBudgetKey,JSON.stringify(recent));}catch(_){}return;
   }
  }
@@ -141,6 +142,13 @@
    const dl=document.createElement('dl');for(const [label,value] of [['Merchandise',money(merchandise)],['Installation / Set-Up',money(installation)],['Freight','To be confirmed'],['Local delivery',deliverySelect.value==='DELIVERY'?'To be confirmed':money(0)],['Package subtotal','To be confirmed'],['Tax','To be confirmed'],['Total','To be confirmed']])dl.append(field(label,value));totals.append(dl);
   }catch(error){totals.append(note(error.message));}
   // Detailed connection messages belong in the payment-options window.
+ }
+ function pricingConfirmation(quote){
+  const issues=pricingIssues(quote);if(!issues.length)return false;
+  updateProblem=issues.join(' ');stopOffers();offerPlan=null;disclaimer(null);
+  for(const target of [promoOutput,creditOutput,output,inLieuOutput])if(target){target.replaceChildren(note(quote.fulfillment==='DELIVERY'?'Delivery pricing needs confirmation.':updateProblem));target.setAttribute('aria-busy','false');}
+  const message=document.getElementById('options-message');if(message){message.replaceChildren(document.createTextNode(updateProblem+' '));const retry=document.createElement('button');retry.type='button';retry.textContent='Retry current pricing';retry.onclick=()=>schedule(true);message.append(retry);}
+  highlightPayment();syncPaymentCards();return true;
  }
  function pricingFailure(error){if(error.name==='AbortError')return 'Current pricing took too long. Your selections are saved; please retry.';if(error instanceof TypeError||error.message==='Failed to fetch')return 'Could not connect to current pricing. Your selections are saved; listed amounts remain visible. Please retry.';return error.message;}
 
@@ -422,7 +430,7 @@
   const body=method=>({items:snapshot.items,financeDownPayments:downPayments(snapshot),paymentMethod:method,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:{}});
   highlightPayment(snapshot);promoOutput.replaceChildren(note('Calculating your total…'));creditOutput.replaceChildren(note('Calculating your total…'));
   panel.hidden=false;if(!restoreFinance(snapshot)){output.replaceChildren(note('Calculating financing for your package…'));output.setAttribute('aria-busy','true');}
-  const offersUpdate=beginUpdate('offers');let offersFailed=false;const deadline=setTimeout(()=>{if(id===offersVersion)offersController.abort();},90000);
+  const offersUpdate=beginUpdate('offers');let offersFailed=false;const deadline=setTimeout(()=>{if(id===offersVersion)offersController.abort();},Math.max(1,(buildDeadline||Date.now()+90000)-Date.now()));
   const previewQuotes=new Map();
   const getQuote=method=>{
    if(!previewQuotes.has(method))previewQuotes.set(method,(async()=>{const q=currentQuote.paymentMethod===method?currentQuote:await packageQuote(body(method),signal);if(snapshot.items.some(x=>x.inventoryId)&&q.stockPricingVersion!==1)throw Error('Stock pricing could not be verified.');return q;})());
@@ -509,13 +517,13 @@
    dl.append(field(name,validMoney(value)?money(value):'Needs confirmation'));
   }totals.append(dl);
   const subtotal=document.getElementById('wep-cart-subtotal');if(subtotal)subtotal.textContent=validMoney(quote.subtotal)?money(quote.subtotal):'Needs confirmation';
-  lastResponse=quote;lastSnapshot=snapshot;remember();if(snapshot.paymentMethod==='finance'&&plan)disclaimer(plan);else if(offerPlan)disclaimer(offerPlan);publishItemized(quote);syncPaymentCards();updateOffers(snapshot,quote);
+  lastResponse=quote;lastSnapshot=snapshot;remember();if(snapshot.paymentMethod==='finance'&&plan)disclaimer(plan);else if(offerPlan)disclaimer(offerPlan);publishItemized(quote);syncPaymentCards();if(!pricingConfirmation(quote))updateOffers(snapshot,quote);
  }
  async function run(id){
   if(id!==generation||!panel?.isConnected)return;
   const progress=pricingUpdate;let failed=false,deadline;
   try{
-   let snapshot=state();activeSignature=JSON.stringify(snapshot);lastStarted=Date.now();controller=new AbortController();const signal=controller.signal;deadline=setTimeout(()=>controller?.signal===signal&&controller.abort(),90000);
+   let snapshot=state();activeSignature=JSON.stringify(snapshot);lastStarted=Date.now();controller=new AbortController();const signal=controller.signal;deadline=setTimeout(()=>controller?.signal===signal&&controller.abort(),Math.max(1,(buildDeadline||Date.now()+90000)-Date.now()));
    if(snapshot.paymentMethod!=='finance'){
     eligiblePrograms(snapshot,signal).catch(()=>{});
     const quote=await packageQuote({items:snapshot.items,financeDownPayments:downPayments(snapshot),paymentMethod:snapshot.paymentMethod,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:{}},signal);
@@ -540,7 +548,7 @@
    preferred=snapshot.programId;failed=pricingIssues(quote).length>0;render(quote,plan,snapshot);lastApplied=activeSignature;return;
    }
    throw Error('No eligible financing program fits this package. Choose cash / bank check, credit card, or another program.');
-  }catch(error){if(id!==generation)return;failed=true;console.error('WEP pricing failure: '+error.name+': '+error.message+'\n'+(error.stack||''));lastResponse=null;lastSnapshot=null;let preserve=false;try{preserve=offersBuildKey===JSON.stringify(previewBuild(compareState()))||!!savedFinance(compareState());}catch(_){}
+  }catch(error){if(id!==generation)return;failed=true;updateProblem=pricingFailure(error);console.error('WEP pricing failure: '+error.name+': '+error.message+'\n'+(error.stack||''));lastResponse=null;lastSnapshot=null;let preserve=false;try{preserve=offersBuildKey===JSON.stringify(previewBuild(compareState()))||!!savedFinance(compareState());}catch(_){}
    showListedBuild(pricingFailure(error),preserve);output.setAttribute('aria-busy','false');if(preserve)restoreFinance(compareState());
    const message=document.getElementById('options-message');if(message){message.replaceChildren(document.createTextNode(pricingFailure(error)+' '));const retry=document.createElement('button');retry.type='button';retry.textContent='Retry current pricing';retry.onclick=()=>schedule(true);message.append(retry);}
   }finally{clearTimeout(deadline);endUpdate(progress,id!==generation?'cancel':failed?'error':'ready');}
@@ -557,7 +565,7 @@
   if(s.fulfillment==='SHIP'){shippingStage();return;}
   const signature=JSON.stringify(s);if(!force&&signature===lastApplied&&lastResponse)return;
   const preserveOffers=offersBuildKey===JSON.stringify(previewBuild(s));
-  ++generation;const id=generation;pricingUpdate=beginUpdate('pricing');clearTimeout(timer);controller?.abort();invalidate('Updating this package…',preserveOffers);status('Updating current price and payment…',preserveOffers);remember();
+  ++generation;const id=generation;buildDeadline=Date.now()+90000;pricingUpdate=beginUpdate('pricing');clearTimeout(timer);controller?.abort();invalidate('Updating this package…',preserveOffers);status('Updating current price and payment…',preserveOffers);remember();
   timer=setTimeout(()=>run(id),spacing);
  }
  let shippingKey='',shippingEligible=false,shippingController,shippingVersion=0;
@@ -713,7 +721,7 @@
   let failed=false;comparisonBusy=true;comparisonStale=false;comparisonUpdate=beginUpdate('comparison:'+filter);const progress=comparisonUpdate;
   try{
    if(!inventoryReady)throw Error('Wait for the stock check before comparing payments.');
-   const snapshot=compareState();if(snapshot.fulfillment==='DELIVERY'&&!/^\d{5}$/.test(snapshot.zip))throw Error('Enter a five-digit delivery ZIP before updating payments.');
+   const snapshot=compareState();if(lastResponse&&lastSnapshot&&JSON.stringify(previewBuild(lastSnapshot))===JSON.stringify(previewBuild(snapshot))&&pricingIssues(lastResponse).length)throw Error(pricingIssues(lastResponse).join(' '));if(snapshot.fulfillment==='DELIVERY'&&!/^\d{5}$/.test(snapshot.zip))throw Error('Enter a five-digit delivery ZIP before updating payments.');
    comparisonColumns=[];comparisonRanked=false;comparisonSnapshot=snapshot;comparisonStatus.textContent=comparisonSortBy==='payment'?'Comparing all eligible payments… This may take a moment.':'Updating payments…';renderComparison();
    const result=await eligiblePrograms(snapshot,signal);if(id!==comparisonGeneration||!comparisonFresh()||signal.aborted)return;
    comparisonProgramRows=validPrograms(result.programs);comparisonColumns=[...(!comparisonFinancingOnly?[{method:'cash'},{method:'credit'}]:[]),...(comparisonSortBy==='payment'?comparisonPrograms():comparisonPrograms().slice(0,comparisonLimit)).map(program=>({method:'finance',program}))];
@@ -735,7 +743,7 @@
    }}
    await Promise.all([next(),next()]);
    if(id===comparisonGeneration&&comparisonFresh()){comparisonRanked=!failed;comparisonStatus.textContent=!comparisonColumns.some(c=>!c.ineligible)?'No eligible financing programs are available for this package.':failed?'Some options could not be confirmed. Update Financing to retry before comparing the lowest payments.':'Payments are current. Select a plan to apply it to your quote.';}
-  }catch(error){if(id!==comparisonGeneration||signal.aborted)return;failed=true;comparisonStale=true;comparisonStatus.textContent=pricingFailure(error);}
+  }catch(error){if(id!==comparisonGeneration||signal.aborted)return;failed=true;updateProblem=pricingFailure(error);comparisonStale=true;comparisonStatus.textContent=pricingFailure(error);}
   finally{if(id===comparisonGeneration){comparisonBusy=false;renderComparison();}endUpdate(progress,id!==comparisonGeneration||signal.aborted?'cancel':failed?'error':'ready');}
  }
  async function open(){
