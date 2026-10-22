@@ -1,57 +1,92 @@
-/* One printable PDF for the builder and customer checkout. */
+/* WEP_QUOTE_FORM_V2: shared builder/checkout data in the dealer's established form. */
 (function(root){
  'use strict';
- async function create(snapshot){
-  const D=root.WEPQuoteDocument||require('./quote-document.js');
-  const P=root.PDFLib||require('./vendor/pdf-lib.min.js');
+ async function create(s){
+  const D=root.WEPQuoteDocument||require('./quote-document.js'),P=root.PDFLib||require('./vendor/pdf-lib.min.js');
   const doc=await P.PDFDocument.create(),font=await doc.embedFont(P.StandardFonts.Helvetica),bold=await doc.embedFont(P.StandardFonts.HelveticaBold);
-  doc.setTitle((snapshot.reference||'Equipment')+' Quote');doc.setAuthor('West End Power Equipment');
+  doc.setTitle((s.reference||'Equipment')+' Quote');doc.setAuthor('West End Power Equipment');
+  const red=P.rgb(.82,.04,.1),ink=P.rgb(.08,.08,.08),gray=P.rgb(.65,.65,.65),white=P.rgb(1,1,1);
   const money=n=>n===null?'Needs confirmation':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
-  const safe=value=>Array.from(String(value??'')).map(c=>{try{font.encodeText(c);return c;}catch(_){return '?';}}).join('');
-  const wrap=(value,width,size=9,f=font)=>{
-   const lines=[];for(const paragraph of safe(value).split('\n')){
-    let line='';for(const word of paragraph.split(/\s+/)){
-     if(line&&f.widthOfTextAtSize(line+' '+word,size)>width){lines.push(line);line='';}
-     for(const c of word){if(f.widthOfTextAtSize(line+c,size)>width){lines.push(line);line='';}line+=c;}
-     line+=' ';
-    }lines.push(line.trimEnd());
-   }return lines;
-  };
-  let page,y;const left=42,right=570,bottom=62;
-  function draw(value,x,top,size=9,f=font,color=P.rgb(.13,.17,.14)){page.drawText(safe(value),{x,y:792-top-size,size,font:f,color});}
-  function rule(top,color=P.rgb(.8,.83,.81)){page.drawLine({start:{x:left,y:792-top},end:{x:right,y:792-top},thickness:.7,color});}
-  function newPage(){page=doc.addPage([612,792]);y=40;draw('West End Power Equipment',left,y,18,bold);draw(snapshot.reference||'Equipment Quote',390,y+4,10,bold);y+=26;draw('New Milford & Danbury, Connecticut',left,y,9);y+=20;rule(y,P.rgb(.7,.08,.15));y+=16;}
-  function room(height){if(y+height>792-bottom)newPage();}
-  function paragraph(value,{size=9,f=font,width=528,x=left}={}){for(const line of wrap(value,width,size,f)){room(size+5);draw(line,x,y,size,f);y+=size+4;}y+=5;}
-  newPage();paragraph('Equipment Quote',{size:14,f:bold});paragraph('Prepared '+new Date(snapshot.createdAt).toLocaleString('en-US'));
-  const customer=D.customerText(snapshot);if(customer.length){paragraph('Prepared for',{f:bold});for(const line of customer)paragraph(line);}
-  paragraph(D.fulfillmentLabel(snapshot));paragraph('Payment preference: '+D.paymentLabel(snapshot));y+=5;
-  const widths=[183,27,65,80,80,93],labels=['Equipment & options','Qty','Installation','Regular price','Your price','Item total'];
-  function tableHeader(){room(34);page.drawRectangle({x:left,y:792-y-27,width:528,height:27,color:P.rgb(.93,.95,.93)});let x=left;labels.forEach((label,i)=>{draw(label,x+5,y+8,8,bold);x+=widths[i];});y+=30;}
-  tableHeader();
-  for(const item of snapshot.lines){
-   const description=wrap(item.productName,173,9,bold).concat(wrap(item.brandId+' - SKU '+item.sku,173,8));
-   if(item.pricingSource)description.push(item.pricingSource==='stock'?'In-stock pricing':'Available to order');
-   const cells=[description,[String(item.quantity)],wrap(item.setupTotal?money(item.setupTotal):'-',55),wrap(money(item.regularUnitPrice),70),wrap(money(item.unitPrice),70),wrap(money(item.itemTotal),83)];
-   let index=0;const count=Math.max(...cells.map(c=>c.length));
-   if(count*13+9<580&&y+count*13+9>792-bottom){newPage();tableHeader();}
-   while(index<count){if(y+22>792-bottom){newPage();tableHeader();}const take=Math.min(count-index,Math.floor((792-bottom-y-9)/13));let x=left;
-    cells.forEach((lines,col)=>{lines.slice(index,index+take).forEach((line,n)=>draw(line,x+5,y+n*13,col===0&&index+n>0?8:9,col===0&&index+n===0?bold:font));x+=widths[col];});y+=take*13+9;index+=take;
-   }rule(y);y+=7;if(item.freightNote)paragraph(item.freightNote,{size:8});
+  const safe=v=>Array.from(String(v??'')).map(c=>{try{font.encodeText(c);return c;}catch(_){return '?';}}).join('');
+  function wrap(value,width,size=9,f=font){
+   const lines=[];for(const paragraph of safe(value).split('\n')){let line='';for(const word of paragraph.split(/\s+/)){
+    if(line&&f.widthOfTextAtSize(line+' '+word,size)>width){lines.push(line);line='';}
+    for(const c of word){if(f.widthOfTextAtSize(line+c,size)>width){lines.push(line);line='';}line+=c;}line+=' ';
+   }lines.push(line.trimEnd());}return lines;
   }
-  paragraph('Item totals exclude installation. Installation is included in the totals below.',{size:8});
-  const totals=D.totalRows(snapshot);room(totals.length*22+32);y+=8;paragraph('Quote total',{f:bold,x:310,width:260});
-  totals.forEach(([label,value],i)=>{const last=i===totals.length-1;if(last){rule(y);y+=7;}draw(label,310,y,last?11:9,last?bold:font);const formatted=money(value),size=last?12:10;draw(formatted,right-bold.widthOfTextAtSize(formatted,size),y,size,bold);y+=last?29:22;});
-  for(const plan of snapshot.plans){room(110);paragraph('Financing estimate - '+plan.brandId+' - '+plan.name,{f:bold});paragraph(plan.apr+'% APR / '+plan.termMonths+' months');
-   for(const [label,value] of [['Required down payment',plan.requiredDown],['Amount financed before fee',plan.amountFinanced],['Application fee',plan.applicationFee],['Financed amount including fee',plan.principalWithFees],['Estimated monthly payment',plan.monthlyPayment]])paragraph(label+': '+money(value));
-   if(plan.minimumCreditScore)paragraph('Minimum credit score: '+plan.minimumCreditScore);
-   paragraph(plan.rebateCompatible?'Compatible customer rebates included':'In lieu of customer rebates');paragraph('Subject to credit approval. Fees are included in the financed amount. Final lender terms are confirmed through the store.',{size:8});
+  let logo=null;try{
+   let bytes;if(typeof window==='undefined')bytes=require('node:fs').readFileSync(require('node:path').join(__dirname,'../images/West-End-Logo.png'));
+   else{const response=await fetch(new URL('images/West-End-Logo.png',document.baseURI));if(!response.ok)throw Error('Logo unavailable');bytes=await response.arrayBuffer();}
+   logo=await doc.embedPng(bytes);
+  }catch(_){}
+  let page;const left=28,right=584,width=556,boxWidth=272,summaryTop=544,tableTop=238,tableBottom=530,extra=[];
+  const draw=(value,x,top,size=9,f=font,color=ink)=>page.drawText(safe(value),{x,y:792-top-size,size,font:f,color});
+  function line(x1,x2,top,color=gray){page.drawLine({start:{x:x1,y:792-top},end:{x:x2,y:792-top},thickness:.55,color});}
+  function box(x,top,w,h){page.drawRectangle({x,y:792-top-h,width:w,height:h,borderWidth:.6,borderColor:gray});}
+  function fit(value,x,top,w,size=11,f=font){
+   const text=safe(value);let adjusted=size;while(adjusted>9&&f.widthOfTextAtSize(text,adjusted)>w)adjusted-=.25;
+   if(f.widthOfTextAtSize(text,adjusted)>w){extra.push(text);let short=text;while(short&&f.widthOfTextAtSize(short+'...',adjusted)>w)short=short.slice(0,-1);draw(short+'...',x,top,adjusted,f);}else draw(text,x,top,adjusted,f);
   }
-  for(const rebate of snapshot.rebates||[])paragraph(rebate.name+' - '+money(rebate.amount)+' - '+rebate.status+(rebate.endDate?' - Ends '+rebate.endDate:''));
-  if(snapshot.customer.notes){paragraph('Customer notes',{f:bold});paragraph(snapshot.customer.notes);}
-  if(snapshot.issues.length){paragraph('Needs confirmation',{f:bold});for(const issue of snapshot.issues)paragraph(issue);}
-  paragraph('Pricing recorded at the time shown. Please confirm availability and final pricing with the store. This quote does not create a payment, order or inventory reservation.',{size:8});
-  const pages=doc.getPages();pages.forEach((p,i)=>{page=p;rule(746);draw('New Milford - 265 Danbury Road - 860-355-8722',left,754,8);draw('Danbury - 56 Beaver Brook Road - 203-792-3030',left,767,8);draw((i+1)+' / '+pages.length,540,767,8);});
+  function header(){
+   if(logo){const dimensions=logo.scaleToFit(200,48);page.drawImage(logo,{x:left,y:792-28-dimensions.height,width:dimensions.width,height:dimensions.height});}
+   else draw('WEST END POWER EQUIPMENT',left,32,16,bold,red);
+   draw('QUOTE',left,78,16,bold);
+   [['Quote #',s.reference||'Equipment Quote'],['Date',new Date(s.createdAt).toLocaleDateString('en-US')],['Phone','(860) 355-8722'],['Email','sales@westendpower.com']].forEach(([k,v],i)=>{draw(k+':',348,28+i*15,9,bold);fit(v,401,28+i*15,181,9);});
+  }
+  function infoBox(x,title,c){
+   box(x,104,boxWidth,100);draw(title,x+7,110,11,bold);
+   const phone=safe(c.phone||'');fit(phone,x+265-Math.min(129,font.widthOfTextAtSize(phone,10)),110,129,10);line(x+6,x+266,125);
+   [[c.firstName,c.lastName].filter(Boolean).join(' '),c.companyName||'', [c.address1,c.address2].filter(Boolean).join(' '),[c.city,c.state,c.zip].filter(Boolean).join(' - '),c.email||''].forEach((v,i)=>fit(v,x+7,129+i*14,258,11.5,i===0?bold:font));
+  }
+  function deliveryInfo(){
+   if(s.fulfillment==='SHIP')return {...s.customer,...s.destination,firstName:s.customer.firstName,lastName:s.customer.lastName,companyName:s.customer.companyName,phone:s.customer.phone,email:s.customer.email};
+   if(s.fulfillment==='DELIVERY')return {...s.customer,city:s.customer.city||s.deliveryTown,state:s.customer.state||s.deliveryState,zip:s.customer.zip||s.zip};
+   const nm=s.fulfillment==='NEW_MILFORD';return {firstName:nm?'Pickup - New Milford':'Pickup - Danbury',companyName:'West End Power Equipment',address1:nm?'265 Danbury Road':'56 Beaver Brook Road',city:nm?'New Milford':'Danbury',state:'CT',zip:nm?'06776':'06810',phone:nm?'(860) 355-8722':'(203) 792-3030',email:nm?'sales@westendpower.com':'dawepe@westendpower.com'};
+  }
+  const notes=wrap(s.customer.notes||'',470,9);if(notes.length>1)extra.push('Customer notes: '+s.customer.notes);
+  const widths=[25,64,201,68,66,66,66],labels=['QTY','SKU / BRAND','DESCRIPTION','MSRP','YOUR PRICE','INSTALL','TOTAL'];
+  function tableHeader(){let x=left;page.drawRectangle({x:left,y:792-tableTop-20,width,height:20,color:red});labels.forEach((label,i)=>{draw(label,x+4,tableTop+6,7.5,bold,white);x+=widths[i];});return tableTop+20;}
+  function makePage(continuation=false){page=doc.addPage([612,792]);header();infoBox(left,'CUSTOMER INFO',s.customer);infoBox(312,'DELIVER TO',deliveryInfo());box(left,211,width,20);draw('Notes / Instructions:',left+6,216,9,bold);fit((notes[0]||'')+(notes.length>1?' (continued)':''),130,216,446,9);if(continuation)draw('Continued',520,83,8);return tableHeader();}
+  const totalRows=D.totalRows(s),paymentLines=[{text:D.paymentLabel(s),size:12,bold:true},{text:D.fulfillmentLabel(s),size:9}];
+  for(const plan of s.plans){paymentLines.push({text:plan.brandId+' - '+plan.name,bold:true},{text:plan.apr+'% APR / '+plan.termMonths+' months'});
+   for(const [label,value] of [['Required down payment',plan.requiredDown],['Application fee',plan.applicationFee],['Amount financed before fee',plan.amountFinanced],['Financed amount including fee',plan.principalWithFees],['Estimated monthly payment',plan.monthlyPayment]])paymentLines.push({text:label+': '+money(value)});
+   if(plan.minimumCreditScore)paymentLines.push({text:'Minimum credit score: '+plan.minimumCreditScore});paymentLines.push({text:plan.rebateCompatible?'Compatible customer rebates included':'In lieu of customer rebates'},{text:'Subject to credit approval. Final lender terms confirmed by the store.'});
+  }
+  for(const r of s.rebates||[])paymentLines.push({text:r.name+' - '+money(r.amount)+' - '+r.status+(r.endDate?' - Ends '+r.endDate:'')});
+  const expandedPayment=paymentLines.flatMap(row=>wrap(row.text,256,row.size||8,row.bold?bold:font).map(text=>({...row,text})));
+  function summary(final){
+   box(left,summaryTop,boxWidth,165);box(312,summaryTop,boxWidth,165);draw('PAYMENT INFORMATION',left+7,summaryTop+7,11,bold);line(left+6,left+266,summaryTop+25);
+   if(final){let y=summaryTop+31;for(const row of expandedPayment){const h=(row.size||8)+2;if(y+h>summaryTop+157){draw('Additional payment details follow.',left+7,summaryTop+150,8,bold);break;}draw(row.text,left+7,y,row.size||8,row.bold?bold:font);y+=h;}}
+   else draw('Payment information and totals on final item page.',left+7,summaryTop+34,9);
+   if(final){const start=summaryTop+9,step=18;totalRows.forEach(([label,value],i)=>{const last=i===totalRows.length-1,top=start+i*step+(last?4:0);if(last)line(319,577,top-3,ink);draw(last?'ESTIMATED TOTAL':label,319,top,last?11:9,last?bold:font,last?red:ink);const text=money(value),size=last?13:10;draw(text,577-bold.widthOfTextAtSize(text,size),top,size,bold,last?red:ink);});}
+   else draw('Continued on next page',320,summaryTop+12,10,bold);
+   draw('Item totals exclude installation; installation is included in the totals.',left,716,8);
+   draw('Quote only. Does not reserve equipment. Confirm availability and final pricing with the store.',left,728,8);
+  }
+  const prepared=s.lines.map(item=>{
+   const sku=wrap(item.sku,56,7.5).concat(wrap(item.brandId,56,7.5));
+   const description=wrap(item.productName,193,9,bold);if(item.freightNote)description.push(...wrap(item.freightNote,193,8));
+   const cells=[[String(item.quantity)],sku,description,wrap(money(item.regularUnitPrice),60),wrap(money(item.unitPrice),58),wrap(item.setupTotal?money(item.setupTotal):'-',58),wrap(money(item.itemTotal),58)];
+   return {cells,height:Math.max(22,Math.max(...cells.map(c=>c.length))*9+4)};
+  });
+  let y=makePage(),itemPages=[];
+  function endItems(final){while(y+22<=tableBottom){let x=left;widths.forEach(w=>{box(x,y,w,22);x+=w;});y+=22;}summary(final);itemPages.push(page);}
+  for(const row of prepared){
+   // Normal items stay together. Oversized descriptions continue with repeated headings.
+   if(row.height<=tableBottom-tableTop-20&&y+row.height>tableBottom){endItems(false);y=makePage(true);}
+   let offset=0,count=Math.max(...row.cells.map(c=>c.length));
+   while(offset<count){if(y+22>tableBottom){endItems(false);y=makePage(true);}const take=Math.min(count-offset,Math.max(1,Math.floor((tableBottom-y-4)/9))),height=Math.max(22,take*9+4);let x=left;
+    row.cells.forEach((lines,col)=>{box(x,y,widths[col],height);lines.slice(offset,offset+take).forEach((text,n)=>draw(text,x+4,y+3+n*9,col===1?7.5:col===2&&offset+n>0?8:9,col===2&&offset+n===0?bold:font));x+=widths[col];});y+=height;offset+=take;
+   }
+  }endItems(true);
+  // Keep long notes, confirmation messages, and financing readable without squeezing the fixed form.
+  let usedPaymentHeight=0;for(const row of expandedPayment)usedPaymentHeight+=(row.size||8)+2;
+  if(usedPaymentHeight>126)extra.push('Payment details: '+expandedPayment.map(r=>r.text).join('\n'));
+  extra.push(...s.issues.map(v=>'Needs confirmation: '+v));
+  if(extra.length){page=doc.addPage([612,792]);header();y=112;draw('ADDITIONAL QUOTE DETAILS',left,y,12,bold);y+=25;
+   for(const text of extra)for(const row of wrap(text,width,10)){if(y+15>730){page=doc.addPage([612,792]);header();y=112;}draw(row,left,y,10);y+=14;}
+  }
+  const pages=doc.getPages();pages.forEach((p,i)=>{page=p;line(left,right,744);const center=(text,top,size=8)=>draw(text,(612-bold.widthOfTextAtSize(text,size))/2,top,size,bold);center('NEW MILFORD - 265 Danbury Rd., New Milford, CT 06776 - (860) 355-8722 - sales@westendpower.com',751,7.7);center('DANBURY - 56 Beaver Brook Rd., Danbury, CT 06810 - (203) 792-3030 - dawepe@westendpower.com',763,7.7);center('westendpower.com',775,8);draw((i+1)+' / '+pages.length,558,775,7);});
   return doc.save();
  }
  root.WEPQuotePDF={create};if(typeof module!=='undefined'&&module.exports)module.exports=root.WEPQuotePDF;
