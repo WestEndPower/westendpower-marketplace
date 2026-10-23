@@ -30,6 +30,7 @@
   const label=document.createElement('strong');label.textContent='Editing '+seed.reference;
   const button=document.createElement('button');button.type='button';button.textContent='Return Changes to Quote / Order';button.style.cssText='padding:9px 14px;background:#287a32;color:white;border:0;border-radius:4px;cursor:pointer';button.onclick=save;
   const status=document.createElement('span');status.id='dealer-edit-status';status.setAttribute('role','status');status.textContent='Review and save changes in the Sales & Profit Center. Existing stock selections remain attached; use its Equipment editor to change the stock unit.';
-  bar.append(label,button,status);document.body.prepend(bar);
+  const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel & Return to Quote / Order';cancel.style.cssText='padding:9px 14px;background:white;color:#245c35;border:1px solid #287a32;border-radius:4px;cursor:pointer';cancel.onclick=()=>{status.textContent='Changes cancelled. Return to the original quote / order tab.';window.opener.focus();window.close();};
+  bar.append(label,button,cancel,status);document.body.prepend(bar);
  });
 })();
