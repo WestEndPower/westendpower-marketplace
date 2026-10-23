@@ -11,7 +11,8 @@
  }catch(e){document.addEventListener('DOMContentLoaded',()=>{const p=document.createElement('p');p.textContent='Open this equipment again from the Sales & Profit Center.';document.body.prepend(p);});return;}
  const real=window.localStorage,prefix='wepDealerCart:'+seed.quoteId+':'+seed.nonce;
  const storage={getItem:k=>k==='wepCart'?sessionStorage.getItem(prefix):real.getItem(k),setItem:(k,v)=>k==='wepCart'?sessionStorage.setItem(prefix,v):real.setItem(k,v),removeItem:k=>k==='wepCart'?sessionStorage.removeItem(prefix):real.removeItem(k)};
- const draft=seed.draft,brand=String(draft.brandId).toUpperCase(),sku=String(draft.sku),group=brand+':'+sku;
+ const draft={...seed.draft},brand=String(draft.brandId).toUpperCase(),sku=String(draft.sku),group=brand+':'+sku;
+ draft.brandId=brand;draft.programId=draft.programId||draft.financeProgramIds?.[brand]||'';
  if(storage.getItem('wepCart')===null){const editable=draft.items.map(l=>({...l,inventoryId:'',packageId:group}));storage.setItem('wepCart',JSON.stringify(editable));sessionStorage.setItem('wepBuildDraft:'+brand+':'+sku,JSON.stringify({...draft,items:editable,paymentConfirmed:true,updated:Date.now()}));}
  sessionStorage.setItem('wepDealerEditSeed:'+seed.nonce,JSON.stringify(seed));
  window.WEPDealerOrderEdit={storage,quoteId:seed.quoteId};
