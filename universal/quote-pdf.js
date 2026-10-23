@@ -45,7 +45,7 @@
   }
   const notes=wrap(s.customer.notes||'',470,9);if(notes.length>1)extra.push('Customer notes: '+s.customer.notes);
   const widths=[25,68,247,72,72,72],labels=['QTY','SKU','DESCRIPTION','MSRP','SALE PRICE','TOTAL'];
-  function tableHeader(){let x=left;page.drawRectangle({x:left,y:792-tableTop-20,width,height:20,color:red});labels.forEach((label,i)=>{draw(label,i>=3?x+widths[i]-4-bold.widthOfTextAtSize(label,9):x+4,tableTop+5,9,bold,white);x+=widths[i];});return tableTop+20;}
+  function tableHeader(){let x=left;page.drawRectangle({x:left,y:792-tableTop-20,width,height:20,color:red});labels.forEach((label,i)=>{draw(label,i===0||i===3?x+(widths[i]-bold.widthOfTextAtSize(label,9))/2:i>=4?x+widths[i]-4-bold.widthOfTextAtSize(label,9):x+4,tableTop+5,9,bold,white);x+=widths[i];});return tableTop+20;}
   function makePage(continuation=false){page=doc.addPage([612,792]);header();infoBox(left,'CUSTOMER INFO',s.customer);infoBox(312,'DELIVER TO',deliveryInfo());box(left,211,width,20);draw('Notes / Instructions:',left+6,216,9,bold);fit((notes[0]||'')+(notes.length>1?' (continued)':''),130,216,446,9);if(continuation)draw('Continued',520,83,8);return tableHeader();}
   const totalRows=D.totalRows(s);
   const paymentLines=s.plans.flatMap(plan=>[
@@ -100,7 +100,7 @@
    if(row.height<=tableBottom-tableTop-20&&y+row.height>tableBottom){endItems(false);y=makePage(true);}
    let offset=0,count=Math.max(...row.cells.map(c=>c.length));
    while(offset<count){if(y+18>tableBottom){endItems(false);y=makePage(true);}const take=Math.min(count-offset,Math.max(1,Math.floor((tableBottom-y-4)/11))),height=Math.max(18,take*11+4);let x=left;
-    row.cells.forEach((lines,col)=>{box(x,y,widths[col],height);lines.slice(offset,offset+take).forEach((text,n)=>draw(text,col>=3?x+widths[col]-4-font.widthOfTextAtSize(text,9):x+4,y+3+n*11,9,font));x+=widths[col];});y+=height;offset+=take;
+    row.cells.forEach((lines,col)=>{box(x,y,widths[col],height);lines.slice(offset,offset+take).forEach((text,n)=>draw(text,col===0||col>=3?x+widths[col]-4-font.widthOfTextAtSize(text,9):x+4,y+3+n*11,9,font));x+=widths[col];});y+=height;offset+=take;
    }
   }endItems(true);
   // Keep long notes, confirmation messages, and financing readable without squeezing the fixed form.
