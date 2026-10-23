@@ -27,6 +27,9 @@
   const details={displayName:c.companyName||name,contactName:name,business:c.companyName,street,cityStateZip,phone:clean(c.phone)||clean(c.cell),altPhone:clean(c.phone)?clean(c.cell):'',email:c.email};
   const ship=q.fulfillment==='SHIP'?q.shippingDetails.destination:c;
   const shipping=q.fulfillment==='SHIP'?q.shipping??0:0;
+  const plans=q.paymentMethod==='finance'?snapshot.plans:[];
+  const sum=key=>plans.every(p=>typeof p[key]==='number'&&Number.isFinite(p[key]))?Math.round(plans.reduce((total,p)=>total+p[key],0)*100)/100:null;
+  const totalPayback=plans.every(p=>typeof p.monthlyPayment==='number'&&Number.isFinite(p.monthlyPayment)&&typeof p.termMonths==='number'&&Number.isFinite(p.termMonths))?Math.round(plans.reduce((total,p)=>total+p.monthlyPayment*p.termMonths,0)*100)/100:null;
   const notes=[c.notes,'CUSTOMER QUOTE REQUEST - please confirm pricing and availability. No payment collected and no inventory reserved.',D.text(snapshot)].filter(Boolean).join('\n\n');
   return {
    quoteNumber:reference,configurator:s.selection.brandId,source:'Marketplace Builder',action:'Customer Quote Request',
@@ -34,7 +37,7 @@
    delivery:D.fulfillmentLabel(snapshot),deliveryDetails:{...details,street:[ship.address1,ship.address2].filter(Boolean).join(', '),cityStateZip:[ship.city,ship.state,ship.zip].filter(Boolean).join(', ')},
    payment:D.paymentLabel(snapshot),paymentProgram:snapshot.plans.map(p=>p.name+' - '+p.apr+'% APR / '+p.termMonths+' months').join('; '),
    // Payment preferences are estimates, never payments received or deposits.
-   paymentDetails:{cash:q.paymentMethod==='cash'?q.total:0,credit:q.paymentMethod==='credit'?q.total:0,financed:q.paymentMethod==='finance'?snapshot.plans.reduce((sum,p)=>sum+(p.principalWithFees||0),0):0,plannedDownPayment:snapshot.plans.reduce((sum,p)=>sum+(p.requiredDown||0),0),program:snapshot.plans.map(p=>p.name).join('; ')},
+   paymentDetails:{cash:q.paymentMethod==='cash'?q.total:0,credit:q.paymentMethod==='credit'?q.total:0,financed:sum('amountFinanced'),requiredDown:sum('requiredDown'),plannedDownPayment:sum('requiredDown'),minimumRequiredDown:sum('minimumRequiredDown'),applicationFee:sum('applicationFee'),principalWithFees:sum('principalWithFees'),monthlyPayment:sum('monthlyPayment'),termMonths:plans.length===1?plans[0].termMonths:0,apr:plans.length===1?plans[0].apr:null,totalPayback,program:plans.map(p=>p.name).join('; '),plans},
    selectedTool:q.lines.find(l=>l.type==='tool')?.productName||q.lines[0].productName,
    items:snapshot.lines.map(l=>({qty:l.quantity,sku:l.sku,name:l.productName,price:money(l.unitPrice),lineTotal:money(l.itemTotal)})),
    lines:snapshot.lines.map(l=>({qty:l.quantity,sku:l.sku,name:l.productName,price:l.unitPrice,originalLineTotal:Math.round(l.regularUnitPrice*l.quantity*100)/100,finalLineTotal:l.itemTotal,lineTotal:l.itemTotal,setupTotal:l.setupTotal})),
