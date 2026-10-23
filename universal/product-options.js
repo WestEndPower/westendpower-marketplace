@@ -1,5 +1,6 @@
 (function(){
 'use strict';
+ const buildStorage=window.WEPDealerOrderEdit?.storage||window.localStorage;
 const qs=new URLSearchParams(location.search);
 const implementBrowser=/\/choose-implements\.html$/i.test(location.pathname);
 window.addEventListener('pageshow',event=>{if(event.persisted&&!implementBrowser)location.reload();});
@@ -319,7 +320,7 @@ function reviewPackage(){
 function addPackageToCart(){
  if(currentPrice(selectedProduct)<=0)throw new Error('Contact the store for equipment pricing.');
  const spec=packageSpec();
- let cart=JSON.parse(localStorage.getItem('wepCart')||'[]');if(!Array.isArray(cart))throw new Error('Cart could not be read.');
+ let cart=JSON.parse(buildStorage.getItem('wepCart')||'[]');if(!Array.isArray(cart))throw new Error('Cart could not be read.');
  const group=selectedBrand.toUpperCase()+':'+sku;
  const previousPackage=cart.filter(row=>row.packageId===group);
  cart=cart.filter(row=>row.packageId!==group);
@@ -329,14 +330,14 @@ function addPackageToCart(){
   const previous=previousPackage.find(old=>old.type===row.type&&old.sku===row.sku&&Number(old.quantity)===row.qty);
   cart.push({autoRequiredComponent:c?.dataset.wepAutoRequired==='true',inventoryId:window.WEPBuildInventorySelection?.(row.type,row.sku,row.qty)??previous?.inventoryId??'',quoteStockChoice:(window.WEPBuildInventorySelection?.(row.type,row.sku,row.qty)??previous?.inventoryId)?'stock':'orderable',brandId:selectedBrand.toUpperCase(),packageId:group,equipmentSku:sku,type:row.type,sku:row.sku,quantity:row.qty,productName:row.type==='tool'?(clean(selectedProduct.Description)||clean(selectedProduct.Model)||sku):c.dataset.name,itemPrice:row.type==='tool'?currentPrice(selectedProduct):Number(c.dataset.price),assemblyOption:row.type==='tool'?assemblyCode(selectedProduct):c.dataset.setupOption,assemblyAmount:row.type==='tool'?assemblyAmount(selectedProduct):Number(c.dataset.setup||0),setupSelected:row.setupSelected,setupAmount:row.setupSelected?(row.type==='tool'?assemblyAmount(selectedProduct):Number(c.dataset.setup||0)):0,shipping:null});
  });
- localStorage.setItem('wepCart',JSON.stringify(cart));
+ buildStorage.setItem('wepCart',JSON.stringify(cart));
  renderSavedCartSubtotal();
  $('options-message').textContent='Package saved in cart. Review your quote for setup, freight, delivery and payment totals.';
 }
 function renderSavedCartSubtotal(){
  const target=$('wep-cart-subtotal');if(!target)return;
  try{
-  const rows=JSON.parse(localStorage.getItem('wepCart')||'[]');if(!Array.isArray(rows))throw Error('Invalid cart');
+  const rows=JSON.parse(buildStorage.getItem('wepCart')||'[]');if(!Array.isArray(rows))throw Error('Invalid cart');
   const total=rows.reduce((sum,row)=>{
    const qty=Number(row.quantity),price=Number(row.itemPrice);if(!Number.isFinite(qty)||qty<0||!Number.isFinite(price)||price<0)throw Error('Invalid cart amount');
    const code=clean(row.assemblyOption).toUpperCase();
@@ -431,7 +432,7 @@ function wireSummary(basePrice){
  const checks=[...document.querySelectorAll('.option-check')];
  if(quoteEnabled()){
   try{
-   const saved=JSON.parse(localStorage.getItem('wepCart')||'[]').filter(row=>row.packageId===selectedBrand.toUpperCase()+':'+sku);
+   const saved=JSON.parse(buildStorage.getItem('wepCart')||'[]').filter(row=>row.packageId===selectedBrand.toUpperCase()+':'+sku);
    const main=saved.find(row=>row.type==='tool');if(main){$('equipment-qty').value=main.quantity;const choice=setupChoice('tool',sku);if(choice&&typeof main.setupSelected==='boolean')choice.checked=main.setupSelected;}
    saved.forEach(row=>{
     const check=checks.find(c=>c.dataset.type===row.type&&c.dataset.sku===row.sku);
@@ -489,7 +490,7 @@ function renderImplementBrowser(items){
   return '<button type="button" class="wep-implement-tile" data-implement-group="'+index+'" aria-controls="implement-group-'+index+'" aria-expanded="false"><span class="wep-implement-tile-image">'+tileImage+'</span><strong>'+esc(group.name)+'</strong><span>'+group.items.length+' '+(group.items.length===1?'Option':'Options')+'</span></button>';
  }).join('')+'</div><div id="implement-group-detail" hidden><button id="all-implement-groups" class="back" type="button">← All Implements</button><div class="wep-option-panel" id="wep-panel-implement">'+groups.map((group,index)=>'<div class="wep-implement-group" id="implement-group-'+index+'" hidden>'+optionSection(group.name+' ('+group.items.length+' '+(group.items.length===1?'Option':'Options')+')',group.items,'attachment')+'</div>').join('')+'</div></div>'+(!groups.length?'<p>No compatible implements are currently listed for this equipment.</p>':'')+'<footer class="wep-implements-footer"><span data-implement-summary></span><a class="wep-return-quote" href="'+esc(quoteUrl.href)+'">Return to Quote <span data-implement-count></span></a></footer><p class="note">Tax and payment pricing are updated when you return to your quote. Implement factory freight is confirmed separately.</p>';
  let opener=null;
- function readCart(){const rows=JSON.parse(localStorage.getItem('wepCart')||'[]');if(!Array.isArray(rows))throw Error('Your quote could not be read. Return to Quote and try again.');return rows;}
+ function readCart(){const rows=JSON.parse(buildStorage.getItem('wepCart')||'[]');if(!Array.isArray(rows))throw Error('Your quote could not be read. Return to Quote and try again.');return rows;}
  function refresh(){
   try{
    const saved=readCart().filter(row=>row.packageId===packageId&&row.type==='attachment'&&items.some(item=>clean(item.SKU)===clean(row.sku)));
@@ -521,7 +522,7 @@ function renderImplementBrowser(items){
     const item=items.find(row=>clean(row.SKU)===button.dataset.sku);if(!item)throw Error('This implement needs store confirmation.');
     const input=document.querySelector('[data-qty="'+CSS.escape(item.SKU)+'"]'),quantity=Number(input?.value);
     if(!Number.isInteger(quantity)||quantity<1||quantity>20)throw Error('Choose a whole quantity from 1 to 20.');
-    const rawCart=localStorage.getItem('wepCart'),rawDraft=sessionStorage.getItem(draftKey),cart=readCart();
+    const rawCart=buildStorage.getItem('wepCart'),rawDraft=sessionStorage.getItem(draftKey),cart=readCart();
     if(!cart.some(row=>row.packageId===packageId&&row.type==='tool'&&clean(row.sku)===sku))throw Error('Return to Quote to save your equipment before adding implements.');
     const index=cart.findIndex(row=>row.packageId===packageId&&row.type==='attachment'&&clean(row.sku)===clean(item.SKU)),previous=index<0?null:cart[index];
     const total=Number(previous?.quantity||0)+quantity;if(!Number.isInteger(total)||total>20)throw Error('The total quantity for this implement must be 20 or less.');
@@ -534,8 +535,8 @@ function renderImplementBrowser(items){
      const entry={brandId:row.brandId,type:'attachment',sku:row.sku,quantity:total,setupSelected:selected,inventoryId:''};
      const n=draft.items.findIndex(x=>x.type==='attachment'&&x.sku===row.sku);if(n<0)draft.items.push(entry);else draft.items[n]=entry;draft.updated=Date.now();
     }
-    try{localStorage.setItem('wepCart',JSON.stringify(cart));if(draft)sessionStorage.setItem(draftKey,JSON.stringify(draft));}
-    catch(error){if(rawCart===null)localStorage.removeItem('wepCart');else localStorage.setItem('wepCart',rawCart);if(rawDraft!==null)sessionStorage.setItem(draftKey,rawDraft);throw Error('This implement could not be saved. Please try again.');}
+    try{buildStorage.setItem('wepCart',JSON.stringify(cart));if(draft)sessionStorage.setItem(draftKey,JSON.stringify(draft));}
+    catch(error){if(rawCart===null)buildStorage.removeItem('wepCart');else buildStorage.setItem('wepCart',rawCart);if(rawDraft!==null)sessionStorage.setItem(draftKey,rawDraft);throw Error('This implement could not be saved. Please try again.');}
     $('implement-message').textContent=quantity+' × '+row.productName+' added to your quote.';refresh();
    }catch(error){$('implement-message').textContent=error.message;}
   });
@@ -618,9 +619,9 @@ async function init(){
      ...compatibleRows(parts,nextSku,next).filter(WEPBuildBuy.usable).map(row=>({type:'part',row})),
      ...nextContext.batteries.map(row=>({type:'battery',row})),...nextContext.chargers.map(row=>({type:'charger',row}))
     ];
-    const cart=JSON.parse(localStorage.getItem('wepCart')||'[]');
+    const cart=JSON.parse(buildStorage.getItem('wepCart')||'[]');
     const plan=WEPFactoryOptions.transfer({snapshot,current:product,next,brand:selectedBrand,cart,allowed});
-    WEPFactoryOptions.persist(plan,localStorage,sessionStorage);
+    WEPFactoryOptions.persist(plan,buildStorage,sessionStorage);
     const url=new URL(location.href);url.searchParams.set('sku',nextSku);url.searchParams.set('brand',selectedBrand);url.searchParams.delete('unit');url.searchParams.delete('inventoryId');url.hash='';
     window.WEPBuildConfiguration.leave();location.replace(url.href);
    }});
@@ -634,3 +635,4 @@ async function init(){
 }
 init();
 })();
+

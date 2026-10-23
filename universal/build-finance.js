@@ -1,6 +1,7 @@
 /* WEP_BUILD_FINANCE_V1 - all money and finance rules come from the existing quote service. */
 (function(){
  'use strict';
+ const buildStorage=window.WEPDealerOrderEdit?.storage||window.localStorage;
  const app=document.getElementById('app');if(!app)return;
  const query=new URLSearchParams(location.search),local=['localhost','127.0.0.1','[::1]'].includes(location.hostname);
  const api=local&&query.get('api')==='local'?'http://127.0.0.1:8787':'https://westendpower-configurator-api.westendpower-nm.workers.dev';
@@ -79,7 +80,7 @@
  function note(text,cls='wep-build-finance-note'){const p=document.createElement('p');p.className=cls;p.textContent=text;return p;}
  function status(text,preserveOffers=false){if(!output)return;panel.hidden=false;if(!preserveOffers){output.replaceChildren(note(text));output.setAttribute('aria-busy','true');}}
  function field(label,value){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;row.append(dt,dd);return row;}
- function cart(){try{const rows=JSON.parse(localStorage.getItem('wepCart')||'[]');return Array.isArray(rows)?rows:[];}catch(_error){return [];}}
+ function cart(){try{const rows=JSON.parse(buildStorage.getItem('wepCart')||'[]');return Array.isArray(rows)?rows:[];}catch(_error){return [];}}
  function selection(){
   const link=app.querySelector('.wep-spec-link');if(!link)throw Error('Choose equipment before reviewing financing.');
   const params=new URL(link.href,location.href).searchParams,brandId=clean(params.get('brand')||query.get('brand')).toUpperCase(),sku=clean(params.get('sku')||query.get('sku'));
@@ -996,11 +997,11 @@
    button.classList.toggle('wep-remove-option',choice.checked);button.setAttribute('aria-label',(choice.checked?'Remove ':'Add to Cart: ')+(choice.dataset.name||button.closest('.card')?.querySelector('h3')?.textContent||choice.dataset.sku));
   }
  }
- function writeCart(rows){const oldValue=localStorage.getItem('wepCart');const value=JSON.stringify(rows);localStorage.setItem('wepCart',value);window.dispatchEvent(new StorageEvent('storage',{key:'wepCart',oldValue,newValue:value,storageArea:localStorage}));}
+ function writeCart(rows){const oldValue=buildStorage.getItem('wepCart');const value=JSON.stringify(rows);buildStorage.setItem('wepCart',value);window.dispatchEvent(new StorageEvent('storage',{key:'wepCart',oldValue,newValue:value,storageArea:window.localStorage}));}
  let emptyUndo=null;
  function clearCart(){
   try{
-   const raw=localStorage.getItem('wepCart')||'[]',rows=JSON.parse(raw);if(!Array.isArray(rows))throw Error('Your cart could not be read. Use View Cart before clearing it.');
+   const raw=buildStorage.getItem('wepCart')||'[]',rows=JSON.parse(raw);if(!Array.isArray(rows))throw Error('Your cart could not be read. Use View Cart before clearing it.');
    if(!rows.length&&emptyUndo){const message=document.getElementById('options-message');if(message)message.textContent='Your cart is already empty. Undo Empty Cart is still available.';return;}
    const drafts={};for(let i=0;i<sessionStorage.length;i++){const key=sessionStorage.key(i);if(key?.startsWith('wepBuildDraft:')||key==='wepBuildCheckoutChoices')drafts[key]=sessionStorage.getItem(key);}
    emptyUndo={raw,drafts,confirmed:paymentConfirmed,payment:paymentSelect.value,preferred,controls:[...app.querySelectorAll('.option-check,.qty,.setup-choice')].map(input=>({input,value:input.value,checked:input.checked}))};
@@ -1016,7 +1017,7 @@
  function undoEmptyCart(){
   try{
    if(!emptyUndo)return;
-   if((localStorage.getItem('wepCart')||'[]')!=='[]')throw Error('Your cart has new items. Undo is unavailable so those items are preserved.');
+   if((buildStorage.getItem('wepCart')||'[]')!=='[]')throw Error('Your cart has new items. Undo is unavailable so those items are preserved.');
    const previous=emptyUndo;emptyUndo=null;cartPaused=false;cartResetting=true;writeCart(JSON.parse(previous.raw));
    for(const [key,value] of Object.entries(previous.drafts))sessionStorage.setItem(key,value);
    for(const row of previous.controls)if(row.input.isConnected){row.input.value=row.value;row.input.checked=row.checked;}
@@ -1030,7 +1031,7 @@
   const choice=optionChoice(button);if(!choice||!['attachment','accessory','part'].includes(choice.dataset.type)||!choice.checked){queueMicrotask(syncOptionButtons);return;}
   event.preventDefault();event.stopImmediatePropagation();
   try{
-   const params=new URL(app.querySelector('.wep-spec-link').href,location.href).searchParams,s={brandId:clean(params.get('brand')).toUpperCase(),sku:clean(params.get('sku'))},rows=JSON.parse(localStorage.getItem('wepCart')||'[]');if(!s.brandId||!s.sku||!Array.isArray(rows))throw Error('Your cart could not be read. Use View Cart to review it.');
+   const params=new URL(app.querySelector('.wep-spec-link').href,location.href).searchParams,s={brandId:clean(params.get('brand')).toUpperCase(),sku:clean(params.get('sku'))},rows=JSON.parse(buildStorage.getItem('wepCart')||'[]');if(!s.brandId||!s.sku||!Array.isArray(rows))throw Error('Your cart could not be read. Use View Cart to review it.');
    // Remove only this package's line; another equipment package may use the same option.
    writeCart(rows.filter(row=>!(clean(row.brandId).toUpperCase()===s.brandId&&row.packageId===s.brandId+':'+s.sku&&row.type===choice.dataset.type&&clean(row.sku)===choice.dataset.sku)));
    choice.checked=false;choice.dispatchEvent(new Event('change',{bubbles:true}));syncOptionButtons();remember();
@@ -1084,3 +1085,4 @@
  window.addEventListener('resize',()=>syncPaymentCards());
  new MutationObserver(()=>{mount();syncOptionButtons();syncPaymentCards();}).observe(app,{childList:true,subtree:true});mount();syncOptionButtons();syncPaymentCards();
 })();
+
