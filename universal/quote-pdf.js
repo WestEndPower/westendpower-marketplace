@@ -109,7 +109,7 @@
   if(extra.length){page=doc.addPage([612,792]);header();y=112;draw('ADDITIONAL QUOTE DETAILS',left,y,12,bold);y+=25;
    for(const text of extra)for(const row of wrap(text,width,10)){if(y+15>730){page=doc.addPage([612,792]);header();y=112;}draw(row,left,y,10);y+=14;}
   }
-  const pages=doc.getPages();pages.forEach((p,i)=>{page=p;line(left,right,744);const center=(text,top,size=8)=>draw(text,(612-bold.widthOfTextAtSize(text,size))/2,top,size,bold);center('NEW MILFORD - 265 Danbury Rd., New Milford, CT 06776 - (860) 355-8722 - sales@westendpower.com',751,7.7);center('DANBURY - 56 Beaver Brook Rd., Danbury, CT 06810 - (203) 792-3030 - dawepe@westendpower.com',763,7.7);center('westendpower.com',775,8);draw((i+1)+' / '+pages.length,558,775,7);});
+  const pages=doc.getPages();pages.forEach((p,i)=>{page=p;line(left,right,744);const center=(text,top,size=8)=>draw(text,(612-bold.widthOfTextAtSize(text,size))/2,top,size,bold);center('NEW MILFORD - 265 Danbury Rd., New Milford, CT 06776 - (860) 355-8722 - sales@westendpower.com',751,9.7);center('DANBURY - 56 Beaver Brook Rd., Danbury, CT 06810 - (203) 792-3030 - dawepe@westendpower.com',763,9.7);center('westendpower.com',775,10);draw((i+1)+' / '+pages.length,558,775,7);});
   return doc.save();
  }
  root.WEPQuotePDF={create};if(typeof module!=='undefined'&&module.exports)module.exports=root.WEPQuotePDF;
