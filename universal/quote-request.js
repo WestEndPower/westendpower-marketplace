@@ -3,12 +3,14 @@
  'use strict';
  const D=root.WEPQuoteDocument||require('./quote-document.js'),clean=v=>String(v??'').trim();
  const fields=['firstName','lastName','companyName','email','phone','cell','address1','address2','city','state','zip','notes'];
- function required(fulfillment){return ['firstName','lastName',...(['DELIVERY','SHIP'].includes(fulfillment)?['address1','city','state','zip']:[])];}
+ function required(fulfillment,c={},checkout=false){return [...(checkout&&!clean(c.companyName)?['firstName','lastName']:[]),...(checkout||fulfillment==='SHIP'?['address1','city','state','zip']:[]),...(checkout&&!clean(c.phone)&&!clean(c.cell)?['phone']:[])];}
  function addressKey(c){return JSON.stringify(['address1','address2','city','state','zip'].map(k=>clean(c?.[k]).toUpperCase()));}
- function validate(c,q){
-  for(const key of required(q.fulfillment))if(!clean(c[key]))return {field:key,message:'Complete the required customer details.'};
+ function validate(c,q,options={}){
+  const checkout=options.checkout===true;
+  if(checkout&&!clean(c.companyName)&&(!clean(c.firstName)||!clean(c.lastName)))return {field:!clean(c.firstName)?'firstName':'lastName',message:'Enter both first and last name, or a business name.'};
+  for(const key of required(q.fulfillment,c,checkout))if(!clean(c[key]))return {field:key,message:'Complete the required customer details.'};
   if(clean(c.email)&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email))return {field:'email',message:'Enter a valid email address.'};
-  if(!clean(c.phone)&&!clean(c.cell))return {field:'phone',message:'Enter a Phone / Cell or Business Phone number.'};
+  if(!clean(c.phone)&&!clean(c.cell)&&(checkout||!clean(c.email)))return {field:'phone',message:checkout?'Enter a Phone / Cell or Business Phone number.':'Enter a phone number or email address so we can respond.'};
   const digits=clean(c.phone).replace(/\D/g,'');if(clean(c.phone)&&digits.length!==10&&!(digits.length===11&&digits[0]==='1'))return {field:'phone',message:'Enter a valid phone number.'};
   if(clean(c.cell)){const cellDigits=clean(c.cell).replace(/\D/g,'');if(cellDigits.length!==10&&!(cellDigits.length===11&&cellDigits[0]==='1'))return {field:'cell',message:'Enter a valid business phone number.'};}
   if(c.state&&!/^[A-Za-z]{2}$/.test(c.state))return {field:'state',message:'Enter a two-letter state.'};
@@ -28,7 +30,7 @@
   const notes=[c.notes,'CUSTOMER QUOTE REQUEST - please confirm pricing and availability. No payment collected and no inventory reserved.',D.text(snapshot)].filter(Boolean).join('\n\n');
   return {
    quoteNumber:reference,configurator:s.selection.brandId,source:'Marketplace Builder',action:'Customer Quote Request',
-   customer:name,business:c.companyName,phone:clean(c.phone)||clean(c.cell),altPhone:clean(c.phone)?clean(c.cell):'',email:c.email,address:[street,cityStateZip].filter(Boolean).join('\n'),customerDetails:details,
+   customer:name||c.companyName||clean(c.phone)||clean(c.cell)||clean(c.email),business:c.companyName,phone:clean(c.phone)||clean(c.cell),altPhone:clean(c.phone)?clean(c.cell):'',email:c.email,address:[street,cityStateZip].filter(Boolean).join('\n'),customerDetails:details,
    delivery:D.fulfillmentLabel(snapshot),deliveryDetails:{...details,street:[ship.address1,ship.address2].filter(Boolean).join(', '),cityStateZip:[ship.city,ship.state,ship.zip].filter(Boolean).join(', ')},
    payment:D.paymentLabel(snapshot),paymentProgram:snapshot.plans.map(p=>p.name+' - '+p.apr+'% APR / '+p.termMonths+' months').join('; '),
    // Payment preferences are estimates, never payments received or deposits.
