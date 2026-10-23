@@ -41,7 +41,7 @@
   function deliveryInfo(){
    if(s.fulfillment==='SHIP')return {...s.customer,...s.destination,firstName:s.customer.firstName,lastName:s.customer.lastName,companyName:s.customer.companyName,phone:s.customer.phone,cell:s.customer.cell,email:s.customer.email};
    if(s.fulfillment==='DELIVERY')return {...s.customer,city:s.customer.city||s.deliveryTown,state:s.customer.state||s.deliveryState,zip:s.customer.zip||s.zip};
-   const nm=s.fulfillment==='NEW_MILFORD';return {firstName:nm?'Pickup - New Milford':'Pickup - Danbury',companyName:'West End Power Equipment',address1:nm?'265 Danbury Road':'56 Beaver Brook Road',city:nm?'New Milford':'Danbury',state:'CT',zip:nm?'06776':'06810',phone:nm?'(860) 355-8722':'(203) 792-3030',email:nm?'sales@westendpower.com':'dawepe@westendpower.com'};
+   const nm=s.fulfillment==='NEW_MILFORD';return {firstName:nm?'Pickup - New Milford':'Pickup - Danbury'};
   }
   const notes=wrap(s.customer.notes||'',470,9);if(notes.length>1)extra.push('Customer notes: '+s.customer.notes);
   const widths=[25,68,247,72,72,72],labels=['QTY','SKU','DESCRIPTION','MSRP','SALE PRICE','TOTAL'];
