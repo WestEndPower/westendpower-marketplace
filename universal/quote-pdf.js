@@ -45,7 +45,7 @@
   }
   const notes=wrap(s.customer.notes||'',470,9);if(notes.length>1)extra.push('Customer notes: '+s.customer.notes);
   const widths=[25,68,247,72,72,72],labels=['QTY','SKU','DESCRIPTION','MSRP','SALE PRICE','TOTAL'];
-  function tableHeader(){let x=left;page.drawRectangle({x:left,y:792-tableTop-20,width,height:20,color:red});labels.forEach((label,i)=>{draw(label,x+4,tableTop+6,7.5,bold,white);x+=widths[i];});return tableTop+20;}
+  function tableHeader(){let x=left;page.drawRectangle({x:left,y:792-tableTop-20,width,height:20,color:red});labels.forEach((label,i)=>{draw(label,i>=3?x+widths[i]-4-bold.widthOfTextAtSize(label,9):x+4,tableTop+5,9,bold,white);x+=widths[i];});return tableTop+20;}
   function makePage(continuation=false){page=doc.addPage([612,792]);header();infoBox(left,'CUSTOMER INFO',s.customer);infoBox(312,'DELIVER TO',deliveryInfo());box(left,211,width,20);draw('Notes / Instructions:',left+6,216,9,bold);fit((notes[0]||'')+(notes.length>1?' (continued)':''),130,216,446,9);if(continuation)draw('Continued',520,83,8);return tableHeader();}
   const totalRows=D.totalRows(s),paymentLines=s.plans.length?[]:[{text:D.paymentLabel(s),size:12,bold:true}];
   for(const plan of s.plans){
@@ -68,14 +68,13 @@
    else draw('Payment information and totals on final item page.',left+7,summaryTop+34,9);
    if(final){const start=summaryTop+9,step=18;totalRows.forEach(([label,value],i)=>{const last=i===totalRows.length-1,top=start+i*step+(last?4:0);if(last)line(319,577,top-3,ink);draw(last?'ESTIMATED TOTAL':label,319,top,last?11:9,last?bold:font,last?red:ink);const text=money(value),size=last?13:10;draw(text,577-bold.widthOfTextAtSize(text,size),top,size,bold,last?red:ink);});}
    else draw('Continued on next page',320,summaryTop+12,10,bold);
-   draw('Item totals exclude installation; installation is included in the totals.',left,716,8);
-   draw('Quote only. Does not reserve equipment. Confirm availability and final pricing with the store.',left,728,8);
+   draw('We will confirm pricing and availability and contact you if there are any discrepancies.',left,728,8);
   }
   const prepared=s.lines.map(item=>{
-   const sku=wrap(item.sku,60,7.5);
-   const description=wrap(item.productName,239,9,bold);if(item.freightNote)description.push(...wrap(item.freightNote,239,8));
+   const sku=wrap(item.sku,60,9);
+   const description=wrap(item.productName,239,9);if(item.freightNote)description.push(...wrap(item.freightNote,239,9));
    const cells=[[String(item.quantity)],sku,description,wrap(money(item.regularUnitPrice),64),wrap(money(item.unitPrice),64),wrap(money(item.itemTotal),64)];
-   return {cells,height:Math.max(18,Math.max(...cells.map(c=>c.length))*9+4)};
+   return {cells,height:Math.max(18,Math.max(...cells.map(c=>c.length))*11+4)};
   });
   let y=makePage(),itemPages=[];
   function endItems(final){while(y+18<=tableBottom){let x=left;widths.forEach(w=>{box(x,y,w,18);x+=w;});y+=18;}summary(final);itemPages.push(page);}
@@ -83,8 +82,8 @@
    // Normal items stay together. Oversized descriptions continue with repeated headings.
    if(row.height<=tableBottom-tableTop-20&&y+row.height>tableBottom){endItems(false);y=makePage(true);}
    let offset=0,count=Math.max(...row.cells.map(c=>c.length));
-   while(offset<count){if(y+18>tableBottom){endItems(false);y=makePage(true);}const take=Math.min(count-offset,Math.max(1,Math.floor((tableBottom-y-4)/9))),height=Math.max(18,take*9+4);let x=left;
-    row.cells.forEach((lines,col)=>{box(x,y,widths[col],height);lines.slice(offset,offset+take).forEach((text,n)=>draw(text,x+4,y+3+n*9,col===1?7.5:col===2&&offset+n>0?8:9,col===2&&offset+n===0?bold:font));x+=widths[col];});y+=height;offset+=take;
+   while(offset<count){if(y+18>tableBottom){endItems(false);y=makePage(true);}const take=Math.min(count-offset,Math.max(1,Math.floor((tableBottom-y-4)/11))),height=Math.max(18,take*11+4);let x=left;
+    row.cells.forEach((lines,col)=>{box(x,y,widths[col],height);lines.slice(offset,offset+take).forEach((text,n)=>draw(text,col>=3?x+widths[col]-4-font.widthOfTextAtSize(text,9):x+4,y+3+n*11,9,font));x+=widths[col];});y+=height;offset+=take;
    }
   }endItems(true);
   // Keep long notes, confirmation messages, and financing readable without squeezing the fixed form.
