@@ -62,13 +62,27 @@
   }
   for(const r of s.rebates||[])paymentLines.push({text:r.name+' - '+money(r.amount)+' - '+r.status+(r.endDate?' - Ends '+r.endDate:'')});
   const expandedPayment=paymentLines.flatMap(row=>wrap(row.text,256,row.size||8,row.bold?bold:font).map(text=>({...row,text})));
+  const sumPlans=key=>s.plans.every(p=>typeof p[key]==='number'&&Number.isFinite(p[key]))?s.plans.reduce((sum,p)=>sum+p[key],0):null;
+  const minimumDown=s.plans.length?(s.plans.every(p=>typeof p.minimumRequiredDown==='number')?sumPlans('minimumRequiredDown'):null):null;
+  const financed=s.plans.length?sumPlans('principalWithFees'):null;
+  const preferred=D.paymentLabel(s);
   function summary(final){
    box(left,summaryTop,boxWidth,165);box(312,summaryTop,boxWidth,165);draw('PAYMENT INFORMATION',left+7,summaryTop+7,11,bold);line(left+6,left+266,summaryTop+25);
-   if(final){let y=summaryTop+31;for(const row of expandedPayment){const h=(row.size||8)+2;if(y+h>summaryTop+157){draw('Additional payment details follow.',left+7,summaryTop+150,8,bold);break;}draw(row.text,left+7,y,row.size||8,row.bold?bold:font);y+=h;}}
+   if(final){
+    const paymentRows=[['Total:',money(s.totals.total)],['Minimum Down Payment:',s.plans.length?money(minimumDown):'Not applicable'],['Amount Paid:','$________________'],['Balance Due:','$________________'],['Amount Financed:',s.plans.length?money(financed):'Not applicable']];
+    paymentRows.forEach(([label,value],i)=>{const top=summaryTop+31+i*12;draw(label,left+7,top,9);draw(value,left+265-font.widthOfTextAtSize(value,9),top,9);});
+    line(left, left+boxWidth,summaryTop+96);
+    draw('CUSTOMER PREFERRED PAYMENT OPTION',left+7,summaryTop+102,8,bold);
+    draw(preferred,left+7,summaryTop+114,9);
+    if(s.plans.length===1){const p=s.plans[0];draw(p.apr+'% APR / '+p.termMonths+' months',left+7,summaryTop+126,9);draw(money(p.monthlyPayment)+' / month (estimated)',left+7,summaryTop+138,11,bold);draw(p.rebateCompatible?'Compatible customer rebates included':'In lieu of customer rebates',left+7,summaryTop+153,7);}
+    else if(s.plans.length>1){draw('Selected financing programs and payments follow.',left+7,summaryTop+130,8);draw('Subject to credit approval.',left+7,summaryTop+145,8);}
+   }
    else draw('Payment information and totals on final item page.',left+7,summaryTop+34,9);
    if(final){const start=summaryTop+9,step=18;totalRows.forEach(([label,value],i)=>{const last=i===totalRows.length-1,top=start+i*step+(last?4:0);if(last)line(319,577,top-3,ink);draw(last?'ESTIMATED TOTAL':label,319,top,last?11:9,last?bold:font,last?red:ink);const text=money(value),size=last?13:10;draw(text,577-bold.widthOfTextAtSize(text,size),top,size,bold,last?red:ink);});}
    else draw('Continued on next page',320,summaryTop+12,10,bold);
-   draw('We will confirm pricing and availability and contact you if there are any discrepancies.',left,728,8);
+   if(final&&s.plans.length===1){const p=s.plans[0],details=[];if(p.requestedDownPayment>0)details.push('Selected down payment: '+money(p.requiredDown));if(p.applicationFee>0)details.push('Application fee: '+money(p.applicationFee)+' (included in amount financed)');if(p.minimumCreditScore)details.push('Minimum credit score: '+p.minimumCreditScore);if(details.length)draw(details.join(' | '),left,712,7);draw('Financing subject to credit approval. Final lender terms confirmed by the store.',left,720,7);}
+   draw('Changing your payment option may change discounts, rebates and the total.',left, s.plans.length?728:716,7);
+   draw('We will confirm pricing and availability and contact you if there are any discrepancies.',left,s.plans.length?736:728,7);
   }
   const prepared=s.lines.map(item=>{
    const sku=wrap(item.sku,60,9);
@@ -88,7 +102,7 @@
   }endItems(true);
   // Keep long notes, confirmation messages, and financing readable without squeezing the fixed form.
   let usedPaymentHeight=0;for(const row of expandedPayment)usedPaymentHeight+=(row.size||8)+2;
-  if(usedPaymentHeight>126)extra.push('Payment details: '+expandedPayment.map(r=>r.text).join('\n'));
+  if(s.plans.length>1||(s.rebates||[]).length)extra.push('Payment details: '+expandedPayment.map(r=>r.text).join('\n'));
   extra.push(...s.issues.map(v=>'Needs confirmation: '+v));
   if(extra.length){page=doc.addPage([612,792]);header();y=112;draw('ADDITIONAL QUOTE DETAILS',left,y,12,bold);y+=25;
    for(const text of extra)for(const row of wrap(text,width,10)){if(y+15>730){page=doc.addPage([612,792]);header();y=112;}draw(row,left,y,10);y+=14;}
