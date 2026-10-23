@@ -57,21 +57,24 @@
   const sumPlans=key=>s.plans.every(p=>typeof p[key]==='number'&&Number.isFinite(p[key]))?s.plans.reduce((sum,p)=>sum+p[key],0):null;
   const minimumDown=s.plans.length?(s.plans.every(p=>typeof p.minimumRequiredDown==='number')?sumPlans('minimumRequiredDown'):null):null;
   const financed=s.plans.length?sumPlans('principalWithFees'):null;
+  const selectedDown=s.paymentMethod==='finance'?sumPlans('requiredDown'):0;
+  const amountPaid=0;
+  const balanceDue=s.paymentMethod==='finance'?selectedDown:s.totals.total;
   const preferred=({cash:'Cash / Bank Check',credit:'Credit Card',finance:'Financing'})[s.paymentMethod];
   function summary(final){
    box(left,summaryTop,boxWidth,165);box(312,summaryTop,boxWidth,165);draw('PAYMENT INFORMATION',left+7,summaryTop+7,11,bold);line(left+6,left+266,summaryTop+25);
    if(final){
-    const paymentRows=[['Amount Paid:','$________________'],['Balance Due:','$________________'],['Amount Financed:',s.plans.length?money(financed):'Not applicable']];
-    paymentRows.forEach(([label,value],i)=>{const top=summaryTop+31+i*16;draw(label,left+7,top,9);draw(value,left+265-font.widthOfTextAtSize(value,9),top,9);});
-    line(left,left+boxWidth,summaryTop+84);
-    draw('SELECTED PAYMENT OPTION',left+7,summaryTop+91,9,bold);
-    draw(preferred,left+7,summaryTop+104,9);
-    if(s.plans.length<=2){s.plans.forEach((p,i)=>{const top=summaryTop+116+i*24;draw('Rate: '+p.apr+'% APR | Term: '+p.termMonths+' months',left+7,top,9);draw('Estimated monthly payment: '+money(p.monthlyPayment),left+7,top+11,10);});}
-    else draw('Rates, terms and estimated monthly payments follow.',left+7,summaryTop+120,8);
+    const paymentRows=[['Payment option:',preferred],['Down Payment:',money(selectedDown)],['Amount Paid:',money(amountPaid)],['Balance Due:',money(balanceDue)],['Amount Financed:',s.paymentMethod==='finance'?money(financed):money(0)]];
+    paymentRows.forEach(([label,value],i)=>{const top=summaryTop+31+i*13;draw(label,left+7,top,9);draw(value,left+265-font.widthOfTextAtSize(value,9),top,9);});
+    if(s.paymentMethod==='finance'){
+     line(left,left+boxWidth,summaryTop+101);
+     if(s.plans.length<=2){s.plans.forEach((p,i)=>{const top=summaryTop+112+i*24;draw('Rate: '+p.apr+'% APR | Term: '+p.termMonths+' months',left+7,top,9);draw('Estimated monthly payment: '+money(p.monthlyPayment),left+7,top+11,10);});}
+     else draw('Rates, terms and estimated monthly payments follow.',left+7,summaryTop+120,8);
+    }
    }
    else draw('Payment information and totals on final item page.',left+7,summaryTop+34,9);
    if(final){const start=summaryTop+9,step=totalRows.length>7?16:18;totalRows.forEach(([label,value],i)=>{const last=i===totalRows.length-1,top=start+i*step+(last?4:0);if(last)line(319,577,top-3,ink);draw(last?'ESTIMATED TOTAL':label,319,top,last?11:9,last?bold:font,last?red:ink);const text=money(value),size=last?13:10;draw(text,577-bold.widthOfTextAtSize(text,size),top,size,bold,last?red:ink);
-     if(last&&s.plans.length){const note='Minimum down payment required: '+money(minimumDown);draw(note,312+(boxWidth-font.widthOfTextAtSize(note,9))/2,top+22,9);}
+     if(last&&s.paymentMethod==='finance'&&minimumDown>0){const note='Minimum down payment required: '+money(minimumDown);draw(note,312+(boxWidth-font.widthOfTextAtSize(note,9))/2,top+22,9);}
     });}
    else draw('Continued on next page',320,summaryTop+12,10,bold);
    draw('Changing your payment option may change discounts, rebates and the total.',left,716,7);
