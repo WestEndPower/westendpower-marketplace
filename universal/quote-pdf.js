@@ -36,7 +36,7 @@
   function infoBox(x,title,c){
    box(x,104,boxWidth,100);draw(title,x+7,110,11,bold);
    const phone=safe(c.phone||'');fit(phone,x+265-Math.min(129,font.widthOfTextAtSize(phone,10)),110,129,10);line(x+6,x+266,125);
-   const info=[[c.firstName,c.lastName].filter(Boolean).join(' '),c.companyName||'', [c.address1,c.address2].filter(Boolean).join(' '),[c.city,c.state,c.zip].filter(Boolean).join(' - '),...(c.cell?['Cell: '+c.cell]:[]),c.email||''];info.forEach((v,i)=>fit(v,x+7,129+i*(c.cell?12:14),258,c.cell?10.5:11.5,i===0?bold:font));
+   const info=[[c.firstName,c.lastName].filter(Boolean).join(' '),c.companyName||'', [c.address1,c.address2].filter(Boolean).join(' '),[c.city,c.state,c.zip].filter(Boolean).join(' - '),...(c.cell?['Business Phone: '+c.cell]:[]),c.email||''];info.forEach((v,i)=>fit(v,x+7,129+i*(c.cell?12:14),258,c.cell?10.5:11.5,i===0?bold:font));
   }
   function deliveryInfo(){
    if(s.fulfillment==='SHIP')return {...s.customer,...s.destination,firstName:s.customer.firstName,lastName:s.customer.lastName,companyName:s.customer.companyName,phone:s.customer.phone,cell:s.customer.cell,email:s.customer.email};
