@@ -71,12 +71,12 @@
      line(left,left+boxWidth,summaryTop+101);
      const centered=(text,top,f=font)=>draw(text,left+(boxWidth-f.widthOfTextAtSize(text,9))/2,top,9,f);
      if(s.plans.length<=2){s.plans.forEach((p,i)=>{
-      const top=summaryTop+(s.plans.length===1?120:107+i*28),step=s.plans.length===1?14:9;
+      const top=summaryTop+(s.plans.length===1?112.5:104+i*27),step=s.plans.length===1?14:9;
       centered('Selected Financing Option:',top,bold);
       centered(Number(p.apr).toFixed(2)+'% for '+p.termMonths+' Months',top+step);
       centered(money(p.monthlyPayment)+' Estimated Monthly Payment',top+step*2);
      });}
-     else{centered('Selected Financing Option:',summaryTop+120,bold);centered('Rates, terms and estimated payments',summaryTop+134);centered('See additional financing details',summaryTop+148);}
+     else{centered('Selected Financing Option:',summaryTop+112.5,bold);centered('Rates, terms and estimated payments',summaryTop+126.5);centered('See additional financing details',summaryTop+140.5);}
     }
    }
    else draw('Payment information and totals on final item page.',left+7,summaryTop+34,9);
