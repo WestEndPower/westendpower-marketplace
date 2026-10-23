@@ -66,7 +66,7 @@
    if(final){
     const downLabel=minimumDown>0?(selectedDown>minimumDown+.005?'Down Payment (Required + Optional):':'Down Payment (Required):'):minimumDown===0&&selectedDown>0?'Down Payment (Optional):':'Down Payment:';
     const paymentRows=[[downLabel,money(selectedDown)],['Amount Paid:',money(amountPaid)],['Balance Due:',money(balanceDue)],['Amount Financed:',s.paymentMethod==='finance'?money(financed):money(0)]];
-    paymentRows.forEach(([label,value],i)=>{const top=summaryTop+31+i*16;draw(label,left+7,top,11);draw(value,left+265-font.widthOfTextAtSize(value,11),top,11);});
+    paymentRows.forEach(([label,value],i)=>{const top=summaryTop+31+i*16;draw(label,left+7,top,10);draw(value,left+265-font.widthOfTextAtSize(value,10),top,10);});
     if(s.paymentMethod==='finance'){
      line(left,left+boxWidth,summaryTop+101);
      const centered=(text,top,f=font)=>draw(text,left+(boxWidth-f.widthOfTextAtSize(text,9))/2,top,9,f);
