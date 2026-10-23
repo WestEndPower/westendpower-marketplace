@@ -8,9 +8,9 @@
  function validate(c,q){
   for(const key of required(q.fulfillment))if(!clean(c[key]))return {field:key,message:'Complete the required customer details.'};
   if(clean(c.email)&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email))return {field:'email',message:'Enter a valid email address.'};
-  if(!clean(c.phone)&&!clean(c.cell))return {field:'phone',message:'Enter either a phone number or a cell number.'};
+  if(!clean(c.phone)&&!clean(c.cell))return {field:'phone',message:'Enter a Phone / Cell or Business Phone number.'};
   const digits=clean(c.phone).replace(/\D/g,'');if(clean(c.phone)&&digits.length!==10&&!(digits.length===11&&digits[0]==='1'))return {field:'phone',message:'Enter a valid phone number.'};
-  if(clean(c.cell)){const cellDigits=clean(c.cell).replace(/\D/g,'');if(cellDigits.length!==10&&!(cellDigits.length===11&&cellDigits[0]==='1'))return {field:'cell',message:'Enter a valid cell phone number.'};}
+  if(clean(c.cell)){const cellDigits=clean(c.cell).replace(/\D/g,'');if(cellDigits.length!==10&&!(cellDigits.length===11&&cellDigits[0]==='1'))return {field:'cell',message:'Enter a valid business phone number.'};}
   if(c.state&&!/^[A-Za-z]{2}$/.test(c.state))return {field:'state',message:'Enter a two-letter state.'};
   if(c.zip&&!/^\d{5}(-\d{4})?$/.test(c.zip))return {field:'zip',message:'Enter a valid ZIP code.'};
   if(['SHIP','DELIVERY'].includes(q.fulfillment)&&!/^\d{5}$/.test(c.zip))return {field:'zip',message:'Enter a five-digit ZIP code for delivery or shipping.'};
