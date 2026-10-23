@@ -64,7 +64,8 @@
   function summary(final){
    box(left,summaryTop,boxWidth,165);box(312,summaryTop,boxWidth,165);draw('PAYMENT INFORMATION',left+7,summaryTop+7,11,bold);line(left+6,left+266,summaryTop+25);
    if(final){
-    const paymentRows=[['Payment option:',preferred],['Down Payment:',money(selectedDown)],['Amount Paid:',money(amountPaid)],['Balance Due:',money(balanceDue)],['Amount Financed:',s.paymentMethod==='finance'?money(financed):money(0)]];
+    const downLabel=minimumDown>0?(selectedDown>minimumDown+.005?'Down Payment (Required + Optional):':'Down Payment (Required):'):minimumDown===0&&selectedDown>0?'Down Payment (Optional):':'Down Payment:';
+    const paymentRows=[...(s.paymentMethod==='finance'?[]:[['Payment option:',preferred]]),[downLabel,money(selectedDown)],['Amount Paid:',money(amountPaid)],['Balance Due:',money(balanceDue)],['Amount Financed:',s.paymentMethod==='finance'?money(financed):money(0)]];
     paymentRows.forEach(([label,value],i)=>{const top=summaryTop+31+i*13;draw(label,left+7,top,9);draw(value,left+265-font.widthOfTextAtSize(value,9),top,9);});
     if(s.paymentMethod==='finance'){
      line(left,left+boxWidth,summaryTop+101);
