@@ -22,7 +22,7 @@
   if(!current?.selection?.items?.length){status.textContent='Wait for the equipment options to load.';return;}
   if(!['cash','credit','finance'].includes(current.selection.paymentMethod)){status.textContent='Choose a payment option before returning.';return;}
   window.opener.postMessage({type:'wep:dealer-build-save',quoteId:seed.quoteId,nonce:seed.nonce,selection:{...current.selection,items:current.selection.items.map(l=>{const old=draft.items.find(x=>x.brandId===l.brandId&&x.type===l.type&&x.sku===l.sku&&x.quantity===l.quantity);return {...l,inventoryId:l.inventoryId||old?.inventoryId||''};})}},seed.returnOrigin);
-  status.textContent='Returned to '+seed.reference+'. Review and save the changes there.';window.opener.focus();
+  status.textContent='Returned to '+seed.reference+'. Review and save the changes there.';window.opener.focus();window.close();
  };
  document.addEventListener('click',e=>{const link=e.target.closest('a[href]');if(link){const url=new URL(link.href,location.href);if(url.origin===location.origin&&/\/(?:product-options|choose-implements)\.html$/i.test(url.pathname)){url.searchParams.set('dealerEdit',seed.nonce);link.href=url.href;}}if(e.target.closest('#wep-build-checkout,#review-package,a[href*="checkout.html"]')){e.preventDefault();e.stopImmediatePropagation();save();}},true);
  document.addEventListener('DOMContentLoaded',()=>{
