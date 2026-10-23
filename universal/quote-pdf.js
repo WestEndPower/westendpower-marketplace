@@ -62,7 +62,7 @@
   const balanceDue=s.paymentMethod==='finance'?selectedDown:s.totals.total;
   const preferred=({cash:'Cash / Bank Check',credit:'Credit Card',finance:'Financing'})[s.paymentMethod];
   function summary(final){
-   box(left,summaryTop,boxWidth,165);box(312,summaryTop,boxWidth,165);draw('PAYMENT',left+7,summaryTop+7,11,bold);if(final)draw(' - '+preferred,left+7+bold.widthOfTextAtSize('PAYMENT',11),summaryTop+7,11);line(left+6,left+266,summaryTop+25);
+   box(left,summaryTop,boxWidth,165);box(312,summaryTop,boxWidth,165);const headingWidth=bold.widthOfTextAtSize('PAYMENT',11),choice=final?' - '+preferred:'',headingX=left+(boxWidth-headingWidth-font.widthOfTextAtSize(choice,11))/2;draw('PAYMENT',headingX,summaryTop+7,11,bold);if(final)draw(choice,headingX+headingWidth,summaryTop+7,11);line(left+6,left+266,summaryTop+25);
    if(final){
     const downLabel=minimumDown>0?(selectedDown>minimumDown+.005?'Down Payment (Required + Optional):':'Down Payment (Required):'):minimumDown===0&&selectedDown>0?'Down Payment (Optional):':'Down Payment:';
     const paymentRows=[[downLabel,money(selectedDown)],['Amount Paid:',money(amountPaid)],['Balance Due:',money(balanceDue)],['Amount Financed:',s.paymentMethod==='finance'?money(financed):money(0)]];
