@@ -80,7 +80,7 @@
     }
    }
    else draw('Payment information and totals on final item page.',left+7,summaryTop+34,9);
-   if(final){const start=summaryTop+9,step=totalRows.length>7?16:18;totalRows.forEach(([label,value],i)=>{const last=i===totalRows.length-1,top=start+i*step+(last?4:0);if(last)line(319,577,top-3,ink);draw(last?'ESTIMATED TOTAL':label,319,top,last?11:9,last?bold:font,last?red:ink);const text=money(value),size=last?13:10;draw(text,577-bold.widthOfTextAtSize(text,size),top,size,bold,last?red:ink);
+   if(final){const start=summaryTop+9,step=totalRows.length>7?16:18;totalRows.forEach(([label,value],i)=>{const last=i===totalRows.length-1,top=start+i*step+(last?4:0);if(last)line(319,577,top-3,ink);draw(last?'ESTIMATED TOTAL':label,319,top,last?12:10,last?bold:font,last?red:ink);const text=money(value),size=last?14:11;draw(text,577-bold.widthOfTextAtSize(text,size),top,size,bold,last?red:ink);
      if(last&&s.paymentMethod==='finance'&&minimumDown>0){const note='Minimum down payment required: '+money(minimumDown);draw(note,312+(boxWidth-font.widthOfTextAtSize(note,9))/2,top+22,9);}
     });}
    else draw('Continued on next page',320,summaryTop+12,10,bold);
