@@ -18,9 +18,9 @@
  function update(){
   const form=$('wep-inline-form');if(!form)return;
   let s;try{s=state();}catch(_){return;}
-  const q=s.quote,shipping=s.selection.fulfillment==='SHIP',delivery=s.selection.fulfillment==='DELIVERY',needed=WEPQuoteRequest.required(s.selection.fulfillment);
+  const q=s.quote,shipping=s.selection.fulfillment==='SHIP',delivery=s.selection.fulfillment==='DELIVERY',needed=WEPQuoteRequest.required(s.selection.fulfillment,customer(),checkoutDetailsRequired);
   form.noValidate=true;
-  if(checkoutDetailsRequired)for(const key of ['address1','city','state','zip'])if(!needed.includes(key))needed.push(key);
+  $('wep-inline-requirements').textContent=checkoutDetailsRequired?'For checkout, enter first and last name or a business name, your address, and at least one phone number. Email and notes are optional. Fields marked * are required.':'For price and availability, enter a phone number or email address. Other details are optional. All fields are optional for printing a quote.';
   if(delivery&&form.elements.namedItem('zip').value!==s.selection.zip)form.elements.namedItem('zip').value=s.selection.zip;
   for(const key of fields){const field=form.elements.namedItem(key);field.required=needed.includes(key);const label=form.querySelector('[data-wep-field-label="'+key+'"]');if(label){const text=(key==='address1'?(shipping?'Billing / shipping address':'Address'):label.dataset.label)+(needed.includes(key)?' *':key==='email'?' (optional)':'');if(label.textContent!==text)label.textContent=text;}}
   form.elements.namedItem('zip').pattern=shipping||delivery?'[0-9]{5}':'[0-9]{5}(-[0-9]{4})?';form.elements.namedItem('zip').maxLength=shipping||delivery?5:10;
@@ -33,7 +33,7 @@
   $('wep-inline-checkout-final').disabled=busy||!q||!s.paymentConfirmed||!addressReady;
   if(received)showReceipt(pending);
  }
- function formMarkup(){return '<h2>Customer information</h2><p class="note">All fields are optional for printing a quote. Fields marked * are required. Enter at least one number: Phone / Cell or Business Phone. Email is optional.</p><p id="wep-inline-mode"></p><form id="wep-inline-form" novalidate><div class="wep-inline-fields">'+[
+ function formMarkup(){return '<h2>Customer information</h2><p class="note" id="wep-inline-requirements">For price and availability, enter a phone number or email address. Other details are optional. All fields are optional for printing a quote.</p><p class="note">We use your information only to respond to your request. We don\'t sell or share it.</p><p id="wep-inline-mode"></p><form id="wep-inline-form" novalidate><div class="wep-inline-fields">'+[
   ['firstName','First name','given-name','text'],['lastName','Last name','family-name','text'],['companyName','Company name','organization','text'],['phone','Phone / Cell','section-contact tel','tel'],['cell','Business Phone','section-business work tel','tel'],['email','Email','email','email'],['address1','Address','street-address','text'],['city','City','address-level2','text'],['state','State','address-level1','text'],['zip','ZIP','postal-code','text']
  ].map(([key,label,auto,type])=>'<label>'+'<span data-wep-field-label="'+key+'" data-label="'+label+'">'+label+'</span>'+'<input name="'+key+'" type="'+type+'" autocapitalize="'+(['firstName','lastName','companyName','address1','city'].includes(key)?'words':'off')+'" autocomplete="'+auto+'" maxlength="'+(key==='state'?2:250)+'"'+(key==='state'?' pattern="[A-Za-z]{2}"':key==='zip'?' inputmode="numeric" pattern="[0-9]{5}(-[0-9]{4})?"':'')+'></label>').join('')+'</div><label class="wep-inline-notes">Notes / special instructions (optional)<textarea name="notes" rows="2" maxlength="2000"></textarea></label><div class="wep-inline-actions"><button type="button" id="wep-inline-print-copy">Print Quote</button><button type="submit" id="wep-inline-submit" disabled>Confirm Price &amp; Availability</button><button type="button" id="wep-inline-checkout-final">Proceed to Checkout</button></div><p id="wep-inline-status" role="status" aria-live="polite"></p><div id="wep-inline-receipt" role="status" hidden></div></form>';}
  function mount(){
@@ -42,7 +42,7 @@
   if(!$('wep-inline-review')){const button=document.createElement('button');button.id='wep-inline-review';button.type='button';button.textContent='Review Quote';button.onclick=()=>{invoice.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});invoice.focus({preventScroll:true});};actions.prepend(button);}
   if(!$('wep-inline-print')){const button=document.createElement('button');button.id='wep-inline-print';button.type='button';button.textContent='Print Quote';button.onclick=printQuote;$('wep-inline-review').after(button);}
   const totals=invoice.querySelector('.wep-itemized-totals');
-  if(totals&&!totals.querySelector('.wep-inline-quote-actions')){const buttons=document.createElement('div');buttons.className='wep-inline-quote-actions';const print=document.createElement('button'),checkout=document.createElement('button');print.type=checkout.type='button';print.textContent='Print Quote';checkout.textContent='Checkout';print.onclick=printQuote;checkout.textContent='Proceed to Checkout';checkout.onclick=()=>{checkoutRequested=true;WEPBuilderCheckout.review();};const confirm=document.createElement('button');confirm.type='button';confirm.textContent='Confirm Price & Availability';confirm.onclick=()=>{checkoutRequested=false;open();};buttons.append(print,confirm,checkout);totals.append(buttons);}
+  if(totals&&!totals.querySelector('.wep-inline-quote-actions')){const buttons=document.createElement('div');buttons.className='wep-inline-quote-actions';const print=document.createElement('button'),checkout=document.createElement('button');print.type=checkout.type='button';print.textContent='Print Quote';checkout.textContent='Checkout';print.onclick=printQuote;checkout.textContent='Proceed to Checkout';checkout.onclick=()=>{checkoutRequested=true;WEPBuilderCheckout.review();};const confirm=document.createElement('button');confirm.type='button';confirm.textContent='Confirm Price & Availability';confirm.onclick=()=>{checkoutRequested=false;checkoutDetailsRequired=false;open();};buttons.append(print,confirm,checkout);totals.append(buttons);}
   for(const group of [actions,totals])if(group&&!group.querySelector('.wep-inline-print-status')){const status=document.createElement('p');status.className='wep-inline-print-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');group.append(status);}
   if(!$('wep-inline-customer')){
    const section=document.createElement('section');section.id='wep-inline-customer';section.className='wep-inline-customer';section.hidden=true;section.innerHTML=formMarkup();invoice.after(section);
@@ -76,7 +76,7 @@
  }
  function verifiedCustomer(){
   const form=$('wep-inline-form');checkoutDetailsRequired=true;update();for(const key of fields){const field=form.elements.namedItem(key);formatField(field);field.setCustomValidity?.('');field.removeAttribute?.('aria-invalid');}remember();
-  const s=fresh(),c=customer(),invalid=WEPQuoteRequest.validate(c,s.quote);
+  const s=fresh(),c=customer(),invalid=WEPQuoteRequest.validate(c,s.quote,{checkout:true});
   if(invalid){const field=form.elements.namedItem(invalid.field);field.setAttribute('aria-invalid','true');field.setCustomValidity(invalid.message);field.reportValidity();throw Error(invalid.message);}
   for(const key of ['address1','city','state','zip'])if(!c[key]){const field=form.elements.namedItem(key);field.setAttribute('aria-invalid','true');field.setCustomValidity('Complete your address before final checkout.');field.reportValidity();throw Error('Complete your address before final checkout.');}
   return {s,c};
@@ -177,6 +177,7 @@
  }
  async function submit(event){
   event.preventDefault();if(busy)return;
+  checkoutDetailsRequired=false;update();
   try{
    const form=$('wep-inline-form');for(const key of fields)formatField(form.elements.namedItem(key));for(const el of form.elements)el.setCustomValidity?.('');
    const s=fresh(),c=customer(),invalid=WEPQuoteRequest.validate(c,s.quote);
