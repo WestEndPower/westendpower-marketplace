@@ -44,7 +44,10 @@
    const nm=s.fulfillment==='NEW_MILFORD';return {firstName:nm?'Pickup - New Milford':'Pickup - Danbury'};
   }
   const notes=wrap(s.customer.notes||'',470,9);if(notes.length>1)extra.push('Customer notes: '+s.customer.notes);
-  const widths=[25,68,247,72,72,72],labels=['QTY','SKU','DESCRIPTION','MSRP','SALE PRICE','TOTAL'];
+  const lineItemSize=9, widths=[25,126,207,66,66,66],labels=['QTY','SKU','DESCRIPTION','MSRP','SALE PRICE','TOTAL'];
+  const freightIssue=value=>/^Additional freight charges apply\./i.test(String(value||''));
+  const hasAdditionalFreight=s.lines.some(item=>item.freightNote)||s.issues.some(freightIssue);
+  const freightSummary="Additional freight may apply. We'll confirm before finalizing your order.";
   function tableHeader(){let x=left;page.drawRectangle({x:left,y:792-tableTop-20,width,height:20,color:red});labels.forEach((label,i)=>{draw(label,i===0||i===3?x+(widths[i]-bold.widthOfTextAtSize(label,9))/2:i>=4?x+widths[i]-4-bold.widthOfTextAtSize(label,9):x+4,tableTop+5,9,bold,white);x+=widths[i];});return tableTop+20;}
   function makePage(continuation=false){page=doc.addPage([612,792]);header();infoBox(left,'CUSTOMER INFO',s.customer);infoBox(312,'Delivery / Pick-Up Location:',deliveryInfo());box(left,211,width,20);draw('Notes / Instructions:',left+6,216,9,bold);fit((notes[0]||'')+(notes.length>1?' (continued)':''),130,216,446,9);if(continuation)draw('Continued',520,83,8);return tableHeader();}
   const totalRows=D.totalRows(s);
@@ -80,17 +83,18 @@
     }
    }
    else draw('Payment information and totals on final item page.',left+7,summaryTop+34,9);
-   if(final){const start=summaryTop+9,step=totalRows.length>7?16:18;totalRows.forEach(([label,value],i)=>{const last=i===totalRows.length-1,top=start+i*step+(last?4:0);if(last)line(319,577,top-3,ink);draw(last?'ESTIMATED TOTAL':label,319,top,last?12:10,last?bold:font,last?red:ink);const text=money(value),size=last?14:11;draw(text,577-bold.widthOfTextAtSize(text,size),top,size,bold,last?red:ink);
+   if(final){const start=summaryTop+9,step=totalRows.length>7||hasAdditionalFreight?16:18;totalRows.forEach(([label,value],i)=>{const last=i===totalRows.length-1,top=start+i*step+(last?4:0);if(last)line(319,577,top-3,ink);draw(last?'ESTIMATED TOTAL':label,319,top,last?12:10,last?bold:font,last?red:ink);const text=money(value),size=last?14:11;draw(text,577-bold.widthOfTextAtSize(text,size),top,size,bold,last?red:ink);
      if(last&&s.paymentMethod==='finance'&&minimumDown>0){const note='Minimum down payment required: '+money(minimumDown);draw(note,312+(boxWidth-font.widthOfTextAtSize(note,9))/2,top+22,9);}
+     if(last&&hasAdditionalFreight){const noteTop=top+22+(s.paymentMethod==='finance'&&minimumDown>0?13:0);wrap(freightSummary,258,8).forEach((text,i)=>draw(text,319,noteTop+i*10,8));}
     });}
    else draw('Continued on next page',320,summaryTop+12,10,bold);
    draw('Changing your payment option may change discounts, rebates and the total.',left,716,7);
    draw('We will confirm pricing and availability and contact you if there are any discrepancies.',left,728,8);
   }
   const prepared=s.lines.map(item=>{
-   const sku=wrap(item.sku,60,9);
-   const description=wrap(item.productName,239,9);if(item.freightNote)description.push(...wrap(item.freightNote,239,9));
-   const cells=[[String(item.quantity)],sku,description,wrap(money(item.regularUnitPrice),64),wrap(money(item.unitPrice),64),wrap(money(item.itemTotal),64)];
+   const sku=wrap(item.sku,widths[1]-8,lineItemSize);
+   const description=wrap(item.productName,widths[2]-8,lineItemSize);
+   const cells=[[String(item.quantity)],sku,description,wrap(money(item.regularUnitPrice),widths[3]-8,lineItemSize),wrap(money(item.unitPrice),widths[4]-8,lineItemSize),wrap(money(item.itemTotal),widths[5]-8,lineItemSize)];
    return {cells,height:Math.max(18,Math.max(...cells.map(c=>c.length))*11+4)};
   });
   let y=makePage(),itemPages=[];
@@ -100,12 +104,12 @@
    if(row.height<=tableBottom-tableTop-20&&y+row.height>tableBottom){endItems(false);y=makePage(true);}
    let offset=0,count=Math.max(...row.cells.map(c=>c.length));
    while(offset<count){if(y+18>tableBottom){endItems(false);y=makePage(true);}const take=Math.min(count-offset,Math.max(1,Math.floor((tableBottom-y-4)/11))),height=Math.max(18,take*11+4);let x=left;
-    row.cells.forEach((lines,col)=>{box(x,y,widths[col],height);lines.slice(offset,offset+take).forEach((text,n)=>draw(text,col===0||col>=3?x+widths[col]-4-font.widthOfTextAtSize(text,9):x+4,y+3+n*11,9,font));x+=widths[col];});y+=height;offset+=take;
+    row.cells.forEach((lines,col)=>{box(x,y,widths[col],height);lines.slice(offset,offset+take).forEach((text,n)=>draw(text,col===0||col>=3?x+widths[col]-4-font.widthOfTextAtSize(text,lineItemSize):x+4,y+3+n*11,lineItemSize,font));x+=widths[col];});y+=height;offset+=take;
    }
   }endItems(true);
   // Keep long notes, confirmation messages, and financing readable without squeezing the fixed form.
   if(s.plans.length>2)extra.push('Payment details: '+expandedPayment.map(r=>r.text).join('\n'));
-  extra.push(...s.issues.map(v=>'Needs confirmation: '+v));
+  extra.push(...s.issues.filter(v=>!freightIssue(v)).map(v=>'Needs confirmation: '+v));
   if(extra.length){page=doc.addPage([612,792]);header();y=112;draw('ADDITIONAL QUOTE DETAILS',left,y,12,bold);y+=25;
    for(const text of extra)for(const row of wrap(text,width,10)){if(y+15>730){page=doc.addPage([612,792]);header();y=112;}draw(row,left,y,10);y+=14;}
   }
@@ -114,3 +118,4 @@
  }
  root.WEPQuotePDF={create};if(typeof module!=='undefined'&&module.exports)module.exports=root.WEPQuotePDF;
 })(typeof window==='undefined'?globalThis:window);
+
