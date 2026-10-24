@@ -8,7 +8,7 @@
  Object.defineProperty(window,'sessionStorage',{value:storage('wepYanmarDemo:session:')});
  const pending=new Map();
  window.addEventListener('message',event=>{if(event.origin!==apiOrigin||event.source!==parent||event.data?.type!=='wep:yanmar-demo-result')return;const job=pending.get(event.data.id);if(!job)return;pending.delete(event.data.id);clearTimeout(job.timer);job.resolve(event.data);});
- function send(action,body){return new Promise((resolve,reject)=>{if(parent===window){reject(Error('Open this demonstration from the Yanmar demo sign-in page.'));return;}const id=crypto.randomUUID(),timer=setTimeout(()=>{pending.delete(id);reject(Error('Demo session unavailable. Return to the demo home page and sign in again.'));},35000);pending.set(id,{resolve,timer});parent.postMessage({type:'wep:yanmar-demo',id,action,body},apiOrigin);});}
+ function send(action,body,id=crypto.randomUUID()){return new Promise((resolve,reject)=>{if(parent===window){reject(Error('Open this demonstration from the Yanmar demo sign-in page.'));return;}const timer=setTimeout(()=>{pending.delete(id);reject(Error('Demo session unavailable. Return to the demo home page and sign in again.'));},35000);pending.set(id,{resolve,timer});parent.postMessage({type:'wep:yanmar-demo',id,action,body},apiOrigin);});}
  const customer=()=>{const form=document.getElementById('wep-inline-form');return Object.fromEntries(['firstName','lastName','companyName','phone','cell','email','address1','address2','city','state','zip'].map(k=>[k,String(form?.elements.namedItem(k)?.value||'').trim()]));};
  const current=()=>{const s=window.WEPBuilderCheckout?.current();if(!s?.paymentConfirmed||!s.quote)throw Error('Choose a payment option and wait for the quote to finish updating.');return s;};
  window.fetch=async(input,options={})=>{
@@ -20,12 +20,13 @@
   return realFetch(input,options);
  };
  window.WEPManufacturerDemo={active:true};
+ window.addEventListener('message',async event=>{
+  if(event.origin!==apiOrigin||event.source!==parent||event.data?.type!=='wep:yanmar-demo-command'||event.data.action!=='view-quote'||typeof event.data.id!=='string'||event.data.id.length>80)return;
+  try{const s=current();await send('quote',{selection:s.selection,customer:customer()},event.data.id);}
+  catch(error){parent.postMessage({type:'wep:yanmar-demo-command-error',id:event.data.id,error:error.message},apiOrigin);}
+ });
  document.addEventListener('DOMContentLoaded',()=>{
-  const style=document.createElement('style');style.textContent='.wep-dealer-portal-bar{display:none!important}.wep-demo-floating-status:empty{display:none}.wep-demo-floating-status{background:#fff;color:#202428;padding:8px 10px;border-radius:5px;box-shadow:0 2px 8px #0002;max-width:290px;font:13px/1.35 Arial;overflow-wrap:anywhere}@media print{.wep-demo-floating-actions{display:none!important}}';document.head.append(style);
-  const bar=document.createElement('section');bar.className='wep-demo-floating-actions';bar.setAttribute('aria-label','Demo quote controls');bar.style.cssText='position:fixed;right:12px;bottom:12px;z-index:1200;display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-width:calc(100vw - 24px)';
-  const button=document.createElement('button');button.type='button';button.textContent='View Quote & Dealer Costs';button.style.cssText='background:#287a32;color:white;border:0;border-radius:5px;padding:12px 14px;font:700 14px Arial;cursor:pointer;box-shadow:0 3px 10px #0004;max-width:100%';
-  const status=document.createElement('span');status.className='wep-demo-floating-status';status.setAttribute('role','status');bar.append(button,status);document.body.append(bar);
-  button.onclick=async()=>{let tab;try{const s=current();tab=window.open('about:blank','_blank');if(tab)tab.opener=null;button.disabled=true;status.textContent='Preparing your demo quote…';const reply=await send('quote',{selection:s.selection,customer:customer()});if(reply.status!==200||!reply.result.ok)throw Error(reply.result.error||'Demo quote unavailable.');const url=apiOrigin+reply.result.documentUrl;if(tab)tab.location.replace(url);else{const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener';link.textContent='Open demo quote';status.replaceChildren(link);return;}status.textContent='Your demo quote opened in a new tab.';}catch(error){if(tab)tab.close();status.textContent=error.message;}finally{button.disabled=false;}};
+  const style=document.createElement('style');style.textContent='.wep-dealer-portal-bar{display:none!important}';document.head.append(style);
   send('event',{event:'builder_opened'}).catch(()=>{});
   document.addEventListener('click',event=>{if(event.target.closest('#review-package'))send('event',{event:'quote_reviewed'}).catch(()=>{});});
   document.addEventListener('click',event=>{const link=event.target.closest('a[href]');if(!link)return;try{const url=new URL(link.href,location.href);if(url.origin===location.origin&&url.pathname.endsWith('/product-options.html')){url.searchParams.set('wepDemo','yanmar');link.href=url.href;}else if(url.protocol==='https:'&&url.hash!==location.hash){link.target='_blank';link.rel='noopener noreferrer';}}catch{}},true);
