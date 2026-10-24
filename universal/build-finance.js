@@ -10,7 +10,7 @@
  const validMoney=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
  let checkoutPending=false;
  let buildDeadline=0;
- let customerDownPayment=0,downPaymentInput,downRow,downFields,downHeading,downNote,downEdited=false;
+ let customerDownPayment=0,downPaymentInput,downRow,downFields,downHeading,downEdited=false;
  const selectedDownMinimums=new Map();
  const downPayments=s=>s.financeDownPayments||{};
  let panel,output,generation=0,timer,controller,lastStarted=-Infinity,lastQuote=-Infinity,activeSignature='',lastApplied='';
@@ -256,8 +256,6 @@
   downHeading.textContent=minimum>0?'Minimum Down Payment Required ('+money(minimum)+')':'Down-Payment Amount (Optional)';
   downPaymentInput.setAttribute('aria-label',downHeading.textContent);
   if(!downEdited)downPaymentInput.value=money(Math.max(customerDownPayment,minimum));
-  const message=minimum>0?'You may increase this amount. Minimum: '+money(minimum)+'.':'For financing estimates. Enter an optional down payment.';
-  if(!downEdited&&downNote.textContent!==message)downNote.textContent=message;
  }
  function syncFinanceAction(){
   const selectedCard=selectedPaymentCard();
@@ -974,19 +972,18 @@
   downHeading=document.createElement('label');downHeading.className='wep-build-down-heading';downHeading.htmlFor='wep-build-down-payment';
   downPaymentInput=document.createElement('input');downPaymentInput.id='wep-build-down-payment';downPaymentInput.type='text';downPaymentInput.inputMode='decimal';downPaymentInput.placeholder='$0.00';downPaymentInput.value=money(customerDownPayment);
   const applyDown=document.createElement('button');applyDown.type='button';applyDown.textContent='Update Payments';
-  downNote=document.createElement('small');downNote.textContent='For financing estimates. Program minimums apply.';downNote.id='wep-build-down-payment-note';downPaymentInput.setAttribute('aria-describedby',downNote.id);
-  downPaymentInput.addEventListener('input',()=>{downEdited=true;downNote.textContent='Select Update Payments to apply this amount.';downPaymentInput.setCustomValidity('');});
+  downPaymentInput.addEventListener('input',()=>{downEdited=true;downPaymentInput.setCustomValidity('');});
   downPaymentInput.addEventListener('focus',()=>downPaymentInput.select());
   downPaymentInput.addEventListener('blur',()=>{const value=parseDownAmount(downPaymentInput.value);if(validMoney(value))downPaymentInput.value=money(value);});
   const applyDownPayment=()=>{
    const next=parseDownAmount(downPaymentInput.value),minimum=selectedDownMinimum();
    if(!validMoney(next)){downPaymentInput.setCustomValidity('Enter a non-negative dollar amount with up to two decimal places.');downPaymentInput.reportValidity();return;}
-   if(next<minimum){const message='This program requires a minimum down payment of '+money(minimum)+'.';downPaymentInput.value=money(Math.max(customerDownPayment,minimum));downPaymentInput.setCustomValidity(message);downNote.textContent=message;downPaymentInput.reportValidity();return;}
+   if(next<minimum){const message='This program requires a minimum down payment of '+money(minimum)+'.';downPaymentInput.value=money(Math.max(customerDownPayment,minimum));downPaymentInput.setCustomValidity(message);downPaymentInput.reportValidity();return;}
    downEdited=false;downPaymentInput.setCustomValidity('');downPaymentInput.value=money(next);
    const changed=next!==customerDownPayment;customerDownPayment=next;syncDownControl();if(changed)schedule(true);
   };
   applyDown.addEventListener('click',applyDownPayment);downPaymentInput.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();applyDownPayment();}});
-  downFields.append(downHeading,downPaymentInput,applyDown,downNote);downRow.append(downFields);const factory=app.querySelector('.wep-factory-options');if(factory)factory.after(downRow);else delivery.append(downRow);syncDownControl();
+  downFields.append(downHeading,downPaymentInput,applyDown);downRow.append(downFields);const factory=app.querySelector('.wep-factory-options');if(factory)factory.after(downRow);else delivery.append(downRow);syncDownControl();
   const updateZip=()=>{delivery.querySelector('#wep-build-zip-label').hidden=deliverySelect.value!=='DELIVERY';};updateZip();
   deliverySelect.addEventListener('change',()=>{updateZip();schedule(true);});zipInput.addEventListener('input',()=>schedule(true));
   paymentSelect.addEventListener('change',()=>{paymentConfirmed=!!paymentSelect.value;preferred=paymentSelect.value.startsWith('finance:')?paymentSelect.value.slice(8):'';schedule(true);});
