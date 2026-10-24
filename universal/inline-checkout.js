@@ -127,6 +127,7 @@
    const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),30000);let response,result;
    try{response=await fetch(s.api+'/marketplace-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:abort.signal});result=await response.json().catch(()=>({}));}finally{clearTimeout(timeout);}
    if(!response.ok||result.ok!==true)throw Error(result.error||'Checkout could not be confirmed. Retry the same checkout or contact a store.');
+   if(result.demo===true&&window.WEPManufacturerDemo?.active){if(applicationTab&&!applicationTab.closed)applicationTab.close();$('wep-inline-checkout-review')?.close();message('Demo checkout complete. No order was placed and no payment was collected. Reference '+result.orderNumber+'.');const link=document.createElement('a');link.href=s.api+result.documentUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent=' View Demo Order & Dealer Costs';$('wep-inline-status')?.append(link);$('wep-checkout-agree').checked=false;return;}
    pending={...pending,orderNumber:result.orderNumber,checkoutToken:result.checkoutToken};sessionStorage.setItem('wepInlinePurchase',JSON.stringify(pending));
    if(q.paymentMethod==='credit'){
     sessionStorage.setItem('wepMarketplacePending',JSON.stringify({...pending,api:s.api,cartSnapshot:null}));
