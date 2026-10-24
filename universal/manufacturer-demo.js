@@ -22,7 +22,7 @@
  window.WEPManufacturerDemo={active:true};
  document.addEventListener('DOMContentLoaded',()=>{
   const style=document.createElement('style');style.textContent='.wep-dealer-portal-bar{display:none!important}';document.head.append(style);
-  const bar=document.createElement('section');bar.style.cssText='background:#fff7de;color:#202428;padding:12px 18px;border-bottom:2px solid #c8102e;font:14px Arial;display:flex;align-items:center;gap:14px;flex-wrap:wrap';
+  const bar=document.createElement('section');bar.style.cssText='position:sticky;top:0;z-index:1200;box-shadow:0 3px 8px #0002;background:#fff7de;color:#202428;padding:12px 18px;border-bottom:2px solid #c8102e;font:14px Arial;display:flex;align-items:center;gap:14px;flex-wrap:wrap';
   const label=document.createElement('strong');label.textContent='YANMAR DEMO · No orders or payments';
   const button=document.createElement('button');button.type='button';button.textContent='View Quote & Dealer Costs';button.style.cssText='background:#287a32;color:white;border:0;border-radius:5px;padding:10px;font:700 14px Arial;cursor:pointer';
   const status=document.createElement('span');status.setAttribute('role','status');bar.append(label,button,status);document.body.prepend(bar);
