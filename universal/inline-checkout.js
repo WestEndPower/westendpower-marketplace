@@ -136,8 +136,9 @@
    if(q.paymentMethod==='finance'){
     const link=new URL(result.applicationUrl);if(link.protocol!=='https:'||link.username||link.password)throw Error('The selected financing application needs store confirmation.');
     status.textContent='Reference '+result.orderNumber+'. '+(applicationTab&&!applicationTab.closed?'Your financing application opened in a new tab.':'Select the link below to open your financing application in a new tab.')+' Purchase pending credit approval and availability confirmation. ';
-    const applicationLink=document.createElement('a');applicationLink.href=link.href;applicationLink.target='_blank';applicationLink.rel='noopener noreferrer';applicationLink.textContent='Open Financing Application';status.append(applicationLink);
-    if(applicationTab&&!applicationTab.closed)applicationTab.location.replace(link.href);
+    const finishApplication=()=>{$('wep-inline-checkout-review')?.close();message('Financing application opened in a new tab. Reference '+result.orderNumber+'. Purchase pending credit approval and dealer confirmation.');};
+    const applicationLink=document.createElement('a');applicationLink.href=link.href;applicationLink.target='_blank';applicationLink.rel='noopener noreferrer';applicationLink.textContent='Open Financing Application';applicationLink.addEventListener('click',finishApplication);status.append(applicationLink);
+    if(applicationTab&&!applicationTab.closed){applicationTab.location.replace(link.href);finishApplication();}
     $('wep-checkout-complete').textContent='Application Ready';$('wep-checkout-agree').checked=false;return;
    }
    status.textContent='Order submitted. Reference '+result.orderNumber+'. '+result.paymentDue+'. The store will confirm availability before processing.';
@@ -211,4 +212,5 @@
  window.addEventListener('focus',update);
  const app=$('app');if(app)new MutationObserver(mount).observe(app,{childList:true,subtree:true});mount();
 })();
+
 
