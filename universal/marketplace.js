@@ -2135,7 +2135,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const choices=selectedStock(f)?[{label:/kit|package/i.test(v.type)?'Package:':'MSRP:',v,variants:[v],isPackage:/kit|package/i.test(v.type)}]:priceChoices(f);
     const rows=choices.map(choice=>pricePanel(choice.label,choice.v,choice.isPackage,f,choice.variants));
     return '<div class="market-price-lines">'+rows.join('')+
-      '<a class="market-product-page-link" href="'+esc('product.html?'+params.toString())+'" style="display:block;text-align:center;margin:8px 0;padding:10px;border:1px solid #176c34;border-radius:8px;font-weight:800;color:#176c34;text-decoration:none">Build & Price ↗</a></div>';
+      '<a class="market-product-page-link" href="'+esc('product.html?'+params.toString())+'" style="display:block;text-align:center;margin:8px 0;padding:10px;border:1px solid #176c34;border-radius:8px;font-weight:800;color:#176c34;text-decoration:none">Build &amp; Buy ↗</a><div class="market-build-buy-copy" style="text-align:center;padding:0 4px 6px;color:#46534b;font-size:12px;line-height:1.4"><strong style="display:block;color:#176c34">Your equipment. Your options. Your price.</strong><span>Build your package, compare payment options, and get a quote or buy online.</span></div></div>';
   }
 
   function offerOverlay(f){

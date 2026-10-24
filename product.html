@@ -13,7 +13,7 @@
 <div id="price" class="price"></div>
 <p id="summary"></p><div class="actions">
 <button class="btn" id="share" type="button">Copy Product Link</button>
-<a class="btn" id="market-link" href="product-options.html">Choose Compatible Options</a>
+<a class="btn" id="market-link" href="product-options.html">Build &amp; Buy</a>
 <a class="btn secondary" id="manufacturer-link" hidden>Manufacturer Details</a>
 </div><p class="note">Marketplace pricing, availability, financing, rebates and discounts must be confirmed before ordering.</p></div></div>
 <h3>Product specifications</h3><div class="specs" id="specs"></div>
@@ -71,7 +71,7 @@ function init(source,rows){
  $('specs').innerHTML=html||'<p>Specifications are being added.</p>';
  const manufacturer=cell(first,h,'ProductURL');if(/^https?:\/\//i.test(manufacturer)){$('manufacturer-link').href=manufacturer;$('manufacturer-link').hidden=false}
  $('market-link').href='product-options.html?'+new URLSearchParams({brand:b,sku:selectedSku}).toString();
- $('market-link').textContent=norm(cell(first,h,'PowerType'))==='BATTERY'?'Add Batteries & Compatible Options':'Choose Compatible Options';
+ $('market-link').textContent='Build & Buy';
  const productLabel=b+' '+m;
  $('context').textContent='Regarding: '+productLabel;
  $('share').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(location.href);$('share').textContent='Link Copied!'}catch(_){prompt('Copy this product link:',location.href)}});
