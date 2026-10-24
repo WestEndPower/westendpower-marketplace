@@ -8,7 +8,7 @@
  const clean=v=>String(v??'').trim(),number=v=>Number(clean(v).replace(/[$,% ,]/g,''));
  const money=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(v);
  const validMoney=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
- let checkoutPending=false;
+ let checkoutPending=false,checkoutRefreshPending=false;
  let buildDeadline=0;
  let customerDownPayment=0,downPaymentInput,downRow,downFields,downHeading,downEdited=false;
  const selectedDownMinimums=new Map();
@@ -564,7 +564,7 @@
    preferred=snapshot.programId;failed=pricingIssues(quote).length>0;render(quote,plan,snapshot);lastApplied=activeSignature;return;
    }
    throw Error('No eligible financing program fits this package. Choose cash / bank check, credit card, or another program.');
-  }catch(error){if(id!==generation)return;failed=true;updateProblem=pricingFailure(error);console.error('WEP pricing failure: '+error.name+': '+error.message+'\n'+(error.stack||''));lastResponse=null;lastSnapshot=null;let preserve=false;try{preserve=offersBuildKey===JSON.stringify(previewBuild(compareState()))||!!savedFinance(compareState());}catch(_){}
+  }catch(error){if(id!==generation)return;checkoutPending=false;checkoutRefreshPending=false;failed=true;updateProblem=pricingFailure(error);console.error('WEP pricing failure: '+error.name+': '+error.message+'\n'+(error.stack||''));lastResponse=null;lastSnapshot=null;let preserve=false;try{preserve=offersBuildKey===JSON.stringify(previewBuild(compareState()))||!!savedFinance(compareState());}catch(_){}
    showListedBuild(pricingFailure(error),preserve);output.setAttribute('aria-busy','false');if(preserve)restoreFinance(compareState());
    const message=document.getElementById('options-message');if(message){message.replaceChildren(document.createTextNode(pricingFailure(error)+' '));const retry=document.createElement('button');retry.type='button';retry.textContent='Retry current pricing';retry.onclick=()=>schedule(true);message.append(retry);}
   }finally{clearTimeout(deadline);endUpdate(progress,id!==generation?'cancel':failed?'error':'ready');}
@@ -1003,7 +1003,7 @@
    if(cartPaused){event.preventDefault();event.stopImmediatePropagation();const message=document.getElementById('options-message');if(message)message.textContent='Your cart is empty. Choose equipment or options to continue.';return;}
    if(deliverySelect.value==='SHIP'){event.preventDefault();event.stopImmediatePropagation();shippingCheckout();return;}
    if(!paymentConfirmed){event.preventDefault();event.stopImmediatePropagation();openComparison();return;}
-   if(!lastResponse||!lastSnapshot||JSON.stringify(state())!==JSON.stringify(lastSnapshot)||Date.now()-Date.parse(lastResponse.createdAt)>300000){event.preventDefault();event.stopImmediatePropagation();openComparison();return;}
+   if(!lastResponse||!lastSnapshot||JSON.stringify(state())!==JSON.stringify(lastSnapshot)||Date.now()-Date.parse(lastResponse.createdAt)>=300000){event.preventDefault();event.stopImmediatePropagation();checkoutPending=true;checkoutRefreshPending=true;schedule(true);return;}
    checkoutPending=false;
    if(window.WEPInlineCheckout){event.preventDefault();event.stopImmediatePropagation();saveCurrentBuild();window.WEPInlineCheckout.open();return;}
    remember();sessionStorage.setItem('wepBuildCheckoutChoices',JSON.stringify({paymentConfirmed:true,paymentMethod:lastSnapshot.paymentMethod,financeDownPayments:downPayments(lastSnapshot),fulfillment:lastSnapshot.fulfillment,zip:lastSnapshot.zip,brandId:lastSnapshot.brandId,sku:lastSnapshot.sku,items:lastSnapshot.items,financeProgramIds:lastSnapshot.paymentMethod==='finance'?{[lastSnapshot.brandId]:lastSnapshot.programId}:{},...checkoutCarry(),updated:Date.now()}));
@@ -1061,6 +1061,17 @@
  },true);
 
  window.addEventListener('pagehide',remember);
+ // Retain the confirmed payment choice while refreshing a returned/expired quote.
+ function refreshReturnedQuote(){
+  if(document.hidden||!panel?.isConnected||departing||!paymentConfirmed||updateJobs.has('pricing'))return;
+  if(!lastResponse||!lastSnapshot||JSON.stringify(state())!==JSON.stringify(lastSnapshot)||Date.now()-Date.parse(lastResponse.createdAt)>=300000)schedule(true);
+ }
+ window.addEventListener('focus',refreshReturnedQuote);
+ window.addEventListener('pageshow',event=>{if(event.persisted)refreshReturnedQuote();});
+ window.addEventListener('wep:build-pricing',event=>{
+  if(!event.detail?.quote||!checkoutPending||!checkoutRefreshPending)return;
+  queueMicrotask(()=>{if(checkoutRefreshPending&&checkoutPending&&paymentConfirmed&&lastResponse&&lastSnapshot&&JSON.stringify(state())===JSON.stringify(lastSnapshot)){checkoutRefreshPending=false;document.getElementById('review-package')?.click();}});
+ });
  app.addEventListener('input',event=>{if(event.target.matches('.qty:not(.wep-review-qty),.setup-choice,.option-check')){if(!cartResetting)cartPaused=false;schedule();}});
  app.addEventListener('change',event=>{if(event.target.matches('.qty:not(.wep-review-qty),.setup-choice,.option-check')){if(!cartResetting)cartPaused=false;schedule();}});
  app.addEventListener('click',event=>{if(!autoSaving&&event.target.closest('.add-option-cart,#save-options,[data-review-remove-type]')){cartPaused=false;schedule();}});
@@ -1106,5 +1117,6 @@
  window.addEventListener('resize',()=>syncPaymentCards());
  new MutationObserver(()=>{mount();syncOptionButtons();syncPaymentCards();}).observe(app,{childList:true,subtree:true});mount();syncOptionButtons();syncPaymentCards();
 })();
+
 
 

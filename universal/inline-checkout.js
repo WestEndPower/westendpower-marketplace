@@ -109,7 +109,7 @@
  }
  async function completeCheckout(){
   if(purchaseBusy||!$('wep-checkout-agree').checked)return;
-  const status=$('wep-checkout-result');let pending;
+  const status=$('wep-checkout-result');let pending,applicationTab=null;
   try{
    const {s,c}=verifiedCustomer(),q=s.quote;
    if(checkoutIdentity(s,c)!==checkoutContext)throw Error('Your quote or details changed. Return to the quote and review checkout again.');
@@ -120,6 +120,9 @@
    const identity=JSON.stringify(body);try{pending=JSON.parse(sessionStorage.getItem('wepInlinePurchase')||'null');}catch(_){}
    if(!pending||pending.identity!==identity)pending={identity,requestKey:crypto.randomUUID()};
    body.requestKey=pending.requestKey;sessionStorage.setItem('wepInlinePurchase',JSON.stringify(pending));
+   // Reserve the application tab during the click so the async order request
+   // does not turn the lender navigation into a blocked popup.
+   if(q.paymentMethod==='finance'){try{applicationTab=window.open('about:blank','_blank');if(applicationTab)applicationTab.opener=null;}catch(_){applicationTab=null;}}
    purchaseBusy=true;$('wep-checkout-complete').disabled=true;$('wep-checkout-back').disabled=true;$('wep-checkout-agree').disabled=true;status.textContent='Submitting your selection…';
    const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),30000);let response,result;
    try{response=await fetch(s.api+'/marketplace-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:abort.signal});result=await response.json().catch(()=>({}));}finally{clearTimeout(timeout);}
@@ -131,11 +134,15 @@
     const link=new URL(result.checkoutUrl);if(link.protocol!=='https:'||link.hostname!=='checkout.stripe.com')throw Error('Secure payment returned an invalid address.');location.assign(link.href);return;
    }
    if(q.paymentMethod==='finance'){
-    const link=new URL(result.applicationUrl);if(link.protocol!=='https:')throw Error('The selected financing application needs store confirmation.');status.textContent='Reference '+result.orderNumber+'. Opening your selected financing application. Purchase pending credit approval and availability confirmation.';location.assign(link.href);return;
+    const link=new URL(result.applicationUrl);if(link.protocol!=='https:'||link.username||link.password)throw Error('The selected financing application needs store confirmation.');
+    status.textContent='Reference '+result.orderNumber+'. '+(applicationTab&&!applicationTab.closed?'Your financing application opened in a new tab.':'Select the link below to open your financing application in a new tab.')+' Purchase pending credit approval and availability confirmation. ';
+    const applicationLink=document.createElement('a');applicationLink.href=link.href;applicationLink.target='_blank';applicationLink.rel='noopener noreferrer';applicationLink.textContent='Open Financing Application';status.append(applicationLink);
+    if(applicationTab&&!applicationTab.closed)applicationTab.location.replace(link.href);
+    $('wep-checkout-complete').textContent='Application Ready';$('wep-checkout-agree').checked=false;return;
    }
    status.textContent='Order submitted. Reference '+result.orderNumber+'. '+result.paymentDue+'. The store will confirm availability before processing.';
    $('wep-checkout-complete').textContent='Order Submitted';$('wep-checkout-agree').checked=false;
-  }catch(error){status.textContent=error.name==='AbortError'?'Checkout timed out. Retry using the same request or contact a store.':error.message;}
+  }catch(error){if(applicationTab&&!applicationTab.closed)applicationTab.close();status.textContent=error.name==='AbortError'?'Checkout timed out. Retry using the same request or contact a store.':error.message;}
   finally{purchaseBusy=false;$('wep-checkout-back').disabled=false;$('wep-checkout-agree').disabled=false;$('wep-checkout-complete').disabled=!$('wep-checkout-agree').checked;}
  }
 
@@ -200,5 +207,8 @@
  window.WEPInlineCheckout={open};
  window.addEventListener('wep:build-pricing',event=>{mount();update();if(!event.detail?.quote&&opened)queueShipping();});
  window.addEventListener('pagehide',remember);
+ window.addEventListener('pageshow',update);
+ window.addEventListener('focus',update);
  const app=$('app');if(app)new MutationObserver(mount).observe(app,{childList:true,subtree:true});mount();
 })();
+
