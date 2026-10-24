@@ -83,6 +83,7 @@
  function field(label,value){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;row.append(dt,dd);return row;}
  function cart(){try{const rows=JSON.parse(buildStorage.getItem('wepCart')||'[]');return Array.isArray(rows)?rows:[];}catch(_error){return [];}}
  function selection(){
+  window.WEPBuildSyncOptionRequirements?.();
   const link=app.querySelector('.wep-spec-link');if(!link)throw Error('Choose equipment before reviewing financing.');
   const params=new URL(link.href,location.href).searchParams,brandId=clean(params.get('brand')||query.get('brand')).toUpperCase(),sku=clean(params.get('sku')||query.get('sku'));
   const qty=Number(app.querySelector('#equipment-qty')?.value||1);
@@ -1012,7 +1013,7 @@
  function syncOptionButtons(){
   for(const button of app.querySelectorAll('.add-option-cart')){
    const choice=optionChoice(button);if(!choice||!['attachment','accessory','part'].includes(choice.dataset.type))continue;
-   if(choice.dataset.wepRequired==='true'){button.disabled=true;if(button.textContent!=='Required with package')button.textContent='Required with package';button.classList.remove('wep-remove-option');button.setAttribute('aria-label','Required with package: '+choice.dataset.name);continue;}
+   if(choice.dataset.wepRequired==='true'){const label=choice.dataset.wepDependencyLabel||'Required with package';button.disabled=true;if(button.textContent!==label)button.textContent=label;button.classList.remove('wep-remove-option');button.setAttribute('aria-label',label+': '+choice.dataset.name);continue;}
    const label=choice.checked?'Remove':'Add to Cart';if(button.textContent!==label)button.textContent=label;
    button.classList.toggle('wep-remove-option',choice.checked);button.setAttribute('aria-label',(choice.checked?'Remove ':'Add to Cart: ')+(choice.dataset.name||button.closest('.card')?.querySelector('h3')?.textContent||choice.dataset.sku));
   }

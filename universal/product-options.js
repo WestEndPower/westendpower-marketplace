@@ -295,6 +295,61 @@ window.WEPBuildSyncRequiredComponents=function(includedItems,mainQuantity){
  }
  return changed;
 };
+let optionRequirementRows=[],optionRequirementCatalog=[];
+const optionRequirementState=new Map();
+function optionRequirementPlan(selected){
+ const key=item=>item.type+':'+clean(item.sku||item.row.SKU).toUpperCase(),desired=new Map();
+ const installed=row=>factoryPackageIncludedSkus.has(clean(row.SKU).toUpperCase())||inventoryPackageIncludes.some(item=>clean(item.sku).toUpperCase()===clean(row.SKU).toUpperCase()&&Number(item.quantity)>0)||[['P1-Loader',/^(front\s+)?loaders?$/i],['P2-Backhoe',/^backhoes?$/i],['P3-Mower',/mower/i],['P4-Cab',/^cabs?$/i]].some(([flag,category])=>trueish(selectedProduct?.[flag])&&category.test(clean(row.SubCategory)));
+ const available=id=>optionRequirementRows.find(item=>clean(item.row.SKU).toUpperCase()===clean(id).toUpperCase()&&compatibilityChoice(item.row,sku)===true)||optionRequirementCatalog.find(item=>clean(item.row.SKU).toUpperCase()===clean(id).toUpperCase()&&installed(item.row));
+ function visit(item,quantity,parent,path=[]){
+  if(!Number.isInteger(quantity)||quantity<1||quantity>20)throw Error('Choose whole option quantities from 1 to 20.');
+  const id=key(item);if(path.includes(id))throw Error('The required options contain a circular rule. Please contact the store.');
+  const row=item.row;let listed=false,matched=false;
+  for(let i=1;i<=4;i++){
+   const required=clean(row['RequiredSKU'+i]);if(!required)continue;listed=true;
+   const target=available(required);if(!target)continue;
+   const children=[];let eligible=true;
+   for(let j=1;j<=2;j++){const childId=clean(row['SKU'+i+'Requires'+j]);if(!childId)continue;const child=available(childId);if(!child){eligible=false;break;}children.push({item:child,multiplier:Number(clean(row['SKU'+i+'Requires'+j+'Qty'])||1)});}
+   if(!eligible)continue;matched=true;
+   const multiplier=Number(clean(row['RequiredSKU'+i+'Qty'])||1);
+   for(const entry of [{item:target,multiplier},...children]){
+    if(!Number.isInteger(entry.multiplier)||entry.multiplier<1)throw Error('A required option quantity needs store confirmation.');
+    if(installed(entry.item.row))continue;
+    const count=quantity*entry.multiplier;if(count>20)throw Error('A required option quantity exceeds 20. Please contact the store.');
+    const childKey=key(entry.item),previous=desired.get(childKey);
+    if(!previous||count>previous.quantity)desired.set(childKey,{...entry.item,sku:clean(entry.item.row.SKU),quantity:count,parent});
+    visit(entry.item,count,parent,[...path,id]);
+   }
+  }
+  if(listed&&!matched)throw Error('Required equipment for '+(clean(row.Description)||clean(row.SKU))+' needs store confirmation.');
+ }
+ for(const item of selected)visit(item,item.quantity,key(item));
+ return desired;
+}
+function syncOptionRequirements(){
+ if(!optionRequirementRows.length)return;
+ const controls=[...document.querySelectorAll('.option-check')],key=c=>c.dataset.type+':'+clean(c.dataset.sku).toUpperCase();
+ const selected=controls.filter(c=>c.checked&&c.dataset.wepAutoRequired!=='true').map(c=>{
+  const item=optionRequirementRows.find(item=>key(c)===item.type+':'+clean(item.row.SKU).toUpperCase());
+  return item?{...item,quantity:Number(document.querySelector('[data-qty="'+CSS.escape(c.dataset.sku)+'"]')?.value)}:null;
+ }).filter(Boolean);
+ const desired=optionRequirementPlan(selected);
+ for(const [id,original] of optionRequirementState)if(!desired.has(id)){
+  const {check,qty,button}=original;check.checked=original.checked;check.disabled=original.disabled;qty.value=original.quantity;qty.readOnly=original.readOnly;
+  if(button)button.disabled=original.buttonDisabled;
+  delete check.dataset.wepRequired;delete check.dataset.wepAutoRequired;delete check.dataset.wepDependencyParent;delete check.dataset.wepDependencyLabel;optionRequirementState.delete(id);
+ }
+ for(const [id,item] of desired){
+  const check=controls.find(c=>key(c)===id);if(!check)throw Error('A required option is not listed: '+item.sku);
+  const qty=document.querySelector('[data-qty="'+CSS.escape(check.dataset.sku)+'"]'),button=check.closest('.card')?.querySelector('.add-option-cart');
+  if(!optionRequirementState.has(id))optionRequirementState.set(id,{check,qty,button,checked:check.checked&&check.dataset.wepAutoRequired!=='true',disabled:check.disabled,quantity:qty.value,readOnly:qty.readOnly,buttonDisabled:button?.disabled||false});
+  const original=optionRequirementState.get(id),count=Math.max(item.quantity,original.checked?Number(original.quantity)||0:0);
+  check.checked=true;check.disabled=true;qty.value=count;qty.readOnly=true;check.dataset.wepRequired='true';check.dataset.wepAutoRequired=original.checked?'false':'true';check.dataset.wepDependencyParent=item.parent;
+  const parent=controls.find(c=>key(c)===item.parent);check.dataset.wepDependencyLabel='Required with '+(parent?.dataset.name||'selected equipment');
+  if(button){button.disabled=true;if(button.textContent!==check.dataset.wepDependencyLabel)button.textContent=check.dataset.wepDependencyLabel;}
+ }
+}
+window.WEPBuildSyncOptionRequirements=syncOptionRequirements;
 function byId(rows,ids,idFields){
  const set=new Set(ids.map(x=>clean(x).toUpperCase()).filter(Boolean));
  return rows.filter(x=>idFields.some(f=>set.has(clean(x[f]).toUpperCase())));
@@ -306,20 +361,22 @@ function idsFromRuntime(runtime,prefix,count){
 let optionSelectionOrder=null;
 function orderedPackageItems(items){
  const key=item=>clean(item.type)+':'+clean(item.sku).toUpperCase();
- const component=item=>item.required===true||requiredPackageComponents.some(row=>row.type===item.type&&clean(row.sku).toUpperCase()===clean(item.sku).toUpperCase());
+ const component=item=>requiredPackageComponents.some(row=>row.type===item.type&&clean(row.sku).toUpperCase()===clean(item.sku).toUpperCase());
+ const parentKey=item=>{const controls=typeof document==='undefined'?[]:[...document.querySelectorAll('.option-check')];return controls.find(c=>c.dataset.type===item.type&&clean(c.dataset.sku).toUpperCase()===clean(item.sku).toUpperCase())?.dataset.wepDependencyParent||key(item);};
  if(optionSelectionOrder===null){
   let saved=[];
   try{const draft=JSON.parse(sessionStorage.getItem('wepBuildDraft:'+selectedBrand.toUpperCase()+':'+sku)||'null');saved=Array.isArray(draft?.items)?draft.items:JSON.parse(buildStorage.getItem('wepCart')||'[]').filter(row=>row.packageId===selectedBrand.toUpperCase()+':'+sku);}catch(_){}
   optionSelectionOrder=[...new Set(saved.filter(item=>item.type!=='tool'&&!component(item)).map(key))];
  }
- const additions=items.filter(item=>item.type!=='tool'&&!component(item)),active=new Set(additions.map(key));
+ const additions=items.filter(item=>item.type!=='tool'&&!component(item)),active=new Set(additions.map(parentKey));
  optionSelectionOrder=optionSelectionOrder.filter(id=>active.has(id));
- for(const item of additions)if(!optionSelectionOrder.includes(key(item)))optionSelectionOrder.push(key(item));
+ for(const item of additions)if(!optionSelectionOrder.includes(parentKey(item)))optionSelectionOrder.push(parentKey(item));
  const rank=item=>item.type==='tool'?0:component(item)?1:2;
- return items.slice().sort((a,b)=>rank(a)-rank(b)||(rank(a)===2?optionSelectionOrder.indexOf(key(a))-optionSelectionOrder.indexOf(key(b)):0));
+ return items.slice().sort((a,b)=>rank(a)-rank(b)||(rank(a)===2?optionSelectionOrder.indexOf(parentKey(a))-optionSelectionOrder.indexOf(parentKey(b))||Number(parentKey(a)!==key(a))-Number(parentKey(b)!==key(b)):0));
 }
 window.WEPBuildOrderItems=orderedPackageItems;
 function packageSpec(){
+ syncOptionRequirements();
  const mainQty=Number($('equipment-qty')?.value||1);if(!Number.isInteger(mainQty)||mainQty<1||mainQty>20)throw new Error('Choose whole quantities from 1 to 20.');
  const items=[{type:'tool',sku,qty:mainQty,setupSelected:mainSetupSelected()}];
  document.querySelectorAll('.option-check:checked').forEach(c=>{
@@ -374,7 +431,7 @@ function renderBuildPackageReview(quote=null,message=""){
  const confirmed=Array.isArray(quote?.lines)&&quote.lines.length>0;
  const amount=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
  let lines=[{name:clean(selectedProduct.Description)||clean(selectedProduct.Model)||sku,sku,type:'tool',code:assemblyCode(selectedProduct),fee:assemblyAmount(selectedProduct),qty:mainQty,regular:money(selectedProduct.MSRP),unit:currentPrice(selectedProduct),setup:mainSetupSelected()?assemblyAmount(selectedProduct):0}];
- document.querySelectorAll('.option-check:checked').forEach(c=>{const qty=Number(document.querySelector('[data-qty="'+CSS.escape(c.dataset.sku)+'"]')?.value);lines.push({name:c.dataset.name,sku:c.dataset.sku,type:c.dataset.type,code:c.dataset.setupOption,fee:Number(c.dataset.setup||0),qty,required:c.dataset.wepRequired==='true',regular:Number(c.dataset.regularPrice||0),unit:Number(c.dataset.price||0),setup:optionSetupSelected(c)?Number(c.dataset.setup||0):0});});
+ document.querySelectorAll('.option-check:checked').forEach(c=>{const qty=Number(document.querySelector('[data-qty="'+CSS.escape(c.dataset.sku)+'"]')?.value);lines.push({name:c.dataset.name,sku:c.dataset.sku,type:c.dataset.type,code:c.dataset.setupOption,fee:Number(c.dataset.setup||0),qty,required:c.dataset.wepRequired==='true',requiredLabel:c.dataset.wepDependencyLabel||'Required with package',regular:Number(c.dataset.regularPrice||0),unit:Number(c.dataset.price||0),setup:optionSetupSelected(c)?Number(c.dataset.setup||0):0});});
  lines=orderedPackageItems(lines);
  // Prices come from the same response as the payment boxes. A changed build
  // falls back to clearly marked listed prices until its new response arrives.
@@ -393,7 +450,7 @@ function renderBuildPackageReview(quote=null,message=""){
   const installation=optional?'<label class="wep-itemized-install"><input type="checkbox" data-review-install-type="'+esc(line.type)+'" data-review-install-sku="'+esc(line.sku)+'" aria-label="Dealer installation for '+esc(line.name)+': '+fmt(line.fee)+' per item" '+(line.setup>0?'checked':'')+'><span>'+fmt(line.fee)+' / item</span></label>':valid&&line.setup>0?'<span class="wep-itemized-install">'+fmt(line.setup*line.qty)+(line.code==='F'?' (required)':'')+'</span>':'—';
   const source=line.live?.pricingSource==='stock'?'In-Stock Unit':line.live?.pricingSource==='orderable'?'Available to Order':'';
   const additionalFreight=line.type==='attachment'&&horsepowerImplementSkus.has(clean(line.sku).toUpperCase());
-  return '<tr'+(additionalFreight?' class="wep-has-implement-freight"':'')+'><th scope="row">'+esc(line.name)+(line.type==='tool'&&packageInclusions().length?'<div class="wep-itemized-meta wep-itemized-includes">Includes: '+esc(packageInclusions().join(' · '))+'</div>':'')+'<div class="wep-itemized-meta"><span>SKU '+esc(line.sku)+'</span>'+(source?'<span class="wep-itemized-source">'+source+'</span>':'')+(line.required?'<span>Required with package</span>':'')+(line.type!=='tool'&&!line.required?'<button type="button" data-review-remove-type="'+esc(line.type)+'" data-review-remove-sku="'+esc(line.sku)+'" aria-label="Remove '+esc(line.name)+'">Remove</button>':'')+'</div>'+'</th><td><input class="qty wep-review-qty" '+(line.required?'readonly aria-readonly="true" ':'')+'type="number" min="1" max="20" value="'+esc(line.qty)+'" data-review-qty-type="'+esc(line.type)+'" data-review-qty-sku="'+esc(line.sku)+'" aria-label="Quantity for '+esc(line.name)+'"><span class="wep-print-qty">'+esc(line.qty)+'</span></td><td>'+installation+'</td><td class="wep-itemized-money">'+(amount(regular)?fmt(regular):'Needs confirmation')+'</td><td class="wep-itemized-money">'+(amount(sale)?fmt(sale):'—')+'</td><td>'+(valid?(amount(line.itemTotal)?fmt(line.itemTotal):'Needs confirmation'):'Check quantity')+'</td></tr>'+(additionalFreight?'<tr class="wep-implement-freight-row"><td colspan="6"><span class="wep-implement-row-freight-note" role="note">Additional freight charges apply. We’ll contact you to confirm the freight charge before finalizing your order.</span></td></tr>':'');
+  return '<tr'+(additionalFreight?' class="wep-has-implement-freight"':'')+'><th scope="row">'+esc(line.name)+(line.type==='tool'&&packageInclusions().length?'<div class="wep-itemized-meta wep-itemized-includes">Includes: '+esc(packageInclusions().join(' · '))+'</div>':'')+'<div class="wep-itemized-meta"><span>SKU '+esc(line.sku)+'</span>'+(source?'<span class="wep-itemized-source">'+source+'</span>':'')+(line.required?'<span>'+esc(line.requiredLabel)+'</span>':'')+(line.type!=='tool'&&!line.required?'<button type="button" data-review-remove-type="'+esc(line.type)+'" data-review-remove-sku="'+esc(line.sku)+'" aria-label="Remove '+esc(line.name)+'">Remove</button>':'')+'</div>'+'</th><td><input class="qty wep-review-qty" '+(line.required?'readonly aria-readonly="true" ':'')+'type="number" min="1" max="20" value="'+esc(line.qty)+'" data-review-qty-type="'+esc(line.type)+'" data-review-qty-sku="'+esc(line.sku)+'" aria-label="Quantity for '+esc(line.name)+'"><span class="wep-print-qty">'+esc(line.qty)+'</span></td><td>'+installation+'</td><td class="wep-itemized-money">'+(amount(regular)?fmt(regular):'Needs confirmation')+'</td><td class="wep-itemized-money">'+(amount(sale)?fmt(sale):'—')+'</td><td>'+(valid?(amount(line.itemTotal)?fmt(line.itemTotal):'Needs confirmation'):'Check quantity')+'</td></tr>'+(additionalFreight?'<tr class="wep-implement-freight-row"><td colspan="6"><span class="wep-implement-row-freight-note" role="note">Additional freight charges apply. We’ll contact you to confirm the freight charge before finalizing your order.</span></td></tr>':'');
  }).join('')+'</tbody></table></div><div class="wep-itemized-footer"><div class="wep-itemized-payment"></div><div class="wep-itemized-totals"><dl></dl></div></div><strong id="selected-total" hidden></strong><p class="note">Installation is shown separately from merchandise. Prices and availability are subject to confirmation.</p>';
  const status=container.querySelector('.wep-itemized-status');
  status.textContent=message||(confirmed?(pricingIssues(quote).length?'Some items need store confirmation.':'Current prices for your selected equipment and options.'):'Listed item prices — updating freight, tax and payment totals…');
@@ -466,6 +523,7 @@ function wireSummary(basePrice){
   }));
  }
  function recalc(){
+  try{syncOptionRequirements();}catch(error){$('options-message').textContent=error.message;return;}
   let add=0,count=0,setup=0;
   const mainQty=Math.max(1,Math.min(20,Number($('equipment-qty')?.value)||1));
   checks.forEach(c=>{if(c.checked){const q=document.querySelector('[data-qty="'+CSS.escape(c.dataset.sku)+'"]');const qty=Math.max(1,Number(q&&q.value)||1);add+=Number(c.dataset.price||0)*qty;setup+=(optionSetupSelected(c)?Number(c.dataset.setup||0):0)*qty;count+=qty}});
@@ -615,6 +673,8 @@ async function init(){
   // The same factory equipment flags that supply the package Includes summary.
   const factoryCategories=[['P1-Loader',/^(front\s+)?loaders?$/i],['P2-Backhoe',/^backhoes?$/i],['P3-Mower',/mower/i],['P4-Cab',/^cabs?$/i]];
   factoryPackageIncludedSkus=new Set(atts.filter(row=>factoryCategories.some(([flag,category])=>trueish(product[flag])&&category.test(clean(row.SubCategory)))).map(row=>clean(row.SKU).toUpperCase()));
+  optionRequirementRows=[...atts.map(row=>({type:'attachment',row})),...accs.map(row=>({type:'accessory',row})),...prts.map(row=>({type:'part',row}))];
+  optionRequirementCatalog=[...attachments.map(row=>({type:'attachment',row})),...accessories.map(row=>({type:'accessory',row})),...parts.map(row=>({type:'part',row}))];
   const name=clean(product.Model)||clean(product.Description)||sku;
   const base=currentPrice(product);
   const kit=['kit','package'].includes(clean(product.ProductType).toLowerCase());
