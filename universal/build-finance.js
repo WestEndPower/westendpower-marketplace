@@ -10,7 +10,8 @@
  const validMoney=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
  let checkoutPending=false;
  let buildDeadline=0;
- let customerDownPayment=0,downPaymentInput,downRow,downFields,addDown,downNote,downEdited=false,downExpanded=false;
+ let customerDownPayment=0,downPaymentInput,downRow,downFields,downHeading,downEdited=false;
+ const selectedDownMinimums=new Map();
  const downPayments=s=>s.financeDownPayments||{};
  let panel,output,generation=0,timer,controller,lastStarted=-Infinity,lastQuote=-Infinity,activeSignature='',lastApplied='';
  // WEP_BUILD_UPDATE_FEEDBACK_V1: token ownership prevents stale requests finishing a newer build.
@@ -233,17 +234,28 @@
    card.hidden=(deliverySelect.value==='SHIP'&&card.dataset.paymentPreview!=='credit')||(card.dataset.paymentPreview==='finance-inlieu'&&!financeLayout.dual);
   }syncFinanceAction();syncDownControl();
  }
+ function selectedDownMinimum(){
+  const selected=paymentConfirmed&&paymentSelect.value.startsWith('finance:')?paymentSelect.value.slice(8):'';
+  if(!selected)return 0;
+  const candidate=lastResponse?.financePlans?.find(p=>clean(p.program?.ProgramID)===selected)||[...paymentPreviews.values()].flatMap(v=>v.quote?.financePlans||[]).find(p=>clean(p.program?.ProgramID)===selected);
+  const minimum=candidate?.minimumRequiredDown??((candidate?.requestedDownPayment?0:candidate?.requiredDown)||0);
+  if(candidate&&validMoney(minimum))selectedDownMinimums.set(selected,Math.round(minimum*100)/100);
+  return selectedDownMinimums.get(selected)||0;
+ }
+ function parseDownAmount(value){
+  const raw=clean(value).replace(/^\$\s*/,'');
+  if(!raw)return 0;
+  if(!/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,2})?$/.test(raw))return NaN;
+  const amount=Number(raw.replace(/,/g,''));
+  return Number.isFinite(amount)&&amount<=Number.MAX_SAFE_INTEGER/100?amount:NaN;
+ }
  function syncDownControl(){
   if(!downRow)return;
   downRow.hidden=deliverySelect.value==='SHIP';
-  const selected=paymentConfirmed&&paymentSelect.value.startsWith('finance:')?paymentSelect.value.slice(8):'';
-  const candidate=selected?(lastResponse?.financePlans?.find(p=>clean(p.program?.ProgramID)===selected)||[...paymentPreviews.values()].flatMap(v=>v.quote?.financePlans||[]).find(p=>clean(p.program?.ProgramID)===selected)):paymentPreviews.get('finance')?.quote?.financePlans?.[0];
-  const minimum=candidate?.minimumRequiredDown??((candidate?.requestedDownPayment?0:candidate?.requiredDown)||0);
-  const expanded=minimum>0||customerDownPayment>0||downExpanded;
-  addDown.hidden=expanded;downFields.hidden=!expanded;
-  if(!downEdited){const value=Math.max(customerDownPayment,minimum);downPaymentInput.value=value?value.toFixed(2):'';}
-  const message=minimum>0?'Minimum for this program: '+money(minimum):'For financing estimates. Program minimums apply.';
-  if(!downEdited&&downNote.textContent!==message)downNote.textContent=message;
+  const minimum=selectedDownMinimum();
+  downHeading.textContent=minimum>0?'Minimum Down Payment Required ('+money(minimum)+')':'Down-Payment Amount (Optional)';
+  downPaymentInput.setAttribute('aria-label',downHeading.textContent);
+  if(!downEdited)downPaymentInput.value=money(Math.max(customerDownPayment,minimum));
  }
  function syncFinanceAction(){
   const selectedCard=selectedPaymentCard();
@@ -956,14 +968,22 @@
    app.querySelector('#equipment-qty')?.dispatchEvent(new Event('input',{bubbles:true}));
   }
   downRow=document.createElement('section');downRow.id='wep-build-down-payment-control';downRow.className='wep-build-down-payment';downRow.setAttribute('aria-label','Financing down payment');
-  addDown=document.createElement('button');addDown.type='button';addDown.textContent='Add a Down Payment';addDown.onclick=()=>{downExpanded=true;syncDownControl();downPaymentInput.focus();};downFields=document.createElement('div');downFields.className='wep-build-down-fields';downFields.hidden=true;
-  const downLabel=document.createElement('label');downLabel.textContent='Down payment';downPaymentInput=document.createElement('input');downPaymentInput.id='wep-build-down-payment';downPaymentInput.type='text';downPaymentInput.inputMode='decimal';downPaymentInput.placeholder='0.00';downPaymentInput.value=customerDownPayment?customerDownPayment.toFixed(2):'';downPaymentInput.setAttribute('aria-label','Financing down payment in dollars');downLabel.append(downPaymentInput);
+  downFields=document.createElement('div');downFields.className='wep-build-down-fields';
+  downHeading=document.createElement('label');downHeading.className='wep-build-down-heading';downHeading.htmlFor='wep-build-down-payment';
+  downPaymentInput=document.createElement('input');downPaymentInput.id='wep-build-down-payment';downPaymentInput.type='text';downPaymentInput.inputMode='decimal';downPaymentInput.placeholder='$0.00';downPaymentInput.value=money(customerDownPayment);
   const applyDown=document.createElement('button');applyDown.type='button';applyDown.textContent='Update Payments';
-  downNote=document.createElement('small');downNote.textContent='For financing estimates. Program minimums apply.';downNote.id='wep-build-down-payment-note';downPaymentInput.setAttribute('aria-describedby',downNote.id);
-  downPaymentInput.addEventListener('input',()=>{downEdited=true;downNote.textContent='Select Update Payments to apply this amount.';downPaymentInput.setCustomValidity('');});
-  const applyDownPayment=()=>{const raw=downPaymentInput.value.trim();if(raw&&!/^(?:\d+)(?:\.\d{1,2})?$/.test(raw)||!Number.isFinite(Number(raw))||Number(raw)>Number.MAX_SAFE_INTEGER/100){downPaymentInput.setCustomValidity('Enter a non-negative dollar amount with up to two decimal places.');downPaymentInput.reportValidity();return;}const next=Number(raw||0);downEdited=false;downExpanded=next>0;downPaymentInput.setCustomValidity('');downNote.textContent='For financing estimates. Program minimums apply.';if(next===customerDownPayment)return;customerDownPayment=next;downPaymentInput.value=next?next.toFixed(2):'';schedule(true);};
+  downPaymentInput.addEventListener('input',()=>{downEdited=true;downPaymentInput.setCustomValidity('');});
+  downPaymentInput.addEventListener('focus',()=>downPaymentInput.select());
+  downPaymentInput.addEventListener('blur',()=>{const value=parseDownAmount(downPaymentInput.value);if(validMoney(value))downPaymentInput.value=money(value);});
+  const applyDownPayment=()=>{
+   const next=parseDownAmount(downPaymentInput.value),minimum=selectedDownMinimum();
+   if(!validMoney(next)){downPaymentInput.setCustomValidity('Enter a non-negative dollar amount with up to two decimal places.');downPaymentInput.reportValidity();return;}
+   if(next<minimum){const message='This program requires a minimum down payment of '+money(minimum)+'.';downPaymentInput.value=money(Math.max(customerDownPayment,minimum));downPaymentInput.setCustomValidity(message);downPaymentInput.reportValidity();return;}
+   downEdited=false;downPaymentInput.setCustomValidity('');downPaymentInput.value=money(next);
+   const changed=next!==customerDownPayment;customerDownPayment=next;syncDownControl();if(changed)schedule(true);
+  };
   applyDown.addEventListener('click',applyDownPayment);downPaymentInput.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();applyDownPayment();}});
-  downFields.append(downLabel,applyDown,downNote);downRow.append(addDown,downFields);const factory=app.querySelector('.wep-factory-options');if(factory)factory.after(downRow);else delivery.append(downRow);syncDownControl();
+  downFields.append(downHeading,downPaymentInput,applyDown);downRow.append(downFields);const factory=app.querySelector('.wep-factory-options');if(factory)factory.after(downRow);else delivery.append(downRow);syncDownControl();
   const updateZip=()=>{delivery.querySelector('#wep-build-zip-label').hidden=deliverySelect.value!=='DELIVERY';};updateZip();
   deliverySelect.addEventListener('change',()=>{updateZip();schedule(true);});zipInput.addEventListener('input',()=>schedule(true));
   paymentSelect.addEventListener('change',()=>{paymentConfirmed=!!paymentSelect.value;preferred=paymentSelect.value.startsWith('finance:')?paymentSelect.value.slice(8):'';schedule(true);});
@@ -1085,4 +1105,5 @@
  window.addEventListener('resize',()=>syncPaymentCards());
  new MutationObserver(()=>{mount();syncOptionButtons();syncPaymentCards();}).observe(app,{childList:true,subtree:true});mount();syncOptionButtons();syncPaymentCards();
 })();
+
 
