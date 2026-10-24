@@ -97,7 +97,7 @@
    if(!id||!['attachment','accessory','part','battery','charger'].includes(type)||!Number.isInteger(quantity)||quantity<1||quantity>20)throw Error('Choose whole option quantities from 1 to 20.');
    items.push({brandId,type,sku:id,quantity,setupSelected:installation(type,id),inventoryId:inventory(type,id,quantity)});
   }
-  return {brandId,sku,items};
+  return {brandId,sku,items:window.WEPBuildOrderItems?window.WEPBuildOrderItems(items):items};
  }
  function pause(ms,signal){return new Promise((resolve,reject)=>{if(signal.aborted){reject(new DOMException('Changed','AbortError'));return;}const abort=()=>{clearTimeout(id);reject(new DOMException('Changed','AbortError'));};const id=setTimeout(()=>{signal.removeEventListener('abort',abort);resolve();},ms);signal.addEventListener('abort',abort,{once:true});});}
  async function post(path,body,signal){
