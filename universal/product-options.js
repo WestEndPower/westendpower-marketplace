@@ -302,6 +302,23 @@ function byId(rows,ids,idFields){
 function idsFromRuntime(runtime,prefix,count){
  const ids=[];for(let i=1;i<=count;i++){const v=clean(runtime[prefix+i]);if(v)ids.push(v)}return ids;
 }
+// Keep required package rows together, then preserve the customer's add order.
+let optionSelectionOrder=null;
+function orderedPackageItems(items){
+ const key=item=>clean(item.type)+':'+clean(item.sku).toUpperCase();
+ const component=item=>item.required===true||requiredPackageComponents.some(row=>row.type===item.type&&clean(row.sku).toUpperCase()===clean(item.sku).toUpperCase());
+ if(optionSelectionOrder===null){
+  let saved=[];
+  try{const draft=JSON.parse(sessionStorage.getItem('wepBuildDraft:'+selectedBrand.toUpperCase()+':'+sku)||'null');saved=Array.isArray(draft?.items)?draft.items:JSON.parse(buildStorage.getItem('wepCart')||'[]').filter(row=>row.packageId===selectedBrand.toUpperCase()+':'+sku);}catch(_){}
+  optionSelectionOrder=[...new Set(saved.filter(item=>item.type!=='tool'&&!component(item)).map(key))];
+ }
+ const additions=items.filter(item=>item.type!=='tool'&&!component(item)),active=new Set(additions.map(key));
+ optionSelectionOrder=optionSelectionOrder.filter(id=>active.has(id));
+ for(const item of additions)if(!optionSelectionOrder.includes(key(item)))optionSelectionOrder.push(key(item));
+ const rank=item=>item.type==='tool'?0:component(item)?1:2;
+ return items.slice().sort((a,b)=>rank(a)-rank(b)||(rank(a)===2?optionSelectionOrder.indexOf(key(a))-optionSelectionOrder.indexOf(key(b)):0));
+}
+window.WEPBuildOrderItems=orderedPackageItems;
 function packageSpec(){
  const mainQty=Number($('equipment-qty')?.value||1);if(!Number.isInteger(mainQty)||mainQty<1||mainQty>20)throw new Error('Choose whole quantities from 1 to 20.');
  const items=[{type:'tool',sku,qty:mainQty,setupSelected:mainSetupSelected()}];
@@ -310,7 +327,7 @@ function packageSpec(){
   const qty=Number(q.value);if(!Number.isInteger(qty)||qty<1||qty>20)throw new Error('Choose whole quantities from 1 to 20.');
   items.push({type:c.dataset.type,sku:c.dataset.sku,qty,setupSelected:optionSetupSelected(c)});
  });
- return {brandId:selectedBrand.toUpperCase(),sku,items};
+ return {brandId:selectedBrand.toUpperCase(),sku,items:orderedPackageItems(items)};
 }
 function reviewPackage(){
  addPackageToCart();
@@ -356,8 +373,9 @@ function renderBuildPackageReview(quote=null,message=""){
  const mainQty=Number($('equipment-qty')?.value||1);
  const confirmed=Array.isArray(quote?.lines)&&quote.lines.length>0;
  const amount=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
- const lines=[{name:clean(selectedProduct.Description)||clean(selectedProduct.Model)||sku,sku,type:'tool',code:assemblyCode(selectedProduct),fee:assemblyAmount(selectedProduct),qty:mainQty,regular:money(selectedProduct.MSRP),unit:currentPrice(selectedProduct),setup:mainSetupSelected()?assemblyAmount(selectedProduct):0}];
+ let lines=[{name:clean(selectedProduct.Description)||clean(selectedProduct.Model)||sku,sku,type:'tool',code:assemblyCode(selectedProduct),fee:assemblyAmount(selectedProduct),qty:mainQty,regular:money(selectedProduct.MSRP),unit:currentPrice(selectedProduct),setup:mainSetupSelected()?assemblyAmount(selectedProduct):0}];
  document.querySelectorAll('.option-check:checked').forEach(c=>{const qty=Number(document.querySelector('[data-qty="'+CSS.escape(c.dataset.sku)+'"]')?.value);lines.push({name:c.dataset.name,sku:c.dataset.sku,type:c.dataset.type,code:c.dataset.setupOption,fee:Number(c.dataset.setup||0),qty,required:c.dataset.wepRequired==='true',regular:Number(c.dataset.regularPrice||0),unit:Number(c.dataset.price||0),setup:optionSetupSelected(c)?Number(c.dataset.setup||0):0});});
+ lines=orderedPackageItems(lines);
  // Prices come from the same response as the payment boxes. A changed build
  // falls back to clearly marked listed prices until its new response arrives.
  lines.forEach(line=>{
@@ -635,4 +653,5 @@ async function init(){
 }
 init();
 })();
+
 
