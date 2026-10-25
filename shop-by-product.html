@@ -705,7 +705,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261025-portal-inline1" defer></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261025-layoutrestore1"></head>
+<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261025-cardrestore1"><script src="universal/marketplace-card.js?v=20261025-cardrestore1"></script></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -1187,7 +1187,7 @@ root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,
         clean(p.SKU);
 
       // WEP_GREENWORKS_ONE_SKU_V1: each Greenworks SKU has its own card.
-      const key=normalizedBrand==='GREENWORKS' ? 'GREENWORKS|SKU|'+clean(p.SKU).toUpperCase() : normalizedBrand==='TORO' ? toroCard(p).key : ((brand+'|'+familyModel+'|'+clean(p.PowerType)).toUpperCase());
+      const key=normalizedBrand==='GREENWORKS' ? 'GREENWORKS|SKU|'+clean(p.SKU).toUpperCase() : normalizedBrand==='TORO' ? toroCard(p).key : normalizedBrand==='STIHL' && /battery/i.test(clean(p.PowerType)) ? (brand+'|BATTERY|'+category+'|'+familyModel).toUpperCase() : ((brand+'|'+familyModel+'|'+clean(p.PowerType)).toUpperCase());
       const rowSort=num(p.SortOrder)||999999;
 
       if(!map.has(key)){
@@ -3277,6 +3277,7 @@ root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,
   }
   function catalogSpecs(f){const v=selectedPriceVariant(f);return Object.entries(v.specs||f.specs||{}).filter(([,value])=>clean(value)).slice(0,4);}
   function card(f){
+    if(window.WestEndMarketplaceCard)return window.WestEndMarketplaceCard.render(f,{selectedPriceVariant,priceChoices,pricePanel,selectedStock,stockHeaderMarkup,sawHeaderBars,cardFinanceMarkup,paymentSelectionUrl,promoInfo,money,state});
     const first=selectedPriceVariant(f),specs=catalogSpecs(f),url=catalogBuildUrl(f),heading=clean(first.description)||clean(f.model)||clean(first.sku);
     const productUrl='product.html?'+new URLSearchParams({brand:f.brand,sku:first.sku||''}),promo=isCompactTractor(f)?null:promoInfo(first);
     const msrp=Number(first.msrp||first.price||0),price=promo?.type==='sale'?promo.price:msrp;
@@ -3301,15 +3302,16 @@ root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,
   function fitPriceDescription(el){
     const width=el.clientWidth;
     if(!width)return;
-    el.style.fontSize='13px';
+    const base=el.classList.contains('market-card-title')?20:13;
+    el.style.fontSize=base+'px';
     const natural=el.scrollWidth;
-    if(natural>width)el.style.fontSize=(Math.floor(13*(width-1)/natural*100)/100)+'px';
+    if(natural>width)el.style.fontSize=(Math.floor(base*(width-1)/natural*100)/100)+'px';
   }
   const descriptionResize=typeof ResizeObserver==='function'
     ? new ResizeObserver(entries=>entries.forEach(entry=>fitPriceDescription(entry.target))) : null;
   function fitPriceDescriptions(){
     if(descriptionResize)descriptionResize.disconnect();
-    document.querySelectorAll('.market-price-description').forEach(el=>{
+    document.querySelectorAll('.market-price-description,.market-card-title').forEach(el=>{
       fitPriceDescription(el);
       if(descriptionResize)descriptionResize.observe(el);
     });

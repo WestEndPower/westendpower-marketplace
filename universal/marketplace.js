@@ -143,7 +143,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       const productSku=clean(p.SKU);
       if(!productSku||['STOP','REFERENCE_ONLY'].includes(productSku.toUpperCase()))return;
       // WEP_GREENWORKS_ONE_SKU_V1: each Greenworks SKU has its own card.
-      const key=normalizedBrand==='GREENWORKS' ? 'GREENWORKS|SKU|'+clean(p.SKU).toUpperCase() : normalizedBrand==='TORO' ? toroCard(p).key : ((/^compact tractors?$/i.test(category) ? brand+'|'+familyModel+'|'+clean(p.PowerType) : /^chainsaws?$/i.test(category) ? brand+'|SAW|'+familyModel+'|'+clean(p.PowerType) : brand+'|'+productSku).toUpperCase());
+      const key=normalizedBrand==='GREENWORKS' ? 'GREENWORKS|SKU|'+clean(p.SKU).toUpperCase() : normalizedBrand==='TORO' ? toroCard(p).key : normalizedBrand==='STIHL' && /battery/i.test(clean(p.PowerType)) ? (brand+'|BATTERY|'+category+'|'+familyModel).toUpperCase() : ((/^compact tractors?$/i.test(category) ? brand+'|'+familyModel+'|'+clean(p.PowerType) : /^chainsaws?$/i.test(category) ? brand+'|SAW|'+familyModel+'|'+clean(p.PowerType) : brand+'|'+productSku).toUpperCase());
       const rowSort=sortOrderValue(p.SortOrder);
 
       if(!map.has(key)){
@@ -2177,6 +2177,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
   function catalogSpecs(f){const v=selectedPriceVariant(f);return Object.entries(v.specs||f.specs||{}).filter(([,value])=>clean(value)).slice(0,4);}
   function card(f){
+    if(window.WestEndMarketplaceCard)return window.WestEndMarketplaceCard.render(f,{selectedPriceVariant,priceChoices,pricePanel,selectedStock,stockHeaderMarkup,sawHeaderBars,cardFinanceMarkup,paymentSelectionUrl,promoInfo,money,state});
     const first=selectedPriceVariant(f),specs=catalogSpecs(f),url=catalogBuildUrl(f),heading=clean(first.description)||clean(f.model)||clean(first.sku);
     const productUrl='product.html?'+new URLSearchParams({brand:f.brand,sku:first.sku||''}),promo=isCompactTractor(f)?null:promoInfo(first);
     const msrp=Number(first.msrp||first.price||0),price=promo?.type==='sale'?promo.price:msrp;
@@ -2201,15 +2202,16 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   function fitPriceDescription(el){
     const width=el.clientWidth;
     if(!width)return;
-    el.style.fontSize='13px';
+    const base=el.classList.contains('market-card-title')?20:13;
+    el.style.fontSize=base+'px';
     const natural=el.scrollWidth;
-    if(natural>width)el.style.fontSize=(Math.floor(13*(width-1)/natural*100)/100)+'px';
+    if(natural>width)el.style.fontSize=(Math.floor(base*(width-1)/natural*100)/100)+'px';
   }
   const descriptionResize=typeof ResizeObserver==='function'
     ? new ResizeObserver(entries=>entries.forEach(entry=>fitPriceDescription(entry.target))) : null;
   function fitPriceDescriptions(){
     if(descriptionResize)descriptionResize.disconnect();
-    document.querySelectorAll('.market-price-description').forEach(el=>{
+    document.querySelectorAll('.market-price-description,.market-card-title').forEach(el=>{
       fitPriceDescription(el);
       if(descriptionResize)descriptionResize.observe(el);
     });

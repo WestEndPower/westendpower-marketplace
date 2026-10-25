@@ -91,3 +91,24 @@
 .wep-catalog-grid .market-inventory-contact{display:inline-block;margin-top:5px;font:700 12px/1.4 Arial,sans-serif;color:#176c34;text-decoration:underline}
 .market-card.wep-blended-card{font-family:Arial,Helvetica,sans-serif}
 .market-card.wep-blended-card .market-card-finance-apr{text-transform:none}
+
+/* Shared restored shopping card controls; generated cards retain their own template. */
+#market-app .wep-restored-card .market-card-head{min-width:0;overflow:hidden}
+#market-app .wep-restored-card .market-card-head h3{display:block;min-width:0;width:100%;max-width:100%}
+#market-app .wep-restored-card .market-card-title{display:block;min-width:0;max-width:100%;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+#market-app .wep-restored-card .market-price-lines,#market-app .wep-restored-card .market-price-choice{min-width:0;width:100%}
+#market-app .wep-restored-card .market-price-choice{padding:8px;min-height:90px}
+#market-app .wep-restored-card .market-price-heading{gap:4px;flex-wrap:wrap;white-space:nowrap}
+#market-app .wep-restored-card .market-price-heading>span:first-child{font-size:12px}
+#market-app .wep-restored-card .market-price-pair strong{font-size:18px}
+#market-app .wep-restored-card .market-price-description,#market-app .wep-restored-card .market-package-savings{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#market-app .wep-restored-card .market-price-inventory{margin-top:4px}
+#market-app .wep-restored-card .market-inventory-wrap{position:relative;text-align:center}
+#market-app .wep-restored-card .market-actions a{font:700 12px/1.35 Arial,sans-serif;min-height:34px}
+#market-app .wep-restored-card>.market-card-footer-specs{grid-template-columns:repeat(4,minmax(0,1fr))!important;margin:0!important;padding:0 10px 10px!important}
+#market-app .wep-restored-card .market-savings-banner{display:block;min-height:0;padding:5px 4px}
+#market-app .wep-restored-card .market-savings-banner strong{display:block;font:800 12px/1.25 Arial,sans-serif;color:#fff;white-space:nowrap}
+#market-app .wep-restored-card .market-savings-banner small{display:block;margin-top:2px;font:700 10px/1.25 Arial,sans-serif;white-space:nowrap;color:#fff}
+@media(max-width:760px){#market-app .wep-restored-card>.market-card-footer-specs{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
+#market-app .wep-restored-card .market-package-savings{white-space:normal;overflow-wrap:anywhere}

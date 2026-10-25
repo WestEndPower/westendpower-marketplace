@@ -4,14 +4,17 @@ John requested that approved layouts be preserved across later changes (October 
 
 ## Marketplace, Shop by Product, Shop by Brand
 
-- Keep the search box, Clear button, and main navigation. On shopping pages, Dealer Portal sits immediately to the right of Clear; pages without that search box retain the standalone dealer entry.
+- Keep the search box, Clear button, and main navigation. On shopping pages, Dealer Portal sits at the far right of the shopping header; pages without that search box retain the standalone dealer entry.
 - Keep compact spacing above and below main navigation in both normal and brand modes. Do not add a divider or extra top padding between navigation and Models / Series.
 - Keep the filter pills and results/comparison bar compact (12px desktop control text). Preserve their actions while reducing padding.
 - Keep the model/series, promotion, package, power, and workbook specification buttons.
 - Keep the left filter panel on desktop: Brand, Availability, Online Purchase, and applicable workbook F fields.
 - On mobile, use the Filters button to open that panel as a drawer, including the compact button controls.
 - Keep the results count, Compare Selected, and Compare All in View. Comparison uses the currently filtered products.
-- Keep the current equipment cards and responsive grid.
+- Keep the responsive equipment-card grid. The three shopping routes use `universal/marketplace-card.js` for card markup.
+- Keep card headings on one line inside the header; fit long descriptions to the available width.
+- Keep specifications below the card body. Battery cards retain individual-unit and package price boxes with an inventory button in each, plus Run & Charge Times. Compact tractors retain their workbook-backed factory and tire selectors.
+- Image banners contain only rebate/save amounts and `Expires Oct. 31, 2026` style dates; financing remains in its payment area.
 - Do not replace these controls with the generated-page dropdown toolbar.
 
 ## Generated builder pages
