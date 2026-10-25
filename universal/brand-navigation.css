@@ -12,3 +12,8 @@
 .wep-brand-navigation .wep-menu,#we-shared-nav .wep-brand-navigation .wep-menu{width:max-content;min-width:220px;max-width:calc(100vw - 32px);overflow:auto}
 .wep-brand-navigation .wep-menu a,#we-shared-nav .wep-brand-navigation .wep-menu a{white-space:nowrap;font:700 13px/1.35 Arial,sans-serif;padding:8px 12px;min-height:36px}
 @media(max-width:650px){.wep-brand-navigation .wep-menu a,#we-shared-nav .wep-brand-navigation .wep-menu a{min-height:44px}}
+
+/* All marketplace navigation bars share the approved compact spacing. */
+#we-shared-nav{margin:6px 0!important;padding:0 4px!important}
+#we-shared-nav .wep-nav{margin:0!important;padding:4px 0!important}
+#market-app .market-shop-nav:has(>#market-shop-tabs[hidden]):has(>#market-power-wrap[hidden]){display:none}

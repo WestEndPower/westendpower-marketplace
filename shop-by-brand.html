@@ -3418,9 +3418,9 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
         ? ' - '+bits.join(' | ')
         : '';
   }
-  function compareTable(){
-    const selected=activeFamilies().filter(f=>state.compare.has(f.key));
-    const fams=(selected.length?selected:DATA.filtered).slice(0,24);
+  function compareTable(all=false){
+    const selected=DATA.filtered.filter(f=>state.compare.has(f.key));
+    const fams=(all?DATA.filtered:selected).slice(0,24);
     if(!fams.length) return '<p>No products to compare.</p>';
     const labels=[];
     fams.forEach(f=>Object.keys(f.specs).forEach(l=>{if(!labels.includes(l)) labels.push(l);}));
@@ -3440,9 +3440,11 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
 
   function updateCompareButton(){
     const b=$('#market-compare-float');
-    const n=state.compare.size;
-    b.textContent=n ? 'Compare '+n+' Selected' : 'Compare '+DATA.filtered.length+' Products';
-    b.disabled=n ? n<2 : DATA.filtered.length<2;
+    const n=DATA.filtered.filter(f=>state.compare.has(f.key)).length;
+    b.textContent='Compare Selected ('+n+')';
+    b.disabled=n<2;
+    let all=$('#market-compare-all');if(!all){all=document.createElement('button');all.id='market-compare-all';all.type='button';all.className='market-compare-float';b.after(all);all.addEventListener('click',()=>{$('#market-compare-content').innerHTML=compareTable(true);$('#market-compare-dialog').showModal();});}
+    all.textContent='Compare All in View ('+DATA.filtered.length+')';all.disabled=DATA.filtered.length<2;all.hidden=!marketplaceHasSelection();
   }
 
   function updateCartFloat(){
