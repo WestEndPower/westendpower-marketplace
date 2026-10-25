@@ -844,9 +844,9 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     return '<div class="market-card-finance">'+
       paymentButton+
       '<div class="market-card-finance-apr">'+esc(summary.aprLabel)+' APR <span class="market-card-finance-dot">•</span> '+esc(summary.termMonths)+' MONTHS</div>'+
-      '<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)'+(summary.freightConfirmed?'':' *')+'</span></strong></div>'+
+      '<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+
 (summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+
-      '<div class="market-card-finance-note">With approved credit.'+(summary.rebateCompatible===false?' In lieu of rebates.':'')+(summary.freightConfirmed?'':' * Additional freight applies; we’ll confirm before finalizing your order.')+'</div>'+button+'</div>';
+      (summary.expirationLabel?'<div class="market-card-finance-note">'+esc(summary.expirationLabel)+'</div>':'')+button+'</div>';
   }
 
   async function requestMarketplaceFinanceSummary(f){

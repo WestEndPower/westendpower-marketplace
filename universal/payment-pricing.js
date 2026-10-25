@@ -33,6 +33,15 @@ const num=v=>{const n=Number(clean(v).replace(/[$,%]/g,''));return Number.isFini
     return 0;
   }
 
+
+  function programExpirationLabel(program){
+    const raw=clean(program&&program.EndDate);if(!raw)return '';
+    const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+    const date=match?new Date(Number(match[1]),Number(match[2])-1,Number(match[3]),12):new Date(raw);
+    if(!Number.isFinite(date.getTime()))return '';
+    return 'Ends '+date.toLocaleDateString('en-US',{month:'numeric',day:'numeric',year:'2-digit'});
+  }
+
   function bestMarketplaceFinanceProgram(programs){
     return (programs||[]).slice().sort((a,b)=>{
       const aa=num(a.APR), ab=num(b.APR);
@@ -149,11 +158,11 @@ async function quote(brandId,sku,row,paymentMethod,program,inventoryId,quantity=
   const requiredDown=program?Math.max(programMinimumDown(program,outTheDoor),num(pricing.profitProtectionDown)):0;
   const applicationFee=program?(brandId==='YANMAR'?299:num(program.CustomerOriginationFee||program.ApplicationFee||program.UCCFilingFee)):0;
   const amountFinanced=program?cents(Math.max(outTheDoor-requiredDown,0)+applicationFee):0;
-  let apr=program?num(program.APR):0;
-  if(apr>0 && apr<1) apr*=100;
+  // The pricing API already returns APR in percentage points (0.99 means 0.99%).
+  const apr=program?num(program.APR):0;
   const termMonths=program?num(program.TermMonths):0;
   return {quantity,pricing,sellingPrice,freight,freightConfirmed,freightSource:freightQuote.source,freightMessage:freightQuote.message||'',inventoryId:selected,salesTax,outTheDoor,requiredDown,applicationFee,amountFinanced,
-    apr,aprLabel:apr===0?'0%':apr.toFixed(2).replace(/\.00$/,'')+'%',termMonths,
+    expirationLabel:programExpirationLabel(program),apr,aprLabel:apr===0?'0%':apr.toFixed(2).replace(/\.00$/,'')+'%',termMonths,
     monthly:program?monthlyPayment(amountFinanced,apr,termMonths):0,
     rebateAmount:cents(selectionItems.length?num(pricing.customerPackageQuote.rebateAmount):num(pricing.customerRebate)),rebateCompatible:program?programAllowsRebate(program):true};
 }
@@ -170,5 +179,5 @@ if(root.document?.addEventListener)root.document.addEventListener('click',event=
  }catch(_){}
 },true);
 
-root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFinanceProgram,monthlyPayment,programMinimumDown,programAllowsRebate};
+root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,quote,bestMarketplaceFinanceProgram,monthlyPayment,programMinimumDown,programAllowsRebate};
 })(typeof window==='undefined'?globalThis:window);

@@ -119,7 +119,8 @@
       const monthly=payments.monthlyPayment(principal,summary.apr,summary.termMonths);
       if(!(monthly>0))return;
       const term=Number(summary.termMonths||program.TermMonths),apr=Number(summary.apr??program.APR);
-      const message=money(monthly)+'/mo'+(Number.isFinite(apr)?' · '+apr.toFixed(2)+'% APR':'')+(term>0?' · '+term+' months':'')+' · Est. with approved credit'+(!payments.programAllowsRebate(program)?' · In lieu of rebates':'')+(down>0?' · '+money(down)+' down':'')+(result.freightConfirmed===false?' · * Additional freight applies; we’ll confirm before finalizing your order.':'');
+      const expiry=payments.programExpirationLabel(program);
+      const message=money(monthly)+'/mo'+(Number.isFinite(apr)?' · '+apr.toFixed(2)+'% APR':'')+(term>0?' · '+term+' months':'')+(down>0?' · '+money(down)+' down':'')+(expiry?' · '+expiry:'');
       financeCache.set(cacheKey,message);applyFinance(card,sku,message);
     }catch{/* Build & Buy remains the source for confirmed terms. */}
   }
