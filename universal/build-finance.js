@@ -125,7 +125,7 @@
   if(button){button.textContent=paymentConfirmed?label:'Select Payment Option';button.setAttribute('aria-label',paymentConfirmed?'Selected payment: '+label+'. View all payment options.':'Select Payment Option');}
   highlightPayment();
  }
- function remember(){if(departing)return;updatePaymentSelection();try{sessionStorage.setItem(draftKey(),JSON.stringify({...state(),paymentConfirmed,updated:Date.now()}));}catch(_){}}
+ function remember(){if(departing||cartPaused)return;updatePaymentSelection();try{sessionStorage.setItem(draftKey(),JSON.stringify({...state(),paymentConfirmed,updated:Date.now()}));}catch(_){}}
  function publishItemized(quote=null,message=""){window.dispatchEvent(new CustomEvent("wep:build-pricing",{detail:{quote,message}}));}
  function showListedBuild(message,preserveOffers=false){
   publishItemized(null,message);
@@ -1082,10 +1082,35 @@
   return JSON.stringify(rows.filter(row=>clean(row.brandId).toUpperCase()===identity.brandId&&(row.packageId===group||(!row.packageId&&clean(row.equipmentSku||row.sku)===identity.sku))).map(row=>JSON.stringify(row)).sort());
  }
  window.addEventListener('storage',event=>{
-  if(event.key!=='wepCart'||autoSaving||departing)return;
+  if(event.key!=='wepCart'||autoSaving||departing||cartResetting)return;
   try{if(cartPackageSignature(event.oldValue)===cartPackageSignature(event.newValue))return;}catch(_){return;}
-  // Recheck relevant changes without saving back and triggering another tab's storage listener.
+  // Adopt the saved cart before another refresh can write this tab's stale controls back.
+  const identity=currentIdentity(),group=identity.brandId+':'+identity.sku;
+  const rows=cart().filter(row=>clean(row.brandId).toUpperCase()===identity.brandId&&(row.packageId===group||(!row.packageId&&clean(row.equipmentSku||row.sku)===identity.sku)));
+  const main=rows.find(row=>row.type==='tool'&&clean(row.sku)===identity.sku);
+  cartResetting=true;cartPaused=true;
+  ++generation;controller?.abort();clearTimeout(timer);stopOffers();endUpdate(pricingUpdate,'cancel');
+  lastApplied='';lastResponse=null;lastSnapshot=null;quoteCache.clear();sessionStorage.removeItem(quoteSessionKey);
+  sessionStorage.removeItem(draftKey());sessionStorage.removeItem('wepBuildCheckoutChoices');
+  try{
+   for(const choice of app.querySelectorAll('.option-check')){
+    const saved=rows.find(row=>row.type===choice.dataset.type&&clean(row.sku)===clean(choice.dataset.sku));
+    choice.checked=!!saved;
+    const qty=[...app.querySelectorAll('[data-qty]')].find(input=>input.dataset.qty===choice.dataset.sku);if(qty&&saved)qty.value=String(saved.quantity);
+   }
+   const qty=app.querySelector('#equipment-qty');if(qty)qty.value=String(main?.quantity||1);
+   for(const choice of app.querySelectorAll('.setup-choice')){
+    const saved=rows.find(row=>row.type===choice.dataset.installType&&clean(row.sku)===clean(choice.dataset.installSku));
+    choice.checked=saved?.setupSelected===true;
+   }
+   stockChoices.clear();
+   if(!main){paymentConfirmed=false;preferred='';paymentSelect.value='';checkoutPending=false;checkoutRefreshPending=false;}
+   qty?.dispatchEvent(new Event('input',{bubbles:true}));
+  }finally{cartResetting=false;cartPaused=!main;}
+  syncOptionButtons();
+  // Reprice without adding a removed package or writing another tab's cart.
   schedule(false,false);
+  const message=document.getElementById('options-message');if(message)message.textContent=main?'Your saved cart changes are now reflected in this build.':'This package was removed from your cart. Choose equipment or options to start a new build.';
  });
  setInterval(()=>{if(!document.hidden)loadInventory(true);},300000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastInventoryCheck>300000)loadInventory(true);});
