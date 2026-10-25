@@ -7,3 +7,8 @@
 #we-shared-nav .wep-nav.wep-brand-navigation{justify-content:flex-start;gap:4px 8px;margin:0;padding:4px 0}
 #we-shared-nav .wep-brand-navigation>a,#we-shared-nav .wep-brand-navigation summary{padding:8px 10px}
 @media(max-width:650px){.wep-nav.wep-brand-navigation{justify-content:flex-start;padding:4px;gap:2px;margin:6px auto}.wep-brand-navigation>a,.wep-brand-navigation summary{min-height:44px}.wep-brand-navigation details{position:static}.wep-brand-navigation summary{padding:10px}.wep-brand-navigation .wep-menu,.wep-brand-navigation details:last-child>.wep-menu{left:8px;right:8px;top:100%;min-width:0;max-width:none}.wep-brand-navigation .wep-menu a{font-size:14px}}
+
+/* Compact, single-line published page links. Long menus scroll within the viewport. */
+.wep-brand-navigation .wep-menu,#we-shared-nav .wep-brand-navigation .wep-menu{width:max-content;min-width:220px;max-width:calc(100vw - 32px);overflow:auto}
+.wep-brand-navigation .wep-menu a,#we-shared-nav .wep-brand-navigation .wep-menu a{white-space:nowrap;font:700 13px/1.35 Arial,sans-serif;padding:8px 12px;min-height:36px}
+@media(max-width:650px){.wep-brand-navigation .wep-menu a,#we-shared-nav .wep-brand-navigation .wep-menu a{min-height:44px}}
