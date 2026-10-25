@@ -4,8 +4,9 @@ John requested that approved layouts be preserved across later changes (October 
 
 ## Marketplace, Shop by Product, Shop by Brand
 
-- Keep the search box, Clear button, and main navigation.
-- Keep compact spacing above and below main navigation in both normal and brand modes.
+- Keep the search box, Clear button, and main navigation. On shopping pages, Dealer Portal sits immediately to the right of Clear; pages without that search box retain the standalone dealer entry.
+- Keep compact spacing above and below main navigation in both normal and brand modes. Do not add a divider or extra top padding between navigation and Models / Series.
+- Keep the filter pills and results/comparison bar compact (12px desktop control text). Preserve their actions while reducing padding.
 - Keep the model/series, promotion, package, power, and workbook specification buttons.
 - Keep the left filter panel on desktop: Brand, Availability, Online Purchase, and applicable workbook F fields.
 - On mobile, use the Filters button to open that panel as a drawer, including the compact button controls.
