@@ -3,6 +3,23 @@
  'use strict';
  const seed=document.getElementById('wep-builder-data'),form=document.getElementById('wep-builder-form');if(!seed||!form)return;
  let data;try{data=JSON.parse(seed.textContent);}catch{return;}
+
+ const socialForm=document.getElementById('wep-social-form');
+ if(socialForm)socialForm.addEventListener('submit',async event=>{
+  event.preventDefault();const button=socialForm.querySelector('button'),status=socialForm.querySelector('[data-social-status]');
+  button.disabled=true;status.textContent='Saving links…';
+  try{
+   const response=await fetch(socialForm.getAttribute('action'),{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'},body:new URLSearchParams(new FormData(socialForm))});
+   let result;try{result=await response.json();}catch{throw Error('Links were not saved. Reopen the builder or sign in again, then retry.');}
+   if(!response.ok||!result.ok)throw Error(result.error||'Links were not saved. Please retry.');
+   socialForm.elements.socialVersion.value=result.version;
+   for(const input of socialForm.querySelectorAll('input[name^="social_"]'))input.value=result.links.find(link=>'social_'+link.key===input.name)?.url||'';
+   const summary=socialForm.closest('details')?.querySelector('summary');if(summary)summary.textContent='Social media links · '+result.links.length+' configured';
+   status.textContent='Saved. All generated pages now use these links.';
+  }catch(error){status.textContent=error.message;}
+  finally{button.disabled=false;}
+ });
+
  const products=data.products||[],controls=[...form.querySelectorAll('[data-builder-select]')],skuInput=form.elements.skus;
  const dimensions={brands:'brand',categories:'category',subcategories:'subcategory',seriesValues:'series'};
  const brandName=b=>({YANMAR:'Yanmar',STIHL:'STIHL',HONDA:'Honda',TORO:'Toro',BILLYGOAT:'Billy Goat',REDMAX:'RedMax',MITM:'Mi-T-M',GREENWORKS:'Greenworks'}[b]||b);
