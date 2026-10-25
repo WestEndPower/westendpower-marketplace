@@ -438,3 +438,7 @@
 #app .wep-build-configuration-column>.wep-build-down-payment{margin-top:10px;padding:8px;border:1px solid #c6cdc7;border-radius:6px;background:#fff}
 #app .wep-build-down-payment>button{width:100%}
 
+
+/* Clearly distinguish stocked equipment from a configurable order unit. */
+.wep-main-unit-choice{font-weight:700}.wep-main-unit-choice select{font-weight:700;border-width:2px}.wep-main-unit-choice[data-unit-source="stock"] select{border-color:#287a32;background:#edf5ed;color:#174f22}.wep-main-unit-choice[data-unit-source="orderable"] select{border-color:#356c99;background:#edf3f8;color:#214c70}.wep-main-unit-choice[data-unit-source="unavailable"] select{border-color:#a33b30;background:#fff1ed;color:#84261e}
+#app .wep-tractor-compact .wep-build-controls-row .wep-main-unit-choice{flex:0 1 252px;min-width:210px;max-width:100%}

@@ -51,7 +51,7 @@
   if(!Array.isArray(cart)||!Array.isArray(snapshot.items))throw Error('Your saved package could not be read. Nothing changed.');
   if(cart.some(row=>row.packageId===newGroup)&&oldGroup!==newGroup)throw Error('This configuration is already saved in your cart. Open that package from the cart before changing it.');
   const main=snapshot.items.find(item=>item.type==='tool'&&item.sku===clean(current.SKU));
-  if(!main||main.inventoryId)throw Error('Select Order Unit before changing factory options or tires.');
+  if(!main||main.inventoryId)throw Error('Select Build to Order before changing factory options or tires.');
   if(!Number.isInteger(main.quantity)||main.quantity<1||main.quantity>20)throw Error('Choose an equipment quantity from 1 to 20.');
   const mainSetup=clean(next.AssemblyOption).toUpperCase()==='F'||clean(next.AssemblyOption).toUpperCase()==='T'&&main.setupSelected===true;
   const items=[{brandId,type:'tool',sku:clean(next.SKU),quantity:main.quantity,setupSelected:mainSetup,inventoryId:''}],rows=[{type:'tool',row:next,item:items[0]}],removed=[];
@@ -118,11 +118,11 @@
   function refresh(){
    if(!section.isConnected){observer.disconnect();return;}
    const state=window.WEPBuildConfiguration?.status()||{ready:false};
-   const message=changing?'Loading your new configuration…':!state.ready?'Checking availability before changing configuration…':state.stocked?'Factory options and tires are fixed on this in-stock unit. Select Order Unit in Availability to change them.':'';
+   const message=changing?'Loading your new configuration…':!state.ready?'Checking availability before changing configuration…':state.stocked?'Factory options and tires are fixed on this in-stock unit. Select Build to Order under Choose Your Unit to change them.':'';
    if(status.textContent!==message)status.textContent=message;status.hidden=!message;
    for(const {button,candidate,selected,tire:isTire} of entries){
     button.disabled=changing||!state.ready||state.stocked||!candidate||isTire&&selected;
-    button.title=state.stocked?'Select Order Unit to change configuration':!candidate?'This combination is not listed':(selected&&!isTire?'Remove ':'Select ')+button.textContent;
+    button.title=state.stocked?'Select Build to Order to change configuration':!candidate?'This combination is not listed':(selected&&!isTire?'Remove ':'Select ')+button.textContent;
    }
   }
   for(const entry of entries)entry.button.onclick=()=>{

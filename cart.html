@@ -325,6 +325,7 @@ function drawCart(){
           <strong>${esc(x.productName)}</strong>
           ${x.description?`<p class="line-description">${esc(x.description)}</p>`:""}
           <small>SKU ${esc(x.sku)}</small>
+          ${x.type==='tool'&&x.packageId?`<small><strong>${x.inventoryId?'In-Stock Unit':'Build-to-Order Unit'}</strong></small>`:''}
           ${isEquipmentPackageRow(x)&&x.type==='tool'&&x.packageId?`<a href="product-options.html?brand=${encodeURIComponent(x.brandId)}&amp;sku=${encodeURIComponent(x.equipmentSku||x.sku)}">Edit Package</a>`:''}
           ${String(x.assemblyOption||'').trim().toUpperCase()==='T'&&Number(x.assemblyAmount)>0?`<label><input type="checkbox" data-cart-install="${i}" ${x.setupSelected?'checked':''}> Optional Dealer Installation: ${money(Number(x.assemblyAmount))} per item</label>`:cartSetup(x)>0?`<small>Required Set-Up / Assembly: ${money(cartSetup(x))} per item</small>`:''}
           <label class="qty-row">

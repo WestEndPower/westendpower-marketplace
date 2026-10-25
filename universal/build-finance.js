@@ -799,7 +799,7 @@
   },
   snapshot(){
    if(!this.status().ready)throw Error('Please wait for availability to load, then try again.');
-   const snapshot=state();if(snapshot.items[0]?.inventoryId)throw Error('Select Order Unit before changing factory options or tires.');
+   const snapshot=state();if(snapshot.items[0]?.inventoryId)throw Error('Select Build to Order before changing factory options or tires.');
    return {...snapshot,items:snapshot.items.map(item=>({...item,autoRequiredComponent:item.type!=='tool'&&[...app.querySelectorAll('.option-check')].some(c=>c.dataset.type===item.type&&c.dataset.sku===item.sku&&c.dataset.wepAutoRequired==='true')}))};
   },
   leave(){departing=true;++generation;controller?.abort();clearTimeout(timer);stopOffers();closeAllComparisons();}
@@ -821,7 +821,7 @@
    if(!existing){if(line.type==='tool'&&query.has('inventoryId'))value=clean(query.get('inventoryId'));else if(line.type==='tool'&&query.get('unit'))value=clean(available.find(x=>clean(x.unitRef)===clean(query.get('unit')))?.selectionId)||'__unavailable__';else if(stored?.inventoryId)value=clean(stored.inventoryId);else if(stored?.quoteStockChoice==='orderable')value='';else value=available.length?clean(available[0].selectionId):'';}
    if(value&&(!available.some(x=>clean(x.selectionId)===value)||exact.length>1))value='__unavailable__';
    stockChoices.set(key,{value,quantity:line.quantity});
-   let wrap=inlineMain?line.target.parentElement.querySelector(':scope>.wep-build-stock-choice'):line.target.querySelector('.wep-build-stock-choice');if(!wrap){wrap=document.createElement('label');wrap.className='wep-build-stock-choice';wrap.append(document.createTextNode('Availability'));const select=document.createElement('select');select.setAttribute('aria-label','Pricing source for '+line.name);wrap.append(select);if(inlineMain)line.target.after(wrap);else line.target.append(wrap);select.addEventListener('change',()=>{stockChoices.set(key,{value:select.value,quantity:Number(line.type==='tool'?app.querySelector('#equipment-qty').value:[...app.querySelectorAll('[data-qty]')].find(q=>q.dataset.qty===line.sku)?.value)});cartPaused=false;schedule(true);});}
+   let wrap=inlineMain?line.target.parentElement.querySelector(':scope>.wep-build-stock-choice'):line.target.querySelector('.wep-build-stock-choice');if(!wrap){wrap=document.createElement('label');wrap.className='wep-build-stock-choice';wrap.append(document.createTextNode(line.type==='tool'?'Choose Your Unit':'Availability'));const select=document.createElement('select');select.setAttribute('aria-label','Pricing source for '+line.name);wrap.append(select);if(inlineMain)line.target.after(wrap);else line.target.append(wrap);select.addEventListener('change',()=>{stockChoices.set(key,{value:select.value,quantity:Number(line.type==='tool'?app.querySelector('#equipment-qty').value:[...app.querySelectorAll('[data-qty]')].find(q=>q.dataset.qty===line.sku)?.value)});cartPaused=false;schedule(true);});}
    const select=wrap.querySelector('select');select.replaceChildren();
    if(value==='__unavailable__'){const o=new Option('Previous stock unavailable — choose again','__unavailable__');o.disabled=true;select.append(o);}
    const groups=new Map();
@@ -835,10 +835,11 @@
    for(const rows of groups.values()){
     const choice=rows.find(x=>clean(x.selectionId)===value)||rows[0];
     const count=rows.reduce((n,x)=>n+Number(x.quantity),0);
-    const label='In Stock — '+count+' available'+(groups.size>1?' · Price '+String.fromCharCode(65+groupIndex):'');
+    const label='In-Stock Unit — '+count+' available'+(groups.size>1?' · Price '+String.fromCharCode(65+groupIndex):'');
     select.append(new Option(label,clean(choice.selectionId)));groupIndex++;
    }
-   select.append(new Option('Order Unit',''));select.value=value;
+   select.append(new Option(line.type==='tool'?'Build to Order — Configure Your Unit':'Available to Order',''));select.value=value;
+   if(line.type==='tool'){wrap.classList.add('wep-main-unit-choice');wrap.dataset.unitSource=value==='__unavailable__'?'unavailable':value?'stock':'orderable';}
    const selectedStock=available.find(choice=>clean(choice.selectionId)===value);
    const includedText=(selectedStock?.includedItems||[]).map(item=>(clean(item.description)||clean(item.sku))+' (Qty '+Number(item.quantity)+')').join('; ');
    let included=wrap.querySelector('.wep-stock-included');if(!included){included=document.createElement('small');included.className='wep-stock-included';wrap.append(included);}
@@ -851,7 +852,7 @@
     else if(child.hasAttribute('data-wep-before-stock-hidden')){child.hidden=child.getAttribute('data-wep-before-stock-hidden')==='true';child.removeAttribute('data-wep-before-stock-hidden');}
    }
    // No serial numbers, cost data or raw inventory IDs are shown in labels.
-   wrap.hidden=!all.length&&!value;
+   wrap.hidden=line.type!=='tool'&&!all.length&&!value;
    if(!inlineMain&&available.length&&line.target.matches('details')&&!line.target.dataset.wepStockOpened){line.target.open=true;line.target.dataset.wepStockOpened='true';}
   }
   const main=buildLines()[0],value=stockChoices.get(sourceKey('tool',main.sku))?.value;
