@@ -14,6 +14,7 @@ John requested that approved layouts be preserved across later changes (October 
 - Keep the responsive equipment-card grid. The three shopping routes use `universal/marketplace-card.js` for card markup.
 - Keep card headings on one line inside the header; fit long descriptions to the available width.
 - Keep specifications below the card body. Battery cards retain individual-unit and package price boxes with an inventory button in each, plus Run & Charge Times. Compact tractors retain their workbook-backed factory and tire selectors.
+- The right column uses the shared Package Prices heading. Tractor factory equipment and tires occupy separate labeled rows above the combined MSRP; battery unit/package boxes retain their prices, savings and individual inventory checks until component-SKU workbook selections are supplied.
 - Image banners contain only rebate/save amounts and `Expires Oct. 31, 2026` style dates; financing remains in its payment area.
 - Do not replace these controls with the generated-page dropdown toolbar.
 

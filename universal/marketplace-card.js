@@ -37,7 +37,7 @@
     '<div class="market-detail-actions"><a class="market-product-details" href="'+escape(product)+'">View Details</a><label class="market-product-details market-compare-detail"><input type="checkbox" data-compare="'+escape(f.key)+'" '+(state.compare.has(f.key)?'checked':'')+'> <span>Compare</span></label></div>'+
     cardFinanceMarkup(f)+
    '</section><section class="market-buy">'+
-    '<div class="market-price-lines">'+choices.map(choice=>pricePanel(choice.label,choice.v,choice.isPackage,f,choice.variants)).join('')+'</div>'+
+    '<h4 class="market-package-prices-title">Package Prices</h4><div class="market-price-lines">'+choices.map(choice=>pricePanel(choice.label,choice.v,choice.isPackage,f,choice.variants)).join('')+'</div>'+
     (battery?'<div class="market-actions"><a href="'+escape(runtime.href)+'" data-wep-runtime-brand="'+escape(f.brand)+'" data-wep-runtime-sku="'+escape(v.sku)+'">Run &amp; Charge Times</a></div>':'')+
     '<a class="market-product-page-link wep-card-build" href="'+escape(build.href)+'">Build &amp; Buy ↗</a><p class="wep-card-build-note">Configure your equipment and review current pricing.</p>'+
    '</section></div>'+

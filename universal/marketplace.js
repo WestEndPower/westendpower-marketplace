@@ -611,7 +611,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   function compactHeaderOptions(f){
     if(!isCompactTractor(f))return '';
     const flags=compactFlags(selectedPriceVariant(f));
-    return '<div class="market-factory-options" style="text-align:center;margin:8px 0"><div class="market-compact-heading">Factory Installed Options</div><span role="group" aria-label="Factory-installed options" style="display:inline-flex;gap:4px;justify-content:center;flex-wrap:wrap">'+compactFields.map(([label],i)=>{
+    return '<div class="market-factory-options" style="text-align:center;margin:8px 0"><div class="market-package-row-label">Factory Equipment</div><span role="group" aria-label="Factory-installed options" style="display:inline-flex;gap:4px;justify-content:center;flex-wrap:wrap">'+compactFields.map(([label],i)=>{
       const offered=compactVariants(f).some(v=>compactFlags(v)[i]);if(!offered||(selectedStock(f)&&!flags[i]))return '';
       const candidate=compactOptionCandidate(f,i),disabled=!candidate;
       if(!flags[i]&&!candidate)return '';
@@ -640,7 +640,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const offered=compactTires.filter(([code])=>selectedStock(f)?code===tire:compactVariants(f).some(v=>compactTire(v)===code));
     const extra=tire&&!compactTires.some(([code])=>code===tire)?[[tire]]:[];
     const note=cardSelectionFor(f).compactNote||'';
-    return '<div class="market-compact-tires" style="margin:7px 0;text-align:center"><div role="group" aria-label="Tire options" style="display:flex;justify-content:center;gap:4px;flex-wrap:wrap">'+offered.concat(extra).map(([code])=>{
+    return '<div class="market-compact-tires" style="margin:7px 0;text-align:center"><div class="market-package-row-label">Tires</div><div role="group" aria-label="Tire options" style="display:flex;justify-content:center;gap:4px;flex-wrap:wrap">'+offered.concat(extra).map(([code])=>{
       const active=code===tire,candidate=compactTireCandidate(f,code),disabled=!candidate;
       return '<button type="button" data-compact-family="'+esc(f.key)+'" data-compact-tire="'+esc(code)+'" aria-pressed="'+active+'" '+(disabled?'disabled ':'')+'title="'+esc(disabled?'Not listed with the selected factory options':'Select '+code+' tires')+'" style="'+compactButtonStyle(active,disabled,false)+'">'+esc(code)+'</button>';
     }).join('')+'</div>'+compactTireGuide(f)+(note?'<div role="status" style="font-size:11px;line-height:1.3;margin-top:4px;color:#315e3d">'+esc(note)+'</div>':'')+'</div>';
@@ -2083,6 +2083,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const regular=promo ? promo.regular : (v.msrp>0 ? v.msrp : v.price);
     const shown=isCompactTractor(f)?v.msrp:(promo ? promo.price : v.price);
     if(!isPackage&&promo?.type==='sale')label='Sale:';
+    if(isCompactTractor(f))label=compactFlags(v).some(Boolean)?'Package MSRP:':'MSRP:';
 
     const description=isCompactTractor(f)?'':v.recommendedPackage&&Array.isArray(v.packageItems)
       ?v.packageItems.map(item=>{
@@ -2098,7 +2099,10 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       ? 'Separately '+money(v.packageValue)+' | Save '+money(v.packageSavings)
       : '';
     return '<div class="market-price-choice'+(isPackage?' market-package-choice':'')+'"'+(active?' style="outline:3px solid #238b45;outline-offset:1px"':'')+'>'+
-      '<button type="button" '+(selectedStock(f)?'disabled ':'')+'data-price-select="'+esc(f.key)+'" data-price-index="'+index+'" aria-pressed="'+active+'" style="display:block;width:100%;border:0;background:transparent;color:inherit;padding:0;cursor:pointer;text-align:inherit">'+
+      stockUnitMarkup(f)+
+      compactHeaderOptions(f)+
+      compactTireMarkup(f)+
+      '<button class="market-price-selection" type="button" '+(selectedStock(f)?'disabled ':'')+'data-price-select="'+esc(f.key)+'" data-price-index="'+index+'" aria-pressed="'+active+'" style="display:block;width:100%;border:0;background:transparent;color:inherit;padding:0;cursor:pointer;text-align:inherit">'+
       '<span class="market-price-heading"><span style="flex:0 1 auto">'+esc(label)+'</span><span class="market-price-pair" style="flex:1 1 auto;justify-content:flex-end">'+
         (promo?'<del>'+money(regular)+'</del>':'')+
         '<strong>'+(shown>0?money(shown):'Pricing Coming Soon')+'</strong>'+
@@ -2107,9 +2111,6 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       (promo && promo.type==='rebate'?'<small class="market-promo-price-note">After customer rebate</small>':'')+
       (savings?'<small class="market-package-savings">'+esc(savings)+'</small>':'')+
       '</button>'+
-      stockUnitMarkup(f)+
-      compactHeaderOptions(f)+
-      compactTireMarkup(f)+
       '<div class="market-price-inventory">'+inventoryMarkup(f,v,isPackage?'package':'unit')+'</div>'+
     '</div>';
   }

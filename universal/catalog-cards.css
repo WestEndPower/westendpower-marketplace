@@ -112,3 +112,14 @@
 @media(max-width:760px){#market-app .wep-restored-card>.market-card-footer-specs{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 
 #market-app .wep-restored-card .market-package-savings{white-space:normal;overflow-wrap:anywhere}
+
+/* Package Prices: one shared box treatment, with workbook-backed choices. */
+#market-app .wep-restored-card .market-package-prices-title{margin:0;padding:5px 4px;text-align:center;color:#245f35;font:800 14px/1.25 Arial,sans-serif}
+#market-app .wep-restored-card .market-package-row-label{margin:0 0 4px;color:#36523d;font:700 11px/1.3 Arial,sans-serif}
+#market-app .wep-restored-card .market-factory-options{margin:0 0 7px!important}
+#market-app .wep-restored-card .market-compact-tires{margin:0 0 7px!important;padding-top:7px;border-top:1px solid #d7e0d9}
+#market-app .wep-restored-card .market-price-selection{border-radius:4px}
+#market-app .wep-restored-card .market-price-selection:focus-visible{outline:2px solid #176c34;outline-offset:3px}
+#market-app .wep-restored-card .market-factory-options~.market-price-selection{padding-top:8px!important;border-top:1px solid #d7e0d9!important}
+#market-app .wep-restored-card .market-price-heading{white-space:normal}
+#market-app .wep-restored-card .market-price-heading>span:first-child{white-space:nowrap}
