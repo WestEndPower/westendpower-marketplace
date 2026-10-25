@@ -2353,6 +2353,9 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       params.set('availability',Array.from(state.availability).join(','));
     }
 
+    for(const [field,values] of state.specFilters){for(const value of values)params.append('spec.'+field,value);}
+    for(const field of state.packageComponents)params.append('package',field);
+
     return params;
   }
 
@@ -2402,6 +2405,11 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       .map(clean)
       .filter(Boolean)
       .forEach(value=>state.availability.add(value));
+
+    for(const [key,value] of params){
+      if(key.startsWith('spec.')&&/^[BF]\d+-.+/i.test(key.slice(5))){const field=key.slice(5);if(!state.specFilters.has(field))state.specFilters.set(field,new Set());state.specFilters.get(field).add(value);}
+      if(key==='package'&&/^P\d+-.+/i.test(value))state.packageComponents.add(value);
+    }
 
     if($('#market-search')) $('#market-search').value=state.search;
     if($('#filter-buy-online')) $('#filter-buy-online').checked=state.buyOnline;

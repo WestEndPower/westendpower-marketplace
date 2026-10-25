@@ -52,3 +52,15 @@
 @media print{.wep-catalog-filters,.wep-catalog-toolbar,.market-results,.market-sidebar,.market-detail-actions,.wep-catalog-compare{display:none!important}#market-app #market-grid,.wep-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.market-card.wep-blended-card{break-inside:avoid}}
 
 #market-app.shop-category-home .market-layout,#market-app.shop-category-home .market-context-panel{display:none!important}
+
+
+/* Generated pages keep filters and comparison in a single scrolling row. */
+.wep-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.wep-catalog-toolbar[data-catalog-toolbar]{flex-wrap:nowrap;overflow-x:auto;min-height:52px;gap:10px}
+.wep-catalog-toolbar[data-catalog-toolbar]>span{flex:0 0 auto;white-space:nowrap}
+.wep-catalog-toolbar[data-catalog-toolbar] .wep-catalog-filters{display:flex;flex-wrap:nowrap;flex:1 1 auto;min-width:130px;overflow-x:auto;margin:0;gap:8px}
+.wep-catalog-toolbar[data-catalog-toolbar] .wep-catalog-filters label{display:block;flex:0 0 150px;margin:0}
+.wep-catalog-toolbar[data-catalog-toolbar] .wep-catalog-filters select{padding:8px 6px;height:36px}
+.wep-catalog-toolbar[data-catalog-toolbar] .actions{flex:0 0 auto;flex-wrap:nowrap;white-space:nowrap;gap:7px}
+.wep-catalog-toolbar[data-catalog-toolbar] .actions button{white-space:nowrap}
+.wep-catalog-toolbar[hidden],.wep-catalog-filters label[hidden],.market-card.wep-blended-card label[hidden],.wep-catalog-toolbar button[hidden]{display:none!important}

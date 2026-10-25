@@ -27,7 +27,7 @@
     text(card.querySelector('[data-catalog-price-label]'),variant.saleActive?'Sale price':count>1?'Starting MSRP':'MSRP');
     text(card.querySelector('[data-catalog-price]'),variant.price?money(variant.price):'Contact Us');
     for(const a of card.querySelectorAll('[data-catalog-buy]'))a.href=variant.buy;
-    for(const a of card.querySelectorAll('[data-catalog-details]'))a.href='https://westendpower.github.io/westendpower-marketplace/product.html?brand=YANMAR&sku='+encodeURIComponent(variant.sku);
+    for(const a of card.querySelectorAll('[data-catalog-details]'))a.href='https://westendpower.github.io/westendpower-marketplace/product.html?brand='+encodeURIComponent(variant.brand||'YANMAR')+'&sku='+encodeURIComponent(variant.sku);
     const imageHost=card.querySelector('.market-image');
     let img=card.querySelector('[data-catalog-image]');
     if(variant.image){
@@ -58,8 +58,8 @@
         for(const value of once)values.set(value,(values.get(value)||0)+1);
       }
       if(selected&&!values.has(selected))values.set(selected,0);
-      const all=element('option','All');all.value='';
-      control.replaceChildren(all,...[...values].sort(([a],[b])=>a.localeCompare(b,undefined,{numeric:true})).map(([value,count])=>{const option=element('option',value+' ('+count+')');option.value=value;return option;}));
+      const all=element('option',(control.getAttribute('aria-label')||'Filter')+': All');all.value='';
+      control.replaceChildren(all,...[...values].sort(([a],[b])=>a.localeCompare(b,undefined,{numeric:true})).map(([value,count])=>{const option=element('option',(control.getAttribute('aria-label')||'Filter')+': '+value+' ('+count+')');option.value=value;return option;}));
       control.value=selected;
     }
     text(document.querySelector('[data-catalog-count]'),displayed.size+' model'+(displayed.size===1?'':'s'));
@@ -69,8 +69,9 @@
   function updateComparisonButtons(){
     const n=[...chosen].filter(k=>displayed.has(k)).length;
     const selected=document.querySelector('[data-catalog-selected]'),all=document.querySelector('[data-catalog-all]');
-    text(selected,'Compare Selected ('+n+')');selected.disabled=n<2;
-    text(all,'Compare All in View ('+displayed.size+')');all.disabled=displayed.size<2;
+    text(selected,'Compare Selected ('+n+')');selected.disabled=n<2;selected.hidden=displayed.size<2;
+    text(all,'Compare All in View ('+displayed.size+')');all.disabled=displayed.size<2;all.hidden=displayed.size<2;
+    for(const checkbox of document.querySelectorAll('[data-catalog-compare]'))checkbox.closest('label').hidden=displayed.size<2;
   }
   function compare(keys){
     const entries=keys.map(k=>({model:models.find(m=>m.key===k),variant:displayed.get(k)})).filter(x=>x.variant);
@@ -93,21 +94,22 @@
   const observer='IntersectionObserver'in window?new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){observer.unobserve(entry.target);loadFinance(entry.target);}},{rootMargin:'120px'}):null;
   function scheduleFinance(card,variant){
     if(data.preview||!window.WestEndPayments)return;
-    if(financeCache.has(variant.sku)){applyFinance(card,variant.sku,financeCache.get(variant.sku));return;}
+    const cacheKey=(variant.brand||'YANMAR')+'|'+variant.sku;
+    if(financeCache.has(cacheKey)){applyFinance(card,variant.sku,financeCache.get(cacheKey));return;}
     if(observer)observer.observe(card);else loadFinance(card);
   }
   function applyFinance(card,sku,message){if(!card.hidden&&card.dataset.currentSku===sku&&message)text(card.querySelector('[data-catalog-finance]'),message);}
   async function loadFinance(card){
     const variant=displayed.get(card.dataset.modelKey),payments=window.WestEndPayments;
     if(!variant||card.hidden||!payments)return;
-    const sku=variant.sku;
-    if(financeCache.has(sku)){applyFinance(card,sku,financeCache.get(sku));return;}
-    financeCache.set(sku,null);
+    const sku=variant.sku,brand=variant.brand||'YANMAR',cacheKey=brand+'|'+sku;
+    if(financeCache.has(cacheKey)){applyFinance(card,sku,financeCache.get(cacheKey));return;}
+    financeCache.set(cacheKey,null);
     try{
-      const programs=await payments.programs('YANMAR',sku,'');
+      const programs=await payments.programs(brand,sku,'');
       const program=payments.bestMarketplaceFinanceProgram(programs);
       if(!program)return;
-      const result=await payments.quote('YANMAR',sku,{Taxable:variant.taxable?'T':'F'},'finance',program,'',1,{shouldRun:()=>!card.hidden&&card.dataset.currentSku===sku,priority:'background'});
+      const result=await payments.quote(brand,sku,{Taxable:variant.taxable?'T':'F'},'finance',program,'',1,{shouldRun:()=>!card.hidden&&card.dataset.currentSku===sku,priority:'background'});
       if(!result||result.freightConfirmed===false)return;
       const summary=result.summary||result;
       const subtotal=Math.max(0,Number(variant.price)-(payments.programAllowsRebate(program)?Number(variant.rebate)||0:0))+Number(summary.freight||0);
@@ -118,7 +120,7 @@
       if(!(monthly>0))return;
       const term=Number(summary.termMonths||program.TermMonths),apr=Number(summary.apr??program.APR);
       const message=money(monthly)+'/mo'+(Number.isFinite(apr)?' · '+apr.toFixed(2)+'% APR':'')+(term>0?' · '+term+' months':'')+' · Est. with approved credit'+(down>0?' · '+money(down)+' down':'');
-      financeCache.set(sku,message);applyFinance(card,sku,message);
+      financeCache.set(cacheKey,message);applyFinance(card,sku,message);
     }catch{/* Build & Buy remains the source for confirmed terms. */}
   }
   for(const control of [...controls,availability].filter(Boolean))control.addEventListener('change',refresh);
@@ -129,3 +131,4 @@
   document.querySelector('[data-catalog-close]').addEventListener('click',()=>document.querySelector('[data-catalog-dialog]').close());
   refresh();
 })();
+
