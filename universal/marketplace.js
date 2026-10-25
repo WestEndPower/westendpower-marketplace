@@ -540,13 +540,13 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     if(!p) return null;
     const raw=num(p.APR);
     const apr=raw>0 && raw<1 ? raw*100 : raw;
-    const aprLabel=apr===0 ? '0%' : apr.toFixed(2).replace(/\.00$/,'')+'%';
+    const aprLabel=apr.toFixed(2)+'%';
     return {
       program:p,
       aprLabel,
       termMonths:clean(p.TermMonths),
-      label:aprLabel+' for '+clean(p.TermMonths),
-      sublabel:'Month Financing'
+      label:aprLabel+' for '+clean(p.TermMonths)+' Months',
+      sublabel:''
     };
   }
 
@@ -843,7 +843,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       (!summary?'<div role="status" style="text-align:center;padding:5px;font-size:11px">Updating financing…</div>':'')+button+'</div>';
     return '<div class="market-card-finance">'+
       paymentButton+
-      '<div class="market-card-finance-apr">'+esc(summary.aprLabel)+' APR <span class="market-card-finance-dot">•</span> '+esc(summary.termMonths)+' MONTHS</div>'+
+      '<div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+
       '<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+
 (summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+
       (summary.expirationLabel?'<div class="market-card-finance-note">'+esc(summary.expirationLabel)+'</div>':'')+button+'</div>';

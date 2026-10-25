@@ -88,3 +88,21 @@
 .market-card.wep-blended-card .market-card-finance-payment span{font-size:10px}
 .market-card.wep-blended-card .market-card-finance-note{font-size:10px;padding:3px 5px 6px}
 .market-card.wep-blended-card .wep-finance-preview{font:700 12px/1.3 Arial,sans-serif;padding:7px 5px}
+
+
+/* Generated cards use the same visual hierarchy and inventory popup as Marketplace. */
+.wep-catalog-grid .market-card-head h2{font-size:20px}
+.wep-catalog-grid .market-image-wrap{box-shadow:inset 0 0 0 2px #bac3ca}
+.wep-catalog-grid .wep-generated-rebate{background:#c8100b;border:2px solid #ffc400;box-shadow:0 2px 4px #0005;border-radius:4px;line-height:1.25;z-index:2}
+.wep-catalog-grid .wep-generated-rebate strong{display:block;font:800 12px/1.25 Arial,sans-serif}
+.wep-catalog-grid .wep-generated-rebate small{display:block;font:700 10px/1.25 Arial,sans-serif;margin-top:2px}
+.wep-catalog-grid .wep-finance-preview{padding:0!important}
+.wep-catalog-grid .market-inventory-wrap{position:relative;text-align:center}
+.wep-catalog-grid .market-inventory-button{padding:5px 9px;border:1px solid #8faac3;border-radius:5px;background:#edf3f9;color:#28628a;font:700 12px/1.35 Arial,sans-serif;cursor:pointer}
+.wep-catalog-grid .market-inventory-popover{position:absolute;right:0;top:calc(100% + 7px);z-index:50;width:min(400px,calc(100vw - 54px));padding:12px;border:1px solid #8faaa0;border-radius:7px;background:white;box-shadow:0 6px 20px #0003;text-align:left;color:#1b3926}
+.wep-catalog-grid .market-inventory-popover[hidden]{display:none!important}
+.wep-catalog-grid .market-inventory-store+ .market-inventory-store{margin-top:12px;padding-top:12px;border-top:1px solid #d4ded5}
+.wep-catalog-grid .market-inventory-line{font:700 13px/1.4 Arial,sans-serif}
+.wep-catalog-grid .market-inventory-contact{display:inline-block;margin-top:5px;font:700 12px/1.4 Arial,sans-serif;color:#176c34;text-decoration:underline}
+.market-card.wep-blended-card{font-family:Arial,Helvetica,sans-serif}
+.market-card.wep-blended-card .market-card-finance-apr{text-transform:none}

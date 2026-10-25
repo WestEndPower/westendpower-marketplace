@@ -162,7 +162,7 @@ async function quote(brandId,sku,row,paymentMethod,program,inventoryId,quantity=
   const apr=program?num(program.APR):0;
   const termMonths=program?num(program.TermMonths):0;
   return {quantity,pricing,sellingPrice,freight,freightConfirmed,freightSource:freightQuote.source,freightMessage:freightQuote.message||'',inventoryId:selected,salesTax,outTheDoor,requiredDown,applicationFee,amountFinanced,
-    expirationLabel:programExpirationLabel(program),apr,aprLabel:apr===0?'0%':apr.toFixed(2).replace(/\.00$/,'')+'%',termMonths,
+    expirationLabel:programExpirationLabel(program),apr,aprLabel:apr.toFixed(2)+'%',termMonths,
     monthly:program?monthlyPayment(amountFinanced,apr,termMonths):0,
     rebateAmount:cents(selectionItems.length?num(pricing.customerPackageQuote.rebateAmount):num(pricing.customerRebate)),rebateCompatible:program?programAllowsRebate(program):true};
 }

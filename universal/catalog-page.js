@@ -36,11 +36,11 @@
     }else {imageHost.replaceChildren(element('span','Image coming soon'));}
     const rebate=card.querySelector('[data-catalog-rebate]');
     rebate.hidden=!variant.rebate;
-    text(rebate,variant.rebate?money(variant.rebate)+' customer rebate'+(variant.rebateEnd?' through '+variant.rebateEnd:''):'');
+    rebate.replaceChildren();if(variant.rebate){rebate.append(element('strong',money(variant.rebate).replace(/\.00$/,'')+' Rebate'));if(variant.rebateEnd)rebate.append(element('small','thru '+new Date(variant.rebateEnd+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})));}
     const specs=card.querySelector('[data-catalog-specs]');
     specs.replaceChildren(...(variant.specs||[]).slice(0,4).map(s=>{const div=element('div');div.append(element('dt',s.label),element('dd',s.value));return div;}));
-    text(card.querySelector('[data-catalog-stock]'),variant.stock>0?'In stock · '+variant.stock+' available':variant.discontinued?'Contact us for availability':'Available to order');
-    if(previous!==variant.sku){text(card.querySelector('[data-catalog-finance]'),'Current rebates and financing in Build & Buy');}
+    const popup=card.querySelector('[data-catalog-inventory-popup]');if(popup){popup.hidden=true;card.querySelector('[data-catalog-inventory]').setAttribute('aria-expanded','false');}
+    if(previous!==variant.sku){text(card.querySelector('[data-catalog-apr]'),'Current promotions in Build & Buy');for(const key of ['monthly','down','expiry']){const el=card.querySelector('[data-catalog-'+key+']');if(el)el.hidden=true;}}
     scheduleFinance(card,variant);
   }
   function refresh(){
@@ -98,7 +98,13 @@
     if(financeCache.has(cacheKey)){applyFinance(card,variant.sku,financeCache.get(cacheKey));return;}
     if(observer)observer.observe(card);else loadFinance(card);
   }
-  function applyFinance(card,sku,message){if(!card.hidden&&card.dataset.currentSku===sku&&message)text(card.querySelector('[data-catalog-finance]'),message);}
+  function applyFinance(card,sku,offer){
+    if(card.hidden||card.dataset.currentSku!==sku||!offer)return;
+    text(card.querySelector('[data-catalog-apr]'),offer.apr.toFixed(2)+'% for '+offer.term+' Months');
+    const monthly=card.querySelector('[data-catalog-monthly]');monthly.replaceChildren(element('strong',money(offer.monthly)),element('span',' per Month (est.)'));monthly.hidden=false;
+    const down=card.querySelector('[data-catalog-down]');text(down,money(offer.down)+' required down');down.hidden=!(offer.down>0);
+    const expiry=card.querySelector('[data-catalog-expiry]');text(expiry,offer.expiry);expiry.hidden=!offer.expiry;
+  }
   async function loadFinance(card){
     const variant=displayed.get(card.dataset.modelKey),payments=window.WestEndPayments;
     if(!variant||card.hidden||!payments)return;
@@ -120,10 +126,50 @@
       if(!(monthly>0))return;
       const term=Number(summary.termMonths||program.TermMonths),apr=Number(summary.apr??program.APR);
       const expiry=payments.programExpirationLabel(program);
-      const message=money(monthly)+'/mo'+(Number.isFinite(apr)?' · '+apr.toFixed(2)+'% APR':'')+(term>0?' · '+term+' months':'')+(down>0?' · '+money(down)+' down':'')+(expiry?' · '+expiry:'');
-      financeCache.set(cacheKey,message);applyFinance(card,sku,message);
+      const offer={apr,term,monthly,down,expiry};
+      financeCache.set(cacheKey,offer);applyFinance(card,sku,offer);
     }catch{/* Build & Buy remains the source for confirmed terms. */}
   }
+  const inventoryCache=new Map();let locationsPromise;
+  const stockKey=value=>String(value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  function csvRows(source){
+    const rows=[];let row=[],value='',quoted=false;
+    for(let i=0;i<source.length;i++){const c=source[i];if(quoted){if(c==='"'&&source[i+1]==='"'){value+='"';i++;}else if(c==='"')quoted=false;else value+=c;}else if(c==='"')quoted=true;else if(c===','){row.push(value);value='';}else if(c==='\n'){row.push(value.replace(/\r$/,''));rows.push(row);row=[];value='';}else value+=c;}
+    if(value||row.length){row.push(value.replace(/\r$/,''));rows.push(row);}const headers=(rows.shift()||[]).map(h=>h.replace(/^\uFEFF/,'').trim());return rows.filter(r=>r.some(Boolean)).map(r=>Object.fromEntries(headers.map((h,i)=>[h,(r[i]||'').trim()])));
+  }
+  function catalogLocations(){
+    if(!locationsPromise)locationsPromise=fetch('https://westendpower.github.io/westendpower-marketplace/data/locations.csv',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('Locations unavailable');return r.text();}).then(source=>csvRows(source).filter(r=>/^(T|TRUE|YES|1)$/i.test(r.Active)).sort((a,b)=>Number(a.SortOrder)-Number(b.SortOrder)));
+    return locationsPromise;
+  }
+  function catalogInventory(brand){
+    let cached=inventoryCache.get(brand);if(!cached||Date.now()-cached.time>30000){cached={time:Date.now(),promise:fetch('https://westendpower-configurator-api.westendpower-nm.workers.dev/inventory-availability',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({brandId:brand})}).then(async r=>{if(!r.ok)throw Error('Inventory unavailable');const data=await r.json();if(!Array.isArray(data.availability))throw Error('Inventory unavailable');return data.availability;})};inventoryCache.set(brand,cached);cached.promise.catch(()=>inventoryCache.delete(brand));}return cached.promise;
+  }
+  function closeInventory(){for(const popup of document.querySelectorAll('[data-catalog-inventory-popup]')){popup.hidden=true;popup.closest('.market-inventory-wrap').querySelector('button').setAttribute('aria-expanded','false');}}
+  async function openCatalogInventory(button){
+    const card=button.closest('[data-model-key]'),variant=displayed.get(card.dataset.modelKey),popup=card.querySelector('[data-catalog-inventory-popup]');
+    const opening=popup.hidden;closeInventory();if(!opening||!variant)return;
+    button.setAttribute('aria-expanded','true');popup.hidden=false;popup.replaceChildren(element('p','Checking inventory…'));
+    const [locationsResult,stockResult]=await Promise.allSettled([catalogLocations(),catalogInventory(variant.brand)]);
+    if(button.getAttribute('aria-expanded')!=='true'||card.dataset.currentSku!==variant.sku)return;
+    const locations=locationsResult.status==='fulfilled'?locationsResult.value:[{LocationID:'NM',ShortName:'New Milford'},{LocationID:'DA',ShortName:'Danbury'}];
+    const record=stockResult.status==='fulfilled'?stockResult.value.find(r=>stockKey(r.sku)===stockKey(variant.sku)):null;
+    popup.replaceChildren();
+    for(const location of locations){
+      const name=location.ShortName||location.LocationName,selections=record?.selections||[];
+      const count=selections.filter(unit=>[name,location.LocationID,location.LocationName].some(value=>value&&stockKey(unit.store)===stockKey(value))).reduce((sum,unit)=>sum+Math.max(Number(unit.quantity)||0,0),0);
+      const unknown=stockResult.status!=='fulfilled'||(Number(record?.quantity)>0&&!selections.length),available=count>0;
+      const status=unknown?'Availability needs confirmation':available?'In Stock':'Out of Stock - Check Lead Time';
+      const action=available||unknown?'Text to Confirm Availability':'Text to Request Lead Time',wrap=element('div');wrap.className='market-inventory-store';
+      const heading=element('div',name+' - '+status);heading.className='market-inventory-line'+(available?'':' market-inventory-order');wrap.append(heading);
+      const phone=String(location.Phone||'').replace(/[^0-9+]/g,'');
+      if(phone){const link=element('a',action);link.className='market-inventory-contact market-inventory-text-action';link.setAttribute('aria-label',action+' at '+name);const body=(available||unknown?'Please confirm availability of ':'Please provide lead time for ')+variant.name+' (SKU: '+variant.sku+') at '+name+'. I am interested in quantity 1.';link.href='sms:'+phone+(/iPad|iPhone|iPod/i.test(navigator.userAgent)?'&':'?')+'body='+encodeURIComponent(body);wrap.append(link);}
+      popup.append(wrap);
+    }
+  }
+  for(const button of document.querySelectorAll('[data-catalog-inventory]'))button.addEventListener('click',()=>openCatalogInventory(button));
+  document.addEventListener('click',event=>{if(!event.target.closest('.market-inventory-wrap'))closeInventory();});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')closeInventory();});
+
   for(const control of [...controls,availability].filter(Boolean))control.addEventListener('change',refresh);
   document.querySelector('[data-catalog-clear]').addEventListener('click',()=>{for(const c of controls)c.value='';if(availability)availability.value='';refresh();});
   for(const checkbox of document.querySelectorAll('[data-catalog-compare]'))checkbox.addEventListener('change',()=>{if(checkbox.checked)chosen.add(checkbox.dataset.catalogCompare);else chosen.delete(checkbox.dataset.catalogCompare);updateComparisonButtons();});
@@ -132,4 +178,5 @@
   document.querySelector('[data-catalog-close]').addEventListener('click',()=>document.querySelector('[data-catalog-dialog]').close());
   refresh();
 })();
+
 
