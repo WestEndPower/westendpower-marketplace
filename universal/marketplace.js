@@ -1172,7 +1172,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     }
 
     if(
-      state.category &&
+      !options.ignoreCategory && state.category &&
       clean(row.Category)!==state.category
     ){
       return false;
@@ -2272,8 +2272,66 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     else link.removeAttribute('href');
   }
 
+
+  let toolbarScopeRows=null;
+  function captureResultsScope(){
+    toolbarScopeRows=DATA.equipmentFamilies.filter(f=>marketplaceFamilyMatches(f)).flatMap(f=>(f.variants||[]).map(v=>v.marketplaceRow).filter(row=>row&&marketplaceRowMatches(row)));
+  }
+  function renderResultsFilters(){
+    const show=marketplaceHasSelection()&&state.shopMode==='equipment',shell=$('#market-app'),bar=$('.market-results');
+    shell.classList.toggle('wep-inline-results',show);
+    let host=$('#market-inline-filters');if(!host){host=document.createElement('div');host.id='market-inline-filters';host.setAttribute('aria-label','Filter displayed equipment');bar.insertBefore(host,$('.market-results-actions'));}
+    host.hidden=!show;if(!show){host.innerHTML='';return;}
+    const base=toolbarScopeRows||DATA.products,groups=[];
+    const selectedBrands=state.brand;
+    const matches=(row,ignore)=>marketplaceRowMatches(row,{ignoreCategory:ignore==='category',ignoreSubcategory:ignore==='subcategory',ignorePower:ignore==='power',ignoreSeries:ignore==='series',ignoreModel:ignore==='model',ignoreField:ignore})&&(ignore==='brand'||!selectedBrands.size||selectedBrands.has(clean(row.BrandID||row.BrandName).toUpperCase()));
+    const add=(key,label,field,current)=>{
+      const initial=distinct(base.map(row=>clean(row[field])).filter(Boolean));if(initial.length<2)return;
+      const values=distinct(base.filter(row=>matches(row,key)).map(row=>clean(row[field])).filter(Boolean)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+      const chosen=Array.isArray(current)?current:current?[current]:[];
+      if(values.length<2&&!chosen.length)return;
+      groups.push({key,label,values:distinct(values.concat(chosen)),chosen});
+    };
+    add('brand','Brand','BrandID',[...state.brand]);
+    add('category','Category','Category',state.category);
+    add('subcategory','Subcategory','SubCategory',state.subcategory);
+    add('series','Series','Series',state.seriesFilter);
+    add('model','Model','Model',state.modelFilter);
+    add('power','Power','PowerType',state.power);
+    for(const group of marketplaceFilterHeaders('B').concat(marketplaceFilterHeaders('F')))add(group.field,group.label,group.field,[...(state.specFilters.get(group.field)||[])]);
+    const addToggle=(key,label,values,chosen)=>{if(values.length>1||chosen.length)groups.push({key,label,values,chosen});};
+    const availability=distinct(DATA.equipmentFamilies.filter(f=>(f.variants||[]).some(v=>base.includes(v.marketplaceRow))).map(f=>availabilityText(f)));
+    addToggle('availability','Availability',availability,[...state.availability]);
+    const online=distinct(base.map(row=>truthy(row.BuyOnlineEligible)?'Eligible':'Unavailable'));
+    if(online.length>1)groups.push({key:'online',label:'Online purchase',values:['Eligible'],chosen:state.buyOnline?['Eligible']:[]});
+    const promos=distinct(base.map(row=>marketplaceRowHasPromo(row)?'Current promotions':'No promotion'));
+    if(promos.length>1)groups.push({key:'promo',label:'Promotions',values:['Current promotions'],chosen:state.promoOnly?['Current promotions']:[]});
+    for(const group of marketplaceFilterHeaders('P')){
+      const values=distinct(base.map(row=>truthy(row[group.field])?'Included':'Not included'));
+      if(values.length>1||state.packageComponents.has(group.field))groups.push({key:'package:'+group.field,label:group.label,values:['Included'],chosen:state.packageComponents.has(group.field)?['Included']:[]});
+    }
+    host.innerHTML=groups.map(g=>'<label><span class="market-inline-label">'+esc(g.label)+'</span><select aria-label="'+esc(g.label)+'" data-results-filter="'+esc(g.key)+'">'+(g.chosen.length>1?'<option value="__selected__" selected disabled>'+esc(g.label)+': '+g.chosen.length+' selected</option>':'')+'<option value="">'+esc(g.label)+': All</option>'+g.values.map(value=>'<option value="'+esc(value)+'"'+(g.chosen.length===1&&g.chosen.includes(value)?' selected':'')+'>'+esc(value)+'</option>').join('')+'</select></label>').join('');
+  }
+  function changeResultsFilter(control){
+    const key=control.dataset.resultsFilter,value=control.value;
+    if(key==='brand'){state.brand.clear();if(value)state.brand.add(value);}
+    else if(key==='category'){state.category=value;state.subcategory='';state.seriesFilter='';state.modelFilter='';state.power='';state.specFilters.clear();state.packageComponents.clear();}
+    else if(key==='subcategory'){state.subcategory=value;state.seriesFilter='';state.modelFilter='';state.specFilters.clear();}
+    else if(key==='availability'){state.availability.clear();if(value)state.availability.add(value);}
+    else if(key==='online')state.buyOnline=!!value;
+    else if(key==='promo')state.promoOnly=!!value;
+    else if(key.startsWith('package:')){if(value)state.packageComponents.add(key.slice(8));else state.packageComponents.delete(key.slice(8));}
+    else if(key==='series')state.seriesFilter=value;
+    else if(key==='model')state.modelFilter=value;
+    else if(key==='power')state.power=value;
+    else {if(value)state.specFilters.set(key,new Set([value]));else state.specFilters.delete(key);}
+    renderTopFilters();renderSidebar();filterFamilies();
+    document.querySelector('[data-results-filter="'+CSS.escape(key)+'"]')?.focus({preventScroll:true});
+  }
+
   function renderResultMeta(){
     updateUniversalCategoryLink();
+    renderResultsFilters();
     const showProducts=marketplaceHasSelection();
     const shell=$('#market-app'),refine=$('#market-refine');
     if(shell)shell.classList.toggle('we-market-home',!showProducts);
@@ -2414,6 +2472,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     if($('#market-search')) $('#market-search').value=state.search;
     if($('#filter-buy-online')) $('#filter-buy-online').checked=state.buyOnline;
 
+    captureResultsScope();
     applyingUrlState=false;
   }
 
@@ -2719,6 +2778,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
     document.addEventListener('change',e=>{
       const el=e.target;
+      if(el.matches('[data-results-filter]')){changeResultsFilter(el);return;}
       if(el.matches('[data-cart-variant]')){
         const f=activeFamilies().find(f=>f.key===el.dataset.cartVariant),index=Number(el.value.slice(el.value.lastIndexOf('|')+1));
         if(f&&selectCardVariant(f,index)){refreshSelectedCard(f);document.querySelector('[data-cart-variant="'+CSS.escape(f.key)+'"]')?.focus({preventScroll:true});}
