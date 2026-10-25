@@ -110,7 +110,7 @@
       const program=payments.bestMarketplaceFinanceProgram(programs);
       if(!program)return;
       const result=await payments.quote(brand,sku,{Taxable:variant.taxable?'T':'F'},'finance',program,'',1,{shouldRun:()=>!card.hidden&&card.dataset.currentSku===sku,priority:'background'});
-      if(!result||result.freightConfirmed===false)return;
+      if(!result)return;
       const summary=result.summary||result;
       const subtotal=Math.max(0,Number(variant.price)-(payments.programAllowsRebate(program)?Number(variant.rebate)||0:0))+Number(summary.freight||0);
       const total=subtotal+(variant.taxable?Math.round(subtotal*0.0635*100)/100:0);
@@ -119,7 +119,7 @@
       const monthly=payments.monthlyPayment(principal,summary.apr,summary.termMonths);
       if(!(monthly>0))return;
       const term=Number(summary.termMonths||program.TermMonths),apr=Number(summary.apr??program.APR);
-      const message=money(monthly)+'/mo'+(Number.isFinite(apr)?' · '+apr.toFixed(2)+'% APR':'')+(term>0?' · '+term+' months':'')+' · Est. with approved credit'+(down>0?' · '+money(down)+' down':'');
+      const message=money(monthly)+'/mo'+(Number.isFinite(apr)?' · '+apr.toFixed(2)+'% APR':'')+(term>0?' · '+term+' months':'')+' · Est. with approved credit'+(!payments.programAllowsRebate(program)?' · In lieu of rebates':'')+(down>0?' · '+money(down)+' down':'')+(result.freightConfirmed===false?' · * Additional freight applies; we’ll confirm before finalizing your order.':'');
       financeCache.set(cacheKey,message);applyFinance(card,sku,message);
     }catch{/* Build & Buy remains the source for confirmed terms. */}
   }

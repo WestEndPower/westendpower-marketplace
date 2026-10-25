@@ -844,9 +844,9 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     return '<div class="market-card-finance">'+
       paymentButton+
       '<div class="market-card-finance-apr">'+esc(summary.aprLabel)+' APR <span class="market-card-finance-dot">•</span> '+esc(summary.termMonths)+' MONTHS</div>'+
-      '<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month</span></strong></div>'+
+      '<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)'+(summary.freightConfirmed?'':' *')+'</span></strong></div>'+
 (summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+
-      button+'</div>';
+      '<div class="market-card-finance-note">With approved credit.'+(summary.rebateCompatible===false?' In lieu of rebates.':'')+(summary.freightConfirmed?'':' * Additional freight applies; we’ll confirm before finalizing your order.')+'</div>'+button+'</div>';
   }
 
   async function requestMarketplaceFinanceSummary(f){
@@ -880,7 +880,8 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
           }
         });
         // Public card estimates use published manufacturer prices, not private dealer discounts.
-        const publishedUnit=isCompactTractor(f)&&!truthy(program.RebateCompatible)?variant.msrp:variant.price;
+        const publishedPromo=promoInfo(variant),allowsRebate=window.WestEndPayments.programAllowsRebate(program);
+        const publishedUnit=!allowsRebate&&(isCompactTractor(f)||publishedPromo?.type==='rebate')?variant.msrp:variant.price;
         const publishedSelling=Math.max(0,Number(publishedUnit)||0)*quantity;
         const publishedSubtotal=publishedSelling+summary.freight;
         const publishedTax=/^(F|FALSE|N|NO|0)$/i.test(clean(row.Taxable))?0:Math.round((publishedSubtotal*0.0635+Number.EPSILON)*100)/100;
@@ -888,7 +889,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
         const publishedDown=window.WestEndPayments.programMinimumDown(program,publishedTotal);
         const publishedFinanced=Math.max(publishedTotal-publishedDown,0)+summary.applicationFee;
         const displaySummary={...summary,requiredDown:publishedDown,monthly:window.WestEndPayments.monthlyPayment(publishedFinanced,summary.apr,summary.termMonths)};
-        DATA.financeSummaryCache.set(key,summary.freightConfirmed?(stock?summary:displaySummary):{none:true});
+        DATA.financeSummaryCache.set(key,stock?summary:displaySummary);
       }catch(error){
         if(error.name==='AbortError')return;
         console.warn('Marketplace finance summary unavailable for '+key,error);
