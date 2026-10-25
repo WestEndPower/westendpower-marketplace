@@ -1,5 +1,6 @@
 (() => {
  'use strict';
+ const brandNavigation=document.createElement('script');brandNavigation.src='https://westendpower.github.io/westendpower-marketplace/universal/brand-navigation.js?v=20261025-brandnav1';document.head.append(brandNavigation);
  const displayNames={BILLYGOAT:'Billy Goat',GREENWORKS:'Greenworks',HONDA:'Honda',MITM:'Mi-T-M',REDMAX:'RedMax',STIHL:'STIHL',TORO:'Toro',YANMAR:'Yanmar'};
  const colors={BILLYGOAT:'#00653d',GREENWORKS:'#447a12',HONDA:'#c00000',MITM:'#003b70',REDMAX:'#ba1425',STIHL:'#aa4b00',TORO:'#c00025',YANMAR:'#bb002a'};
  function initializeMenus(){document.querySelectorAll('.wep-nav').forEach(nav=>{
