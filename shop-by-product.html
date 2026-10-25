@@ -705,7 +705,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261024-portal-auth2" defer></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261025-cardformat1"></head>
+<script src="universal/dealer-portal-link.js?v=20261024-portal-auth2" defer></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261025-expiry1"></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -905,7 +905,7 @@ const num=v=>{const n=Number(clean(v).replace(/[$,%]/g,''));return Number.isFini
     const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
     const date=match?new Date(Number(match[1]),Number(match[2])-1,Number(match[3]),12):new Date(raw);
     if(!Number.isFinite(date.getTime()))return '';
-    return 'Ends '+date.toLocaleDateString('en-US',{month:'numeric',day:'numeric',year:'2-digit'});
+    return 'Expires '+['Jan.','Feb.','Mar.','Apr.','May','Jun.','Jul.','Aug.','Sept.','Oct.','Nov.','Dec.'][date.getMonth()]+' '+date.getDate()+', '+date.getFullYear();
   }
 
   function bestMarketplaceFinanceProgram(programs){

@@ -9,7 +9,7 @@ test('API APR percentage points are not converted a second time in quotes or mon
   const q=await payments.quote('HONDA','TEST',{Taxable:'F'},'finance',{APR:0.99,TermMonths:36,EndDate:'2026-10-31'},'',1);
   assert.equal(q.apr,0.99);assert.equal(q.aprLabel,'0.99%');
   const rate=0.99/1200,expected=10000*rate/(1-Math.pow(1+rate,-36));
-  assert.ok(Math.abs(q.monthly-expected)<0.000001);assert.ok(q.monthly<300);assert.equal(q.expirationLabel,'Ends 10/31/26');
+  assert.ok(Math.abs(q.monthly-expected)<0.000001);assert.ok(q.monthly<300);assert.equal(q.expirationLabel,'Expires Oct. 31, 2026');
  }finally{globalThis.fetch=original;}
 });
 test('program ordering keeps the lowest APR and longest term at that rate',()=>{

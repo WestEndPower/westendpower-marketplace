@@ -39,7 +39,7 @@ const num=v=>{const n=Number(clean(v).replace(/[$,%]/g,''));return Number.isFini
     const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
     const date=match?new Date(Number(match[1]),Number(match[2])-1,Number(match[3]),12):new Date(raw);
     if(!Number.isFinite(date.getTime()))return '';
-    return 'Ends '+date.toLocaleDateString('en-US',{month:'numeric',day:'numeric',year:'2-digit'});
+    return 'Expires '+['Jan.','Feb.','Mar.','Apr.','May','Jun.','Jul.','Aug.','Sept.','Oct.','Nov.','Dec.'][date.getMonth()]+' '+date.getDate()+', '+date.getFullYear();
   }
 
   function bestMarketplaceFinanceProgram(programs){
