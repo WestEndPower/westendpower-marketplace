@@ -930,7 +930,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
 
   function marketplaceFamilyMatches(f,ignoreBrand=false){
-    const q=searchKey(state.search);
+    const queries=String(state.search||'').split(',').map(searchKey).filter(Boolean);
       if(state.category && f.category!==state.category) return false;
       if(state.subcategory && f.subcategory!==state.subcategory) return false;
       if(state.power && f.power!==state.power) return false;
@@ -1001,9 +1001,9 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
           }
         }
       }
-      if(q){
-        const hay=searchKey([f.brand,f.model,f.category,f.subcategory,f.power,f.series,Object.values(f.specs).join(' ')].join(' '));
-        if(!hay.includes(q)) return false;
+      if(queries.length){
+        const hay=searchKey([f.brand,f.model,f.category,f.subcategory,f.power,f.series,...(f.variants||[]).map(v=>v.sku),Object.values(f.specs).join(' ')].join(' '));
+        if(!queries.some(query=>hay.includes(query))) return false;
       }
       return true;
 
