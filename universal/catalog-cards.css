@@ -50,3 +50,5 @@
 @media(max-width:850px){#market-app #market-grid,.wep-catalog-grid{grid-template-columns:minmax(0,1fr)!important}.market-card.wep-blended-card .market-image-wrap{height:180px!important}.market-card.wep-blended-card h2,.market-card.wep-blended-card h3{font-size:19px}}
 @media(max-width:420px){.market-card.wep-blended-card .market-card-body{gap:8px!important;padding:8px}.market-card.wep-blended-card .wep-card-msrp strong{font-size:20px}.market-card.wep-blended-card .market-specs dd{font-size:12px}}
 @media print{.wep-catalog-filters,.wep-catalog-toolbar,.market-results,.market-sidebar,.market-detail-actions,.wep-catalog-compare{display:none!important}#market-app #market-grid,.wep-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.market-card.wep-blended-card{break-inside:avoid}}
+
+#market-app.shop-category-home .market-layout,#market-app.shop-category-home .market-context-panel{display:none!important}
