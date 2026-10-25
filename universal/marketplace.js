@@ -778,7 +778,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     }
     return selection;
   }
-  function selectedPriceVariant(f){const selection=cardSelectionFor(f);return selection.stockUnit?.variant||selection.compactVariant||f.variants[selection.index]||f.variants[0]||{};}
+  function selectedPriceVariant(f){const selection=cardSelectionFor(f),matched=relevantVariants(f);if(selection.stockUnit&&matched.includes(selection.stockUnit.variant))return selection.stockUnit.variant;const chosen=selection.compactVariant||f.variants[selection.index];return matched.includes(chosen)?chosen:matched[0]||f.variants[0]||{};}
   function selectedPriceQuantity(f){return selectedStock(f)?1:cardSelectionFor(f).quantity;}
   function maximumCardQuantity(v){return Math.max(1,Math.min(99,...(v.recommendedPackage?v.packageItems||[]:[]).map(item=>Math.floor(99/Math.max(1,Number(item.quantity)||1)))));}
   function selectCardVariant(f,index,quantity){
@@ -833,9 +833,9 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   function cardFinanceMarkup(f){
     const key=financeSummaryKey(f);
     const variant=marketplaceFinanceVariant(f);
-    const url=paymentSelectionUrl(f);
+    const url=catalogBuildUrl(f);
     const button='<a class="market-payment-options" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">Out-the-Door Price</a>';
-    const paymentButton='<a class="market-card-finance-head market-payment-options" style="border-top:0" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">View Payment Options</a>';
+    const paymentButton='<a class="market-card-finance-head market-payment-options" style="border-top:0" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">View Current Promotions</a>';
     if(!key || /\|$/.test(key)) return '<div class="market-payment-options-only">'+button+'</div>';
     const summary=DATA.financeSummaryCache.get(key);
     if(!summary) requestMarketplaceFinanceSummary(f);
@@ -1435,7 +1435,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       (!state.subcategory || f.subcategory===state.subcategory) &&
       (!state.power || f.power===state.power)
     );
-    const quickSpecs = marketplaceSpecGroups();
+    const quickSpecs = marketplaceSpecGroups().concat(marketplaceGroups('F'));
 
     const seriesValues = distinct(
       DATA.products
@@ -1699,7 +1699,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
           '<div class="market-narrow-search">' +
 
             '<div class="market-compact-heading">' +
-              'NARROW SEARCH RESULTS' +
+              'FILTER BY SPECIFICATIONS' +
             '</div>' +
 
             '<div class="market-compact-buttons market-b-filter-tabs">' +
@@ -1833,7 +1833,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
         '</label>'
       ).join('');
 
-    const fGroups=marketplaceGroups('F');
+    const fGroups=[]; // Workbook F fields share the top specification filters.
 
     $('#filter-specs-wrap').hidden=!fGroups.length;
 
@@ -2170,60 +2170,30 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       promoHtml+joiner+financeHtml+'</div>';
   }
 
-    function card(f){
-    const first=selectedPriceVariant(f);
-    const specs=familySpecs(f).slice(0,4);
-    const heading=clean(first.description)||clean(f.model)||clean(first.sku);
-    const equipmentMode=state.shopMode==='equipment';
-    const yanmarOptions=clean(f.brand).toUpperCase()==='YANMAR'&&clean(f.category)==='Compact Tractors';
-    // YANMAR_CONFIGURATOR_LINK_V1
-    const optionsVariant=first;
-    const optionsUrl=yanmarOptions
-      ? 'https://westendpower.github.io/yanmar-equipment-configurator/?'+new URLSearchParams({category:f.category,sku:optionsVariant.sku||''}).toString()
-      : 'product-options.html?sku='+encodeURIComponent(first.sku||'')+'&category='+encodeURIComponent(f.category)+'&brand='+encodeURIComponent(f.brand)+'&return='+encodeURIComponent(location.pathname+location.search+location.hash);
-    // WEP_TORO_BUILD_LINK_V1: the configurator owns compatibility and pricing.
-    const buildUrl=f.brand==='TORO'?optionsUrl:''; // WEP_MARKET_OPTIONS_V1
-    const runtimeUrl=optionsUrl+'&view=runtime';
-    const productParams=new URLSearchParams({brand:f.brand});
-    if(isYanmarTractor(f)&&clean(first.sku)) productParams.set('sku',clean(first.sku));
-    else if(clean(first.sku)) productParams.set('sku',clean(first.sku));
-    else productParams.set('model',clean(f.model)||clean(first.model));
-    const productPageUrl='product.html?'+productParams.toString();
-    return '<article class="market-card" data-key="'+esc(f.key)+'">'+
-      '<header class="market-card-head"><h3 style="flex:1 1 auto;width:100%"><strong>'+esc(heading)+'</strong>'+(first.sku?'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;font-size:0.8em;font-weight:400;clear:both"><span>SKU: '+esc(first.sku)+sawHeaderBars(f)+'</span>'+stockHeaderMarkup(f)+'</div>':'')+'</h3></header>'+
-      '<div class="market-card-body">'+
-        '<section class="market-card-left">'+
-          '<div class="market-image-wrap">'+
-            offerOverlay(isYanmarTractor(f)?Object.assign({},f,{variants:[first],price:first.price,series:first.series||f.series}):f)+
-            (
-              (first.productUrl||f.productUrl)
-                ? (
-                  '<a class="market-image" href="'+esc(productPageUrl)+'">'+
-                  (f.image?'<img src="'+esc(f.image)+'" alt="'+esc(f.brand+' '+f.model)+'" loading="lazy">':'<span>Image Coming Soon</span>')+
-                  '</a>'
-                )
-                : (
-                  '<div class="market-image">'+
-                  (f.image?'<img src="'+esc(f.image)+'" alt="'+esc(f.brand+' '+f.model)+'" loading="lazy">':'<span>Image Coming Soon</span>')+
-                  '</div>'
-                )
-            )+
-          '</div>'+
-          '<div class="market-detail-actions">'+
-            ((first.productUrl||f.productUrl)?'<a class="market-product-details" href="'+esc(first.productUrl||f.productUrl)+'">View Details</a>':'')+
-            '<label class="market-product-details market-compare-detail"><input type="checkbox" data-compare="'+esc(f.key)+'" '+(state.compare.has(f.key)?'checked':'')+'> <span>Compare</span></label>'+
-          '</div>'+
-          cardFinanceMarkup(f)+
-        '</section>'+
-        '<section class="market-buy">'+
-          familyPriceMarkup(f)+
-          (equipmentMode&&/battery/i.test(f.power)?'<div class="market-actions"><a href="'+optionsUrl+'&view=runtime" data-wep-runtime-brand="'+esc(f.brand)+'" data-wep-runtime-sku="'+esc(first.sku)+'">Run &amp; Charge Times</a></div>':'')+
-          (/battery/i.test(f.power)?'<div data-wep-integrated="'+esc(JSON.stringify(first.marketplaceRow||{}))+'"></div>':'')+
-          cartMarkup(f)+
-        '</section>'+
-      '</div>'+
-      (specs.length?'<dl class="market-specs">'+specs.map(([l,v])=>'<div><dt>'+esc(l)+'</dt><dd>'+esc(v)+'</dd></div>').join('')+'</dl>':'')+
-    '</article>';
+
+  function catalogBuildUrl(f){
+    const url=new URL(paymentSelectionUrl(f));url.pathname=url.pathname.replace(/payment-options(?:\.html)?\/?$/,'product-options.html');return url.href;
+  }
+  function catalogSpecs(f){const v=selectedPriceVariant(f);return Object.entries(v.specs||f.specs||{}).filter(([,value])=>clean(value)).slice(0,4);}
+  function card(f){
+    const first=selectedPriceVariant(f),specs=catalogSpecs(f),url=catalogBuildUrl(f),heading=clean(first.description)||clean(f.model)||clean(first.sku);
+    const productUrl='product.html?'+new URLSearchParams({brand:f.brand,sku:first.sku||''}),promo=isCompactTractor(f)?null:promoInfo(first);
+    const msrp=Number(first.msrp||first.price||0),price=promo?.type==='sale'?promo.price:msrp;
+    const image=clean(first.marketplaceRow?.ImageURL)||f.image;
+    return '<article class="market-card wep-blended-card" data-key="'+esc(f.key)+'">'+
+      '<header class="market-card-head"><h3><strong>'+esc(heading)+'</strong><div class="wep-card-sku"><span>SKU: '+esc(first.sku)+sawHeaderBars(f)+'</span>'+stockHeaderMarkup(f)+'</div></h3></header>'+
+      '<div class="market-card-body"><section class="market-card-left">'+
+        '<div class="market-image-wrap">'+offerOverlay(Object.assign({},f,{variants:[first],price:first.price,series:first.series||f.series}))+
+          '<a class="market-image" href="'+esc(productUrl)+'">'+(image?'<img src="'+esc(image)+'" alt="'+esc(heading)+'" loading="lazy">':'<span>Image Coming Soon</span>')+'</a></div>'+
+        '<div class="market-detail-actions"><a class="market-product-details" href="'+esc(productUrl)+'">View Details</a>'+
+          '<label class="market-product-details market-compare-detail"><input type="checkbox" data-compare="'+esc(f.key)+'" '+(state.compare.has(f.key)?'checked':'')+'> <span>Compare</span></label></div>'+
+        '<div class="wep-card-msrp"><span>'+(promo?.type==='sale'?'Sale price':'MSRP')+'</span><strong>'+(price>0?money(price):'Contact Us')+'</strong>'+(promo?.type==='sale'?'<small>MSRP '+money(msrp)+'</small>':'')+'</div>'+
+        cardFinanceMarkup(f)+
+      '</section><section class="market-buy"><dl class="market-specs">'+specs.map(([label,value])=>'<div><dt>'+esc(label)+'</dt><dd>'+esc(value)+'</dd></div>').join('')+'</dl>'+
+        inventoryMarkup(f,first,'unit')+stockUnitMarkup(f)+
+        '<a class="market-product-page-link wep-card-build" href="'+esc(url)+'">Build &amp; Buy ↗</a>'+
+        '<p class="wep-card-build-note">Configure your equipment and review current pricing.</p>'+
+      '</section></div></article>';
   }
 
   // Fit the 42-character description to its actual price-box width.
@@ -2325,9 +2295,9 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
         ? ' - '+bits.join(' | ')
         : '';
   }
-  function compareTable(){
-    const selected=activeFamilies().filter(f=>state.compare.has(f.key));
-    const fams=(selected.length?selected:DATA.filtered).slice(0,24);
+  function compareTable(all=false){
+    const selected=DATA.filtered.filter(f=>state.compare.has(f.key));
+    const fams=all?DATA.filtered:(selected.length?selected:DATA.filtered);
     if(!fams.length) return '<p>No products to compare.</p>';
     const labels=[];
     fams.forEach(f=>Object.keys(f.specs).forEach(l=>{if(!labels.includes(l)) labels.push(l);}));
@@ -2338,18 +2308,20 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
         if(r==='Brand') v=f.brand;
         else if(r==='Power') v=f.power;
         else if(r==='Series') v=f.series;
-        else if(r==='Starting Price') v=f.price?money(f.price):'Contact Us';
+        else if(r==='Starting Price'){const chosen=selectedPriceVariant(f);v=chosen.msrp?money(chosen.msrp):'Contact Us';}
         else if(r==='Availability') v=availabilityText(f);
-        else v=f.specs[r]||'';
+        else v=selectedPriceVariant(f).specs?.[r]||f.specs[r]||'';
         return '<td>'+esc(v)+'</td>';
       }).join('')+'</tr>').join('')+'</tbody></table></div>';
   }
 
   function updateCompareButton(){
     const b=$('#market-compare-float');
-    const n=state.compare.size;
-    b.textContent=n ? 'Compare '+n+' Selected' : 'Compare '+DATA.filtered.length+' Products';
-    b.disabled=n ? n<2 : DATA.filtered.length<2;
+    const n=DATA.filtered.filter(f=>state.compare.has(f.key)).length;
+    b.textContent='Compare Selected ('+n+')';
+    b.disabled=n<2;
+    let all=$('#market-compare-all');if(!all){all=document.createElement('button');all.id='market-compare-all';all.type='button';all.className='market-compare-float';b.after(all);all.addEventListener('click',()=>{$('#market-compare-content').innerHTML=compareTable(true);$('#market-compare-dialog').showModal();});}
+    all.textContent='Compare All in View ('+DATA.filtered.length+')';all.disabled=DATA.filtered.length<2;all.hidden=!marketplaceHasSelection();
   }
 
   function updateCartFloat(){
