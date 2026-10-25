@@ -52,7 +52,7 @@
  let pricingUpdate;
  app.addEventListener('click',event=>{if([...updateJobs.keys()].some(scope=>!scope.startsWith('comparison:'))&&event.target.closest('[data-payment-preview],#wep-open-payment-options,#wep-build-checkout')){event.preventDefault();event.stopImmediatePropagation();}},true);
  const spacing=1200; // Debounce edits; quotes use the shared request budget below.
- const quoteCache=new Map(),quoteSessionKey='wepBuildQuoteCache:implement-freight-v3:'+api,quoteBudgetKey='wepBuildQuoteBudget',quoteBudgetWindow=61000,quoteBudgetMax=9; // API route allows 10/minute; retain one request of headroom.
+ const quoteCache=new Map(),quoteSessionKey='wepBuildQuoteCache:additional-freight-v4:'+api,quoteBudgetKey='wepBuildQuoteBudget',quoteBudgetWindow=61000,quoteBudgetMax=9; // API route allows 10/minute; retain one request of headroom.
  let quoteCooldown=0,quoteBudgetMemory=[];
  try{const rows=JSON.parse(sessionStorage.getItem(quoteSessionKey)||'[]');if(Array.isArray(rows))for(const entry of rows.slice(-40)){if(!Array.isArray(entry)||entry.length!==2||typeof entry[0]!=='string')continue;const q=entry[1];if(q&&Array.isArray(q.lines)&&q.lines.length&&q.lines.every(l=>validMoney(l.unitPrice))&&Array.isArray(q.issues)&&!pricingIssues(q).length&&validMoney(q.total)&&Date.now()-Date.parse(q.createdAt)<120000)quoteCache.set(entry[0],q);}}catch(_){}
 
@@ -405,7 +405,7 @@
  function pricePreview(target,quote,rebate=0){
   target.replaceChildren();appendManufacturerRebate(target,quote,0);
   if(pricingIssues(quote).length||!validMoney(quote.total)){target.append(note('Complete your package to view total.'));return;}
-  target.append(note(money(quote.total),'wep-package-payment-total'),note('Out the door price','wep-package-payment-caption'));
+  target.append(note(money(quote.total),'wep-package-payment-total'),note(quote.excludedFactoryFreight?.length?'Estimated price — freight extra *':'Out the door price','wep-package-payment-caption'));
   appendManufacturerRebate(target,quote,rebate);
  }
  function stopOffers(){endUpdate(updateJobs.get('offers'),'cancel');++offersVersion;offersController?.abort();offersBuildKey='';paymentPreviews.clear();}
@@ -526,12 +526,17 @@
   panel.hidden=false;
   const main=quote.lines.find(l=>l.type==='tool'&&clean(l.sku)===snapshot.sku),price=app.querySelector('.hero .price');
   if(!main||!validMoney(main.unitPrice))throw Error('Equipment pricing needs store confirmation.');
+  const title=app.querySelector('.hero h1');let freightMarker=title?.querySelector('.wep-freight-marker');if(main.factoryFreightExcluded&&!freightMarker&&title){freightMarker=document.createElement('sup');freightMarker.className='wep-freight-marker';freightMarker.textContent='*';title.append(document.createTextNode(' '),freightMarker);}else if(!main.factoryFreightExcluded)freightMarker?.remove();
   const msrp=number(price.dataset.wepMsrp);price.textContent=msrp>0?money(msrp):'Contact Us';priceExtra.replaceChildren(note('MSRP','wep-build-msrp'));
   totals.replaceChildren();const dl=document.createElement('dl');
   for(const [name,value] of [['Merchandise',quote.merchandise],['Installation / Set-Up',quote.installation],['Freight',quote.freight],['Local delivery',snapshot.fulfillment==='DELIVERY'?quote.delivery:0],['Package subtotal',quote.subtotal],['Tax',quote.tax],['Total',quote.total]]){
 
-   dl.append(field(name,validMoney(value)?money(value):'Needs confirmation'));
+   const pendingFreight=quote.excludedFactoryFreight?.length>0;
+   const label=pendingFreight&&name==='Total'?'Estimated total *':name;
+   const display=pendingFreight&&name==='Freight'?(Number(value)>0?money(value)+' + pending *':'To be confirmed *'):validMoney(value)?money(value):'Needs confirmation';
+   dl.append(field(label,display));
   }totals.append(dl);
+  if(quote.excludedFactoryFreight?.length){const footnote=note('* Additional freight applies to marked items. We’ll confirm the charge before finalizing your order.');footnote.setAttribute('role','note');footnote.style.color='inherit';totals.append(footnote);}
   const subtotal=document.getElementById('wep-cart-subtotal');if(subtotal)subtotal.textContent=validMoney(quote.subtotal)?money(quote.subtotal):'Needs confirmation';
   lastResponse=quote;lastSnapshot=snapshot;remember();if(snapshot.paymentMethod==='finance'&&plan)disclaimer(plan);else if(offerPlan)disclaimer(offerPlan);publishItemized(quote);syncPaymentCards();if(!pricingConfirmation(quote))updateOffers(snapshot,quote);
  }
@@ -1143,6 +1148,7 @@
  window.addEventListener('resize',()=>syncPaymentCards());
  new MutationObserver(()=>{mount();syncOptionButtons();syncPaymentCards();}).observe(app,{childList:true,subtree:true});mount();syncOptionButtons();syncPaymentCards();
 })();
+
 
 
 
