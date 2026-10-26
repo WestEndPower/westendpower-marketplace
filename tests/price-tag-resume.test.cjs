@@ -3,7 +3,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 function runtime(file){
  let source=fs.readFileSync(file,'utf8');
  if(file.endsWith('.html')){const start=source.indexOf("(() => {\n  'use strict';\n\n  const DATA");source=source.slice(start,source.indexOf('</script>',start));}
- source=source.slice(0,source.indexOf("  document.addEventListener('DOMContentLoaded',init);"))+"window.test={DATA,loadMarketplaceProducts,financeSummaryKey,selectPackageVariant,selectedPriceVariant,selectCardVariant};})();";
+ source=source.slice(0,source.indexOf("  document.addEventListener('DOMContentLoaded',init);"))+"window.test={DATA,loadMarketplaceProducts,financeSummaryKey,selectPackageVariant,selectedPriceVariant,selectCardVariant,compactBaseVariant,compactPriceBoxes,selectCompactVariant};})();";
  const paths=[];const window={WestEndPayments:{},addEventListener(){},WESTEND_BRANDS:{STIHL:{id:'STIHL',dataRoot:'brands/stihl/data/'},YANMAR:{id:'YANMAR',dataRoot:'brands/yanmar/data/'}}};
  vm.runInNewContext(source,{window,document:{querySelector(){return null},querySelectorAll(){return []},addEventListener(){}},fetch:async path=>{paths.push(path);return {ok:true,text:async()=> 'SKU,BrandID,PowerType,Active\n'+(path.includes('yanmar')?'TRACTOR,YANMAR,Diesel,T':'TOOL,STIHL,Battery,T')}}});
  return {...window.test,paths};
@@ -23,5 +23,24 @@ for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-br
   r.selectCardVariant(f,0);assert.equal(r.selectedPriceVariant(f).sku,'SA325BI');
   const mower={key:'RZ142',brand:'STIHL',category:'Zero-Turn Mowers',variants:[variant('RZ142-BAG',4200,[],'Package'),variant('RZ142',3500,[])]};
   assert.equal(r.selectedPriceVariant(mower).sku,'RZ142');
+ });
+}
+
+for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-brand.html']){
+ test(file+': tractor has separate base/package boxes and exact-SKU base selection',()=>{
+  const r=runtime(file);
+  const variant=(sku,price,loader)=>({sku,price,msrp:price,type:'Tool',workbookSort:0,marketplaceRow:{'B2-Tires':'R-4','P1-Loader':loader?'T':''}});
+  const base=variant('SA325BI',19999,false),loader=variant('SA325BI-L',25299,true),f={key:'SA325',brand:'YANMAR',category:'Compact Tractors',model:'SA325',variants:[base,loader]};
+  assert.equal(r.compactBaseVariant(f).sku,'SA325BI');
+  const html=r.compactPriceBoxes(f,r.selectedPriceVariant(f));
+  assert.match(html,/pp-box pp-compact-base" data-pp-box="tool"/);
+  assert.match(html,/pp-compact-package pp-selected/);
+  assert.ok(html.indexOf('Package Price:')<html.indexOf('Factory Equipment'));
+  assert.match(html,/data-compact-sku="SA325BI" aria-pressed="false"/);
+  assert.match(html,/data-compact-sku="SA325BI-L" aria-pressed="true"/);
+  assert.match(html,/\$19,999\.00/);assert.match(html,/\$25,299\.00/);
+  r.selectCompactVariant(f,base);
+  const bare=r.compactPriceBoxes(f,r.selectedPriceVariant(f));
+  assert.match(bare,/pp-compact-base pp-selected/);assert.doesNotMatch(bare,/pp-compact-package pp-selected/);
  });
 }
