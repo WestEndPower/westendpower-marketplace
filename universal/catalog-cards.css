@@ -280,3 +280,7 @@
 #market-app .wep-restored-card:has(.pp-equipment-base) .market-card-finance-apr{font:800 18px/1.25 Arial,sans-serif;padding:6px 3px 2px}
 #market-app .wep-restored-card:has(.pp-equipment-base) .market-card-finance-payment,#market-app .wep-restored-card:has(.pp-equipment-base) .market-card-finance-payment strong{font-size:18px;line-height:1.2}
 #market-app .wep-restored-card:has(.pp-equipment-base) .market-card-finance-payment span{font-size:inherit}
+
+/* Keep one visible row per option type, including an empty row when none apply. */
+#market-app .wep-restored-card .pp-equipment-package .pp-component-row>div{flex-wrap:nowrap;min-height:29px}
+#market-app .wep-restored-card .pp-equipment-package .pp-component-row button{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis}
