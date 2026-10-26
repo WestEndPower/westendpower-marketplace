@@ -75,7 +75,7 @@
   if(initial||previous.price!==config.variant.price||previous.msrp!==config.variant.msrp||JSON.stringify(previous.packageItems||[])!==JSON.stringify(config.variant.packageItems||[]))c.selectPackageVariant(f,config.variant);
   const selected=s.selected.size>0,rows=['attachment','accessory'].map(type=>{
    const options=m.options.filter(p=>p.type===type);
-   const label=type==='attachment'?'Attachments':'Accessories';
+   const label=type==='attachment'?'Attach.':'Acces.';
    return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+(type==='attachment'?'Attachments':'Accessories')+'">'+options.map(p=>'<button type="button" data-eqp-option="'+esc(p.row.SKU)+'" aria-pressed="'+s.selected.has(key(p.row.SKU))+'" title="'+esc(p.row.Description)+'">'+esc(shortName(p.row))+'</button>').join('')+'</div></div>';
   }).join('');
   const offer=c.promoInfo(m.tool),sale=offer?.type==='sale',basePrice=sale?offer.price:m.tool.msrp||m.tool.price;
