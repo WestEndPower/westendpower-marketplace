@@ -272,3 +272,11 @@
 #market-app .wep-restored-card:has(.pp-compact-base) .market-card-finance-payment,#market-app .wep-restored-card:has(.pp-compact-base) .market-card-finance-payment strong{font-size:18px}
 #market-app .wep-restored-card:has(.pp-compact-base) .market-card-finance-payment span{font-size:inherit}
 #market-app .wep-restored-card:has(.pp-compact-base) .market-card-finance-note .market-card-finance-rebate{margin:0}
+
+/* RZ142 attachment packages share the approved box appearance. */
+#market-app .wep-restored-card .pp-box.pp-equipment-base[data-pp-box=tool]{display:flex;align-items:center}
+#market-app .wep-restored-card .pp-equipment-base .pp-price-select{font-size:clamp(20px,6.2cqi,36px);align-items:center;min-height:40px;line-height:1.1;padding-block:0}
+#market-app .wep-restored-card .pp-equipment-base .pp-prices{align-items:center;line-height:1.1}
+#market-app .wep-restored-card:has(.pp-equipment-base) .market-card-finance-apr{font:800 18px/1.25 Arial,sans-serif;padding:6px 3px 2px}
+#market-app .wep-restored-card:has(.pp-equipment-base) .market-card-finance-payment,#market-app .wep-restored-card:has(.pp-equipment-base) .market-card-finance-payment strong{font-size:18px;line-height:1.2}
+#market-app .wep-restored-card:has(.pp-equipment-base) .market-card-finance-payment span{font-size:inherit}
