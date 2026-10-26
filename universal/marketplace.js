@@ -2078,8 +2078,8 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const regular=promo ? promo.regular : (v.msrp>0 ? v.msrp : v.price);
     const shown=promo?promo.price:isCompactTractor(f)?v.msrp:v.price;
     if(!isPackage&&promo?.type==='sale')label='Sale:';
-    label=isPackage?'Package Price':'Base Price';
-    if(isCompactTractor(f))label=compactFlags(v).some(Boolean)?'Package Price':'Base Price';
+    label=isPackage?'Package Price':clean(f.brand)+' Base Price:';
+    if(isCompactTractor(f))label=compactFlags(v).some(Boolean)?'Package Price':clean(f.brand)+' Base Price:';
 
     const description=isCompactTractor(f)?'':v.recommendedPackage&&Array.isArray(v.packageItems)
       ?v.packageItems.map(item=>{
@@ -2096,8 +2096,8 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       : '';
     const base=isCompactTractor(f)?compactVariants(f).filter(x=>!compactFlags(x).some(Boolean)).sort((a,b)=>(compactTire(a)===compactTire(v)?-1:0)-(compactTire(b)===compactTire(v)?-1:0)||a.msrp-b.msrp)[0]:null;
     const baseOffer=base?promoInfo(base):null,baseSale=baseOffer?.type==='sale';
-    const baseMarkup=base?'<div class="pp-tractor-base"><span>Base Price</span><span>'+(baseSale?'<del>'+money(base.msrp)+'</del> ':'')+'<strong>'+money(baseSale?baseOffer.price:base.msrp)+'</strong></span></div>':'';
-    return '<div class="market-price-choice'+(isPackage?' market-package-choice':'')+'"'+(active?' style="outline:3px solid #238b45;outline-offset:1px"':'')+'>'+
+    const baseMarkup=base?'<div class="pp-tractor-base"><span>'+esc(clean(f.brand))+' Base Price:</span><span>'+(baseSale?'<del>'+money(base.msrp)+'</del> ':'')+'<strong>'+money(baseSale?baseOffer.price:base.msrp)+'</strong></span></div>':'';
+    return '<div class="market-price-choice'+(isPackage?' market-package-choice':'')+(/Base Price:$/.test(label)?' market-base-choice':'')+'"'+(active?' style="outline:3px solid #238b45;outline-offset:1px"':'')+'>'+
       baseMarkup+stockUnitMarkup(f)+
       compactHeaderOptions(f)+
       compactTireMarkup(f)+
