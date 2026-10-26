@@ -112,7 +112,7 @@ Change a baseline only when John requests or approves that layout change.
 
 ## RZ142 attachment package trial (October 26, 2026)
 
-- STIHL RZ142 uses separate manufacturer Base Price and Package MSRP boxes, Attach and Access rows sourced from its exported workbook tables, and a base-only default. Keep one Attach row and one Access row; show only the first four compatible choices in each and leave empty option areas when none apply. Other equipment, battery and tractor layouts are unchanged.
+- STIHL RZ142 uses separate manufacturer Base Price and Package MSRP boxes, Attachments and Accessories rows sourced from its exported workbook tables, and a base-only default. Keep one Attachments group and one Accessories group; show all compatible choices with full workbook names, no outside indentation, and wrapping as needed. Leave empty option areas when none apply. Other equipment, battery and tractor layouts are unchanged.
 - Match compatibility by explicit SKU/model before group flags, respecting explicit exclusions. Use current workbook MSRP for package reference totals; selling prices, required parts and quantity-linked cart rows continue to the builder and quote. No invented kit SKU is assigned.
 - Requirements match their RequiredModel/SKU mapping, so the RZ142 bagger includes its mower boot kit once, rather than the other mower's blower. Required rows are included in totals and full cart/builder details. Catalog SortOrder and added/removed compatible rows drive the choices.
 - The current exports classify mulch kit, LED lights, bagger and armrests as attachments, with no RZ142 accessories. Keep the workbook classification. Stock-unit selections retain their existing fixed-unit card flow.

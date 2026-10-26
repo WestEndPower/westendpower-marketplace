@@ -38,9 +38,6 @@
  }
  function shortName(row){
   const text=clean(row.Description||row.Model||row.SKU);
-  if(/mulch/i.test(text))return 'Mulch Kit';
-  if(/\bLED\b/i.test(text)&&/light/i.test(text))return 'LED Lights';
-  if(/bag|M\.C\.S\./i.test(text))return 'Bagger';
   return text;
  }
  function model(f,c){
@@ -77,8 +74,8 @@
   const previous=c.selectedPriceVariant(f);
   if(initial||previous.price!==config.variant.price||previous.msrp!==config.variant.msrp||JSON.stringify(previous.packageItems||[])!==JSON.stringify(config.variant.packageItems||[]))c.selectPackageVariant(f,config.variant);
   const selected=s.selected.size>0,rows=['attachment','accessory'].map(type=>{
-   const options=m.options.filter(p=>p.type===type).slice(0,4);
-   const label=type==='attachment'?'Attach':'Access';
+   const options=m.options.filter(p=>p.type===type);
+   const label=type==='attachment'?'Attachments':'Accessories';
    return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+(type==='attachment'?'Attachments':'Accessories')+'">'+options.map(p=>'<button type="button" data-eqp-option="'+esc(p.row.SKU)+'" aria-pressed="'+s.selected.has(key(p.row.SKU))+'" title="'+esc(p.row.Description)+'">'+esc(shortName(p.row))+'</button>').join('')+'</div></div>';
   }).join('');
   const offer=c.promoInfo(m.tool),sale=offer?.type==='sale',basePrice=sale?offer.price:m.tool.msrp||m.tool.price;
