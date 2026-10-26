@@ -102,9 +102,9 @@
   const initial=!states.has(f.key),s=state(f,m),pkg=configured(m,s,c);
   if(initial&&m.defaultPackage)c.selectPackageVariant(f,pkg.variant);
   return '<div class="pp-box'+(s.choice==='tool'?' pp-selected':'')+'" data-pp-box="tool">'+
-   '<button class="pp-price-select" type="button" data-pp-select="tool" aria-pressed="'+(s.choice==='tool')+'"><span>Base Price</span>'+prices(m.tool.msrp,m.tool.price)+'</button></div>'+
+   '<button class="pp-price-select" type="button" data-pp-select="tool" aria-pressed="'+(s.choice==='tool')+'"><span>Base Unit Price:</span>'+prices(m.tool.msrp,m.tool.price)+'</button></div>'+
    '<div class="pp-box pp-package'+(s.choice==='package'?' pp-selected':'')+'" data-pp-box="package">'+
-   '<button class="pp-price-select pp-package-total" type="button" data-pp-select="package" aria-pressed="'+(s.choice==='package')+'"><span>Package Price</span>'+prices(pkg.regular,pkg.price)+'</button>'+
+   '<button class="pp-price-select pp-package-total" type="button" data-pp-select="package" aria-pressed="'+(s.choice==='package')+'"><span>Package Price:</span>'+prices(pkg.regular,pkg.price)+'</button>'+
    row(f,m,s,'Battery')+row(f,m,s,'Charger')+((pkg.parts.some(p=>p.qty>1)||pkg.parts.some(p=>!['battery','charger'].includes(p.type)))?'<small class="pp-package-contents">Includes: '+esc(['battery','charger'].map(type=>{const count=pkg.parts.filter(p=>p.type===type).reduce((n,p)=>n+p.qty,0);return count?count+' '+(type==='battery'?(count===1?'battery':'batteries'):(count===1?'charger':'chargers')):'';}).filter(Boolean).concat(pkg.parts.some(p=>!['battery','charger'].includes(p.type))?['Required items included']:[]).join(' · '))+'</small>':'')+(pkg.error?'<small class="pp-package-contents">'+esc(pkg.error)+'</small>':'')+'</div>';
  }
  function popup(message,opener){
@@ -130,7 +130,7 @@
   return rows;
  }
  function add(f,c,m,s,opener,increment=true){
-  if(m&&!s.choice){popup('No option selected. Please select Base Price or Package Price to continue.',opener);return false;}
+  if(m&&!s.choice){popup('No option selected. Please select Base Unit Price or Package Price to continue.',opener);return false;}
   try{
    const rows=cartRows(f,c,m,s),saved=JSON.parse(localStorage.getItem('wepCart')||'[]');if(!Array.isArray(saved))throw Error('Your cart could not be read.');
    for(const row of rows){const old=saved.find(x=>x.packageId===row.packageId&&x.type===row.type&&key(x.sku)===key(row.sku));if(old){if(!increment)continue;if(Number(old.quantity)+row.quantity>99)throw Error('Your cart already contains the maximum quantity for this configuration.');old.quantity=Number(old.quantity)+row.quantity;}else saved.push(row);}
