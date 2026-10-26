@@ -291,3 +291,13 @@
 #market-app .wep-restored-card .pp-equipment-package .pp-component-row:has(>div[aria-label$="Bar"])>.pp-component-label{flex:0 0 auto}
 #market-app .wep-restored-card .pp-equipment-package .pp-component-row>div[aria-label$="Bar"]{flex:0 1 auto;justify-content:center}
 #market-app .wep-restored-card .pp-equipment-package .pp-component-row>div[aria-label$="Bar"] button{flex:0 0 auto;width:auto;padding-inline:8px;white-space:nowrap}
+
+/* Four shared price-tag rules: three desktop columns and reserved data slots. */
+@media(min-width:1101px){#market-app #market-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(min-width:851px) and (max-width:1100px){#market-app #market-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+#market-app .wep-restored-card .market-card-warranty{height:28px;min-height:28px;overflow-y:auto;box-sizing:border-box}
+#market-app .wep-restored-card .market-card-finance,#market-app .wep-restored-card .market-payment-options-only{min-height:132px;display:flex;flex-direction:column;justify-content:flex-end}
+#market-app .wep-restored-card .market-card-price-links{margin-top:auto}
+#market-app .wep-restored-card .market-price-lines{min-height:178px}
+#market-app .wep-restored-card .market-card-overview{height:var(--card-overview-height)}
+#market-app .wep-restored-card .market-empty-specs{height:var(--card-overview-height)}
