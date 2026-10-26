@@ -285,3 +285,9 @@
 #market-app .wep-restored-card .pp-equipment-package .pp-component-row{margin-inline:0;grid-template-columns:90px minmax(0,1fr)}
 #market-app .wep-restored-card .pp-equipment-package .pp-component-row>div{flex-wrap:wrap;min-height:29px}
 #market-app .wep-restored-card .pp-equipment-package .pp-component-row button{flex:1 1 auto;min-width:0;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+
+/* Center each complete bar-size line; buttons retain their label width. */
+#market-app .wep-restored-card .pp-equipment-package .pp-component-row:has(>div[aria-label$="Bar"]){display:flex;justify-content:center;gap:8px}
+#market-app .wep-restored-card .pp-equipment-package .pp-component-row:has(>div[aria-label$="Bar"])>.pp-component-label{flex:0 0 auto}
+#market-app .wep-restored-card .pp-equipment-package .pp-component-row>div[aria-label$="Bar"]{flex:0 1 auto;justify-content:center}
+#market-app .wep-restored-card .pp-equipment-package .pp-component-row>div[aria-label$="Bar"] button{flex:0 0 auto;width:auto;padding-inline:8px;white-space:nowrap}
