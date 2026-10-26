@@ -99,4 +99,6 @@ Change a baseline only when John requests or approves that layout change.
 
 - Start SA325 on SA325BI without factory attachments. The image rebate follows that exact selected configuration; loader package rebates appear only after a loader configuration is selected.
 - Center the manufacturer Base Price text vertically. Use Factory Installed as the row heading. Tractor Inventory lists only the exact selected configuration, preserving store-level availability and locked stock selections. Battery inventory behavior remains unchanged.
-- Make tractor APR/term 18px and the estimated payment 16px. Show In lieu of customer rebate directly below the APR/term only when the selected program's rebateCompatible flag is false.
+- Use matching 18px tractor APR/term and monthly-payment text. Show (In lieu of customer rebate) after the expiration date only when the selected program's rebateCompatible flag is false.
+
+- Place an underlined blue Guide disclosure immediately beside the Tires label, preserving the tire information popup.

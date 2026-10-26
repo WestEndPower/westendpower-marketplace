@@ -705,7 +705,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261026-tractor-corrections1"><script src="universal/package-components.js?v=20261026-kit-lines1"></script><script src="universal/package-pricing.js?v=20261026-tractor-corrections1"></script><script src="universal/marketplace-card.js?v=20261026-compact-boxes1"></script></head>
+<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261026-guide-finance1"><script src="universal/package-components.js?v=20261026-kit-lines1"></script><script src="universal/package-pricing.js?v=20261026-tractor-corrections1"></script><script src="universal/marketplace-card.js?v=20261026-compact-boxes1"></script></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -1733,7 +1733,7 @@ root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,
   }
   function compactTireGuide(f){
     const descriptions={'R-1':'Agricultural tire','R-3':'Turf tire','R-4':'Industrial tire','Hybrid':'Mixed tread design'};
-    return '<details class="market-tire-guide" style="position:relative;text-align:left;font-size:11px"><summary style="cursor:pointer;text-align:center;color:#176c34;font-weight:800;padding:5px">Tire guide</summary><div style="position:absolute;z-index:40;right:0;top:100%;width:300px;max-width:75vw;padding:12px;border:1px solid #9ebda7;border-radius:8px;background:white;color:#24342a;box-shadow:0 5px 20px #0003"><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;text-align:center">'+compactTires.map(([code])=>'<div>'+compactTreadSvg(code)+'<div style="font-weight:900">'+code+'</div><div>'+descriptions[code]+'</div></div>').join('')+'</div><p style="font-size:10px;line-height:1.4;margin:9px 0 0">Illustrative tread patterns. Actual tires vary by model. Selectable choices match the listed tractor configuration.</p><a href="https://www.yanmar.com/eu/agri/wp-content/uploads/sites/12/2023/02/EN_SA221_424_OPERATORS-MANUAL_WEB_LR.pdf" target="_blank" rel="noopener" style="font-size:10px;color:#176c34">YANMAR tire terminology</a> · <a href="https://www.titan-intl.com/r14t" target="_blank" rel="noopener" style="font-size:10px;color:#176c34">Hybrid tire example</a></div></details>';
+    return '<details class="market-tire-guide" style="position:relative;text-align:left;font-size:11px"><summary style="cursor:pointer;text-align:center;color:#176c34;font-weight:800;padding:5px" aria-label="Tire guide">Guide</summary><div style="position:absolute;z-index:40;right:0;top:100%;width:300px;max-width:75vw;padding:12px;border:1px solid #9ebda7;border-radius:8px;background:white;color:#24342a;box-shadow:0 5px 20px #0003"><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;text-align:center">'+compactTires.map(([code])=>'<div>'+compactTreadSvg(code)+'<div style="font-weight:900">'+code+'</div><div>'+descriptions[code]+'</div></div>').join('')+'</div><p style="font-size:10px;line-height:1.4;margin:9px 0 0">Illustrative tread patterns. Actual tires vary by model. Selectable choices match the listed tractor configuration.</p><a href="https://www.yanmar.com/eu/agri/wp-content/uploads/sites/12/2023/02/EN_SA221_424_OPERATORS-MANUAL_WEB_LR.pdf" target="_blank" rel="noopener" style="font-size:10px;color:#176c34">YANMAR tire terminology</a> · <a href="https://www.titan-intl.com/r14t" target="_blank" rel="noopener" style="font-size:10px;color:#176c34">Hybrid tire example</a></div></details>';
   }
   function compactTireMarkup(f){
     if(!isCompactTractor(f))return '';
@@ -1741,10 +1741,10 @@ root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,
     const offered=compactTires.filter(([code])=>selectedStock(f)?code===tire:compactVariants(f).some(v=>compactTire(v)===code));
     const extra=tire&&!compactTires.some(([code])=>code===tire)?[[tire]]:[];
     const note=cardSelectionFor(f).compactNote||'';
-    return '<div class="market-compact-tires" style="margin:7px 0;text-align:center"><div class="market-package-row-label">Tires</div><div role="group" aria-label="Tire options" style="display:flex;justify-content:center;gap:4px;flex-wrap:wrap">'+offered.concat(extra).map(([code])=>{
+    return '<div class="market-compact-tires" style="margin:7px 0;text-align:center"><div class="market-compact-tire-label"><div class="market-package-row-label">Tires</div>'+compactTireGuide(f)+'</div><div role="group" aria-label="Tire options" style="display:flex;justify-content:center;gap:4px;flex-wrap:wrap">'+offered.concat(extra).map(([code])=>{
       const active=code===tire,candidate=compactTireCandidate(f,code),disabled=!candidate;
       return '<button type="button" data-compact-family="'+esc(f.key)+'" data-compact-tire="'+esc(code)+'" aria-pressed="'+active+'" '+(disabled?'disabled ':'')+'title="'+esc(disabled?'Not listed with the selected factory options':'Select '+code+' tires')+'" style="'+compactButtonStyle(active,disabled,false)+'">'+esc(code)+'</button>';
-    }).join('')+'</div>'+compactTireGuide(f)+(note?'<div role="status" style="font-size:11px;line-height:1.3;margin-top:4px;color:#315e3d">'+esc(note)+'</div>':'')+'</div>';
+    }).join('')+'</div>'+(note?'<div role="status" style="font-size:11px;line-height:1.3;margin-top:4px;color:#315e3d">'+esc(note)+'</div>':'')+'</div>';
   }
   function handleCompactSelection(event){
     const button=event.target.closest('[data-compact-family]');if(!button)return false;
@@ -1942,7 +1942,7 @@ root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,
     if(!key || /\|$/.test(key))return '<div class="market-payment-options-only">'+links+'</div>';
     const summary=DATA.financeSummaryCache.get(key);if(!summary)requestMarketplaceFinanceSummary(f);
     if(!summary||summary.none)return '<div class="market-payment-options-only">'+(!summary?'<div role="status" style="text-align:center;padding:5px;font-size:11px">Updating financing…</div>':'')+links+'</div>';
-    return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+(isCompactTractor(f)&&summary.rebateCompatible===false?'<div class="market-card-finance-rebate">In lieu of customer rebate</div>':'')+'<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+(summary.expirationLabel?'<div class="market-card-finance-note">'+esc(summary.expirationLabel)+'</div>':'')+links+'</div>';
+    return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+'<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+((summary.expirationLabel||(isCompactTractor(f)&&summary.rebateCompatible===false))?'<div class="market-card-finance-note">'+esc(summary.expirationLabel||'')+(isCompactTractor(f)&&summary.rebateCompatible===false?' <span class="market-card-finance-rebate">(In lieu of customer rebate)</span>':'')+'</div>':'')+links+'</div>';
   }
 
   async function requestMarketplaceFinanceSummary(f){
