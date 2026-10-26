@@ -52,7 +52,7 @@ h1 svg{width:30px;height:30px;color:#c8102e}
 @media(max-width:700px){.summary{display:block}.review{width:100%;margin-top:14px}}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261024-portal-auth2" defer></script></head>
+<script src="universal/dealer-portal-link.js?v=20261024-portal-auth2" defer></script><script src="universal/package-components.js?v=20261026-kit-lines1"></script></head>
 <body>
 <main class="page">
 
@@ -201,7 +201,7 @@ h1 svg{width:30px;height:30px;color:#c8102e}
 </dialog>
 </main>
 
-<script>
+<script src="universal/build-buy-tools.js?v=20261026-kit-lines1"></script><script>
 (function(){
 
 let cart=[];
@@ -310,9 +310,24 @@ function saveCart(){
   }catch(e){}
 }
 
+async function hydrateKitCart(){
+ const cache=new Map(),rows=(brand,table)=>{const path='brands/'+String(brand).toLowerCase()+'/data/'+table+'.csv';if(!cache.has(path))cache.set(path,fetch(path,{cache:'no-store'}).then(async r=>r.status===404?[]:r.ok?WEPBuildBuy.parseCSV(await r.text()):Promise.reject(Error('Package data unavailable'))));return cache.get(path);};
+ const initial=cart;
+ for(const entry of [...cart]){
+  if(entry.type!=='tool'||!entry.brandId)continue;
+  try{const products=await rows(entry.brandId,'products'),product=products.find(p=>WEPKitComponents.key(p.SKU)===WEPKitComponents.key(entry.sku));if(!product||!/kit|package/i.test(product.ProductType||''))continue;
+   const packages=await rows(entry.brandId,'packages'),catalog={};for(const table of ['batteries','chargers','attachments','accessories','parts'])catalog[table]=await rows(entry.brandId,table);
+   const def=WEPKitComponents.definition(product,products,packages,catalog);if(!def)continue;
+   if(cart!==initial||!cart.includes(entry))return;entry.kitComponents=WEPKitComponents.breakdown(def,Number(entry.itemPrice),Number(entry.quantity));delete entry.kitBreakdownIssue;
+  }catch(error){if(cart.includes(entry))entry.kitBreakdownIssue=error.message;}
+ }
+ if(cart===initial){saveCart();drawCart();}
+}
 function cartSetup(x){const code=String(x.assemblyOption||'').trim().toUpperCase();const amount=Number(x.assemblyAmount??x.setupAmount);if(code==='T'&&!x.setupSelected)return 0;return Number.isFinite(amount)&&amount>0?amount:0}
 function cartLineTotal(x){return (Number(x.itemPrice)+cartSetup(x))*Number(x.quantity)}
 function drawCart(){
+  for(const row of cart)for(const child of row.kitComponents||[]){child.perPackageQuantity??=child.quantity/row.quantity;child.perPackageTotal??=child.itemTotal/row.quantity;child.quantity=child.perPackageQuantity*row.quantity;child.itemTotal=Math.round(child.perPackageTotal*row.quantity*100)/100;}
+
 
   const lines=$("cart-lines");
 
@@ -324,6 +339,8 @@ function drawCart(){
         <div>
           <strong>${esc(x.productName)}</strong>
           ${x.description?`<p class="line-description">${esc(x.description)}</p>`:""}
+          ${(x.kitComponents||[]).map(c=>`<div class="kit-component"><strong>${esc(c.productName)}</strong><small>SKU ${esc(c.sku)} · Qty ${c.quantity} · ${money(c.unitPrice)} each · ${money(c.itemTotal)} total · Included quantity tied to package</small></div>`).join('')}
+          ${x.kitBreakdownIssue?`<small>Component allocation needs store confirmation. Package total remains ${money(Number(x.itemPrice)*x.quantity)}.</small>`:''}
           <small>SKU ${esc(x.sku)}</small>
           ${x.type==='tool'&&x.packageId?`<small><strong>${x.inventoryId?'In-Stock Unit':'Build-to-Order Unit'}</strong></small>`:''}
           ${!x.cardConfiguration&&isEquipmentPackageRow(x)&&x.type==='tool'&&x.packageId?`<a href="product-options.html?brand=${encodeURIComponent(x.brandId)}&amp;sku=${encodeURIComponent(x.equipmentSku||x.sku)}">Edit Package</a>`:''}
@@ -333,7 +350,7 @@ function drawCart(){
             <input type="number" class="qty-input" min="1" max="99"
               value="${x.quantity}" data-cart-qty="${i}" ${x.packageComponent?'readonly aria-readonly="true"':''}>
           </label>
-          <button type="button" class="remove" data-remove="${i}">Remove</button>
+          ${x.packageComponent?'<small>Required with configured package</small>':`<button type="button" class="remove" data-remove="${i}">Remove</button>`}
         </div>
         <div class="price">${money(cartLineTotal(x))}</div>
       </div>
@@ -401,7 +418,7 @@ $("clear-cart").onclick=function(){
 window.addEventListener('storage',event=>{
   if(event.key==='wepCart'||event.key===null){loadCart();resetShipping();drawCart();updateShippingChoice();}
 });
-window.addEventListener('pageshow',()=>{loadCart();resetShipping();drawCart();updateShippingChoice();});
+window.addEventListener('pageshow',()=>{loadCart();resetShipping();drawCart();updateShippingChoice();hydrateKitCart();});
 
 $("continue-shopping").onclick=function(){
 
@@ -759,6 +776,7 @@ $("checkout-form").addEventListener("submit",submitCart);
 wireCustomerFormatting();
 loadCart();
 drawCart();
+hydrateKitCart();
 updateShippingChoice();
 
 })();

@@ -55,3 +55,9 @@ Change a baseline only when John requests or approves that layout change.
 - Use Base Price and Package Price without MSRP labels or a separate package-savings line. Compare the sum of bare-tool and selected-component MSRP with the current matching kit price (including active advertised promotions), or current separate-component total when no kit matches. Show one amount when equal; only cross out a higher, fully known combined MSRP.
 - Center option rows with equal left/right insets and a subtle selected box border. Keep choices visible by wrapping.
 - Default to the lowest-priced complete package with an active promotion when available; otherwise prefill the lowest-priced complete package. A promotional default is selected immediately so its image banner, pricing and purchase actions agree.
+
+## Battery series and kit itemization (October 26, 2026)
+
+- Left-align compact series headings beside centered option buttons: AP / AR Series, PRO AP Series, 82BD Series, CORE Series and Chargers. One battery selection spans all battery rows. Empty rows are hidden; wrapping keeps all options visible.
+- Button labels omit shared series prefixes only in the named row. A short Includes line describes multi-battery/charger quantities or required connection items.
+- Package component quantities are locked to the package SKU. Itemized builder, cart and quote displays retain full names/SKUs. The package total stays authoritative and component splits never introduce additional charges. See battery-series-and-kit-lines.md for allocation and workbook fields.

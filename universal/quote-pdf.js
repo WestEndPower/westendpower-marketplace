@@ -3,6 +3,7 @@
  'use strict';
  async function create(s){
   const D=root.WEPQuoteDocument||require('./quote-document.js'),P=root.PDFLib||require('./vendor/pdf-lib.min.js');
+  s={...s,lines:D.displayLines?D.displayLines(s.lines):s.lines};
   const doc=await P.PDFDocument.create(),font=await doc.embedFont(P.StandardFonts.Helvetica),bold=await doc.embedFont(P.StandardFonts.HelveticaBold);
   doc.setTitle((s.reference||'Equipment')+' Quote');doc.setAuthor('West End Power Equipment');
   const red=P.rgb(.82,.04,.1),ink=P.rgb(.08,.08,.08),gray=P.rgb(.65,.65,.65),white=P.rgb(1,1,1);

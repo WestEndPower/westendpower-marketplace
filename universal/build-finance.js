@@ -52,7 +52,7 @@
  let pricingUpdate;
  app.addEventListener('click',event=>{if([...updateJobs.keys()].some(scope=>!scope.startsWith('comparison:'))&&event.target.closest('[data-payment-preview],#wep-open-payment-options,#wep-build-checkout')){event.preventDefault();event.stopImmediatePropagation();}},true);
  const spacing=1200; // Debounce edits; quotes use the shared request budget below.
- const quoteCache=new Map(),quoteSessionKey='wepBuildQuoteCache:additional-freight-v4:'+api,quoteBudgetKey='wepBuildQuoteBudget',quoteBudgetWindow=61000,quoteBudgetMax=9; // API route allows 10/minute; retain one request of headroom.
+ const quoteCache=new Map(),quoteSessionKey='wepBuildQuoteCache:kit-components-v1:'+api,quoteBudgetKey='wepBuildQuoteBudget',quoteBudgetWindow=61000,quoteBudgetMax=9; // API route allows 10/minute; retain one request of headroom.
  let quoteCooldown=0,quoteBudgetMemory=[];
  try{const rows=JSON.parse(sessionStorage.getItem(quoteSessionKey)||'[]');if(Array.isArray(rows))for(const entry of rows.slice(-40)){if(!Array.isArray(entry)||entry.length!==2||typeof entry[0]!=='string')continue;const q=entry[1];if(q&&Array.isArray(q.lines)&&q.lines.length&&q.lines.every(l=>validMoney(l.unitPrice))&&Array.isArray(q.issues)&&!pricingIssues(q).length&&validMoney(q.total)&&Date.now()-Date.parse(q.createdAt)<120000)quoteCache.set(entry[0],q);}}catch(_){}
 
