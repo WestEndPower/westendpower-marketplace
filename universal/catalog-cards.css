@@ -306,7 +306,7 @@
 #market-app .wep-restored-card .pp-energy-row{display:grid;gap:4px;margin:5px 0 0;text-align:center;min-width:0}
 #market-app .wep-restored-card .pp-energy-heading{font:700 12px/1.2 Arial,sans-serif;white-space:nowrap}
 #market-app .wep-restored-card .pp-energy-row [role=group]{display:flex;justify-content:safe center;flex-wrap:nowrap;gap:4px;min-width:0;overflow-x:auto;scrollbar-width:thin}
-#market-app .wep-restored-card .pp-energy-row button{flex:0 0 auto;white-space:nowrap;min-height:29px;padding:5px 6px;font:400 12px/1.2 Arial,sans-serif;border:1px solid #9ebda7;border-radius:4px;background:#fff;color:#155d2d;cursor:pointer}
+#market-app .wep-restored-card .pp-energy-row button{flex:0 0 auto;white-space:nowrap;min-height:29px;padding:5px 4px;font:400 12px/1.2 Arial,sans-serif;border:1px solid #9ebda7;border-radius:4px;background:#fff;color:#155d2d;cursor:pointer}
 #market-app .wep-restored-card .pp-energy-row button[aria-pressed=true]{background:#e1e3e5;border-color:#73777b;box-shadow:inset 0 -2px #73777b;color:#292d31}
 #market-app .wep-restored-card .pp-energy-row .pp-series-tabs button{font-weight:700}
 #market-app .wep-restored-card .pp-energy-row button:disabled{opacity:.4;cursor:default}
