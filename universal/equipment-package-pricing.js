@@ -41,7 +41,21 @@
   return text;
  }
  function model(f,c){
-  if(key(f.brand)!=='STIHL'||!/^RZ142(?:0)?$/.test(key(f.model))||/battery/i.test(f.power)||c.selectedStock(f))return null;
+  const saw=key(f.model)==='MS362CM'&&/^chainsaws?$/i.test(clean(f.category));
+  if(key(f.brand)!=='STIHL'||(!/^RZ142(?:0)?$/.test(key(f.model))&&!saw)||/battery/i.test(f.power)||c.selectedStock(f))return null;
+  if(saw){
+   const bars=[],seen=new Set();
+   for(const v of [...f.variants].sort((a,b)=>num(a.marketplaceRow?.SortOrder)-num(b.marketplaceRow?.SortOrder))){
+    if(v.recommendedPackage||/kit|package/i.test(v.type)||!usable({...v.marketplaceRow,SKU:v.sku}))continue;
+    const match=clean(v.description).match(/(\d+(?:\.\d+)?)\s*["\u2033\u201d]/);if(!match)continue;
+    const size=Number(match[1]),light=/light\s*(?:weight\s*)?bar/i.test(clean(v.description)),id=(light?'light':'standard')+size;
+    if(seen.has(id))continue;seen.add(id);bars.push({variant:v,size,light});
+   }
+   if(!bars.length)return null;
+   const chosen=bars.find(b=>b.variant.sku===states.get(f.key)?.barSku)||bars.find(b=>b.variant.sku===c.selectedPriceVariant(f).sku)||bars[0];
+   const tool={...chosen.variant,chainsawBarTrial:true,marketplaceRow:{...chosen.variant.marketplaceRow}};
+   return {tool,product:tool.marketplaceRow,catalog:[],options:[],bars};
+  }
   const original=f.variants.find(v=>!v.recommendedPackage&&!/kit|package/i.test(v.type));
   const source=c.DATA.componentSources?.STIHL;if(!original||!source)return null;
   const tool={...original,marketplaceRow:{...original.marketplaceRow}},product={...tool.marketplaceRow,SKU:tool.sku,Model:tool.marketplaceRow?.Model||f.model,BrandID:f.brand};
@@ -72,8 +86,11 @@
   for(const id of s.selected)if(!allowed.has(id))s.selected.delete(id);
   const config=configuration(m,s,c);contexts.set(f.key,{f,c,m,s});
   const previous=c.selectedPriceVariant(f);
-  if(initial||previous.price!==config.variant.price||previous.msrp!==config.variant.msrp||JSON.stringify(previous.packageItems||[])!==JSON.stringify(config.variant.packageItems||[]))c.selectPackageVariant(f,config.variant);
-  const selected=s.selected.size>0,rows=['attachment','accessory'].map(type=>{
+  if(initial||previous.sku!==config.variant.sku||previous.price!==config.variant.price||previous.msrp!==config.variant.msrp||JSON.stringify(previous.packageItems||[])!==JSON.stringify(config.variant.packageItems||[]))c.selectPackageVariant(f,config.variant);
+  const selected=s.selected.size>0,rows=m.bars?[false,true].map(light=>{
+   const label=light?'Light Bar':'Std. Bar';
+   return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+label+'">'+m.bars.filter(b=>b.light===light).sort((a,b)=>a.size-b.size).map(b=>'<button type="button" data-eqp-bar="'+esc(b.variant.sku)+'" aria-pressed="'+(b.variant.sku===m.tool.sku)+'">'+b.size+'&quot;</button>').join('')+'</div></div>';
+  }).join(''):['attachment','accessory'].map(type=>{
    const label=type==='attachment'?'Attach':'Access';
    return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+(type==='attachment'?'Attachments':'Accessories')+'"></div></div>';
   }).join('');
@@ -99,6 +116,8 @@
  function handle(event){
   const host=event.target.closest('.wep-restored-card'),e=host&&contexts.get(host.dataset.key);if(!e)return false;
   const {f,c,m,s}=e,option=event.target.closest('[data-eqp-option]'),select=event.target.closest('[data-eqp-select]');
+  const bar=event.target.closest('[data-eqp-bar]');
+  if(bar){if(m.bars?.some(b=>b.variant.sku===bar.dataset.eqpBar)){s.barSku=bar.dataset.eqpBar;s.selected.clear();c.refreshSelectedCard(f);}return true;}
   if(option||select){
    if(option){const id=key(option.dataset.eqpOption);if(!m.options.some(p=>key(p.row.SKU)===id))return true;s.selected.has(id)?s.selected.delete(id):s.selected.add(id);}
    else if(select.dataset.eqpSelect==='tool')s.selected.clear();

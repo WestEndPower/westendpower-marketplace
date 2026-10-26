@@ -117,3 +117,9 @@ Change a baseline only when John requests or approves that layout change.
 - Requirements match their RequiredModel/SKU mapping, so the RZ142 bagger includes its mower boot kit once, rather than the other mower's blower. Required rows are included in totals and full cart/builder details. Catalog SortOrder and added/removed compatible rows drive the choices.
 - The current exports classify mulch kit, LED lights, bagger and armrests as attachments, with no RZ142 accessories. Keep the workbook classification. Stock-unit selections retain their existing fixed-unit card flow.
 - Use the existing RZ142.jpg photo for the known RZ14.jpg export typo. Module changes are scoped to this model; no manufacturer workbook bytes are modified.
+
+## MS 362 C-M bar selection trial (October 26, 2026)
+
+- Keep the approved purchase-box format and two option rows. For this model, replace Attach/Access with Std. Bar and Light Bar. Show only published active sizes, once per size in each row; leave absent choices empty. No safety/arborist chain selector yet.
+- For duplicate sizes within a bar type, use the first active exact SKU by workbook SortOrder. Never merge SKU prices. Selected size updates the exact SKU, description, price, inventory, promotions, financing and builder/cart links. Fixed stock selections retain their existing flow.
+- Preserve the battery and Yanmar compact modules, grid and card sizing. Missing data must retain its allotted space; no global rollout is included in this trial.

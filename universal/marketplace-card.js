@@ -33,7 +33,7 @@
    if(!window.WEPBuildBuy&&!document.querySelector('script[src*="build-buy-tools.js"]')){const script=document.createElement('script');script.src='universal/build-buy-tools.js';document.head.append(script);}
   }
   return '<article class="market-card wep-blended-card wep-restored-card" data-key="'+escape(f.key)+'" data-brand="'+escape(clean(f.brand).toUpperCase())+'">'+
-   '<header class="market-card-head"><h3><strong class="market-card-title" title="'+escape(heading)+'">'+escape(heading)+'</strong><div class="wep-card-sku"><span>SKU: '+escape(displaySku)+sawHeaderBars(f)+'</span>'+stockHeaderMarkup(f)+'</div></h3></header>'+
+   '<header class="market-card-head"><h3><strong class="market-card-title" title="'+escape(heading)+'">'+escape(heading)+'</strong><div class="wep-card-sku"><span>SKU: '+escape(displaySku)+(tool.chainsawBarTrial?'':sawHeaderBars(f))+'</span>'+stockHeaderMarkup(f)+'</div></h3></header>'+
    '<div class="market-card-body"><div class="market-card-overview"><section class="market-card-left">'+
     '<div class="market-image-wrap">'+banner(equipment?.tool(f)||v,context)+'<a class="market-image" href="'+escape(product)+'" target="_blank" rel="noopener noreferrer" title="View product details" aria-label="View product details for '+escape(heading)+'">'+(image?'<img src="'+escape(image)+'" alt="'+escape(heading)+'" loading="lazy">':'<span>Image Coming Soon</span>')+'</a></div>'+
    '</section>'+
