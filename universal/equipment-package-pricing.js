@@ -74,9 +74,8 @@
   const previous=c.selectedPriceVariant(f);
   if(initial||previous.price!==config.variant.price||previous.msrp!==config.variant.msrp||JSON.stringify(previous.packageItems||[])!==JSON.stringify(config.variant.packageItems||[]))c.selectPackageVariant(f,config.variant);
   const selected=s.selected.size>0,rows=['attachment','accessory'].map(type=>{
-   const options=m.options.filter(p=>p.type===type);
-   const label=type==='attachment'?'Attach.':'Acces.';
-   return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+(type==='attachment'?'Attachments':'Accessories')+'">'+options.map(p=>'<button type="button" data-eqp-option="'+esc(p.row.SKU)+'" aria-pressed="'+s.selected.has(key(p.row.SKU))+'" title="'+esc(p.row.Description)+'">'+esc(shortName(p.row))+'</button>').join('')+'</div></div>';
+   const label=type==='attachment'?'Attach':'Access';
+   return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+(type==='attachment'?'Attachments':'Accessories')+'"></div></div>';
   }).join('');
   const offer=c.promoInfo(m.tool),sale=offer?.type==='sale',basePrice=sale?offer.price:m.tool.msrp||m.tool.price;
   return '<div class="pp-box pp-equipment-base'+(!selected?' pp-selected':'')+'" data-pp-box="tool"><button class="pp-price-select" type="button" data-eqp-select="tool" aria-pressed="'+!selected+'"><span>'+esc(f.brand)+' Base Price:</span><span class="pp-prices">'+(sale?'<del>'+c.money(offer.regular)+'</del>':'')+'<strong>'+c.money(basePrice)+'</strong></span></button></div>'+
