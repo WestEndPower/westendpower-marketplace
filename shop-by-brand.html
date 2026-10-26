@@ -1746,14 +1746,14 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     const button=event.target.closest('[data-compact-family]');if(!button)return false;
     const f=activeFamilies().find(f=>f.key===button.dataset.compactFamily);if(!f||!isCompactTractor(f)||button.disabled)return true;
     const old=selectedPriceVariant(f),oldFlags=compactFlags(old),option=button.dataset.compactOption;
-    const candidate=option!==undefined?compactOptionCandidate(f,Number(option)):compactTireCandidate(f,button.dataset.compactTire);
+    const candidate=button.dataset.compactSku?compactVariants(f).find(v=>skuKey(v.sku)===skuKey(button.dataset.compactSku)):option!==undefined?compactOptionCandidate(f,Number(option)):compactTireCandidate(f,button.dataset.compactTire);
     if(!candidate)return true;
     const nextFlags=compactFlags(candidate);
     const notes=compactFields.flatMap(([label],i)=>i!==Number(option)&&nextFlags[i]!==oldFlags[i]?[label+(nextFlags[i]?' included':' removed')]:[]);
     if(selectCompactVariant(f,candidate)){
       cardSelectionFor(f).compactNote=notes.length?notes.join('; ')+'.':'';
       refreshSelectedCard(f);
-      const selector=option!==undefined?'[data-compact-option="'+option+'"]':'[data-compact-tire="'+CSS.escape(button.dataset.compactTire)+'"]';
+      const selector=button.dataset.compactSku?'[data-compact-sku="'+CSS.escape(button.dataset.compactSku)+'"]':option!==undefined?'[data-compact-option="'+option+'"]':'[data-compact-tire="'+CSS.escape(button.dataset.compactTire)+'"]';
       document.querySelector('[data-compact-family="'+CSS.escape(f.key)+'"]'+selector)?.focus({preventScroll:true});
     }
     return true;
@@ -3165,11 +3165,26 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     return parts.length ? parts.join(' and ')+' included' : '';
   }
 
+  function compactBaseVariant(f,current=selectedPriceVariant(f)){
+    if(!isCompactTractor(f))return null;
+    return compactVariants(f).filter(v=>!compactFlags(v).some(Boolean)&&v.price>0)
+      .sort((a,b)=>Number(compactTire(a)!==compactTire(current))-Number(compactTire(b)!==compactTire(current))||a.msrp-b.msrp)[0]||null;
+  }
+  function compactPriceBoxes(f,current){
+    const base=compactBaseVariant(f,current);if(!base)return null;
+    const attached=compactFlags(current).some(Boolean),locked=!!selectedStock(f);
+    const amount=v=>{const offer=promoInfo(v),sale=offer?.type==='sale';return '<span class="pp-prices">'+(sale?'<del>'+money(offer.regular)+'</del>':'')+'<strong>'+money(sale?offer.price:v.msrp||v.price)+'</strong></span>';};
+    const control=(v,pressed,extra,label)=>'<button type="button" class="pp-price-select'+extra+'" data-compact-family="'+esc(f.key)+'" data-compact-sku="'+esc(v.sku)+'" aria-pressed="'+pressed+'" '+(locked?'disabled ':'')+'><span>'+esc(label)+'</span>'+amount(v)+'</button>';
+    return '<div class="pp-box pp-compact-base'+(!attached?' pp-selected':'')+'" data-pp-box="tool">'+control(base,!attached,'',clean(f.brand)+' Base Price:')+'</div>'+
+      '<div class="pp-box pp-package pp-compact-package'+(attached?' pp-selected':'')+'" data-pp-box="package">'+control(current,attached,' pp-package-total','Package Price:')+stockUnitMarkup(f)+compactHeaderOptions(f)+compactTireMarkup(f)+'</div>';
+  }
+
   function pricePanel(label,v,isPackage,f,variantGroup,hideInventory=false){
     if(!v) return '';
     const selected=selectedPriceVariant(f),group=Array.isArray(variantGroup)?variantGroup:[v];
     if(group.includes(selected))v=selected;
     else if(selected.recommendedPackage||group.some(x=>x.recommendedPackage))v=group.find(x=>skuKey(x.sku)===skuKey(selected.sku))||v;
+    if(isCompactTractor(f)){const boxes=compactPriceBoxes(f,v);if(boxes)return boxes;}
     const index=f.variants.indexOf(v),active=v===selected;
     const offer=promoInfo(v),promo=isCompactTractor(f)&&offer?.type!=='sale'?null:offer;
     const regular=promo ? promo.regular : (v.msrp>0 ? v.msrp : v.price);
@@ -3269,7 +3284,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
   }
 
     function card(f){
-    if(window.WestEndMarketplaceCard)return window.WestEndMarketplaceCard.render(f,{selectedPriceVariant,priceChoices,pricePanel,selectedStock,stockHeaderMarkup,sawHeaderBars,cardFinanceMarkup,paymentSelectionUrl,promoInfo,money,state,DATA,currentPrice,inventoryMarkup,selectPackageVariant,refreshSelectedCard,selectedPriceQuantity,updateCartFloat,track});
+    if(window.WestEndMarketplaceCard)return window.WestEndMarketplaceCard.render(f,{selectedPriceVariant,priceChoices,pricePanel,selectedStock,stockHeaderMarkup,sawHeaderBars,cardFinanceMarkup,paymentSelectionUrl,promoInfo,money,state,DATA,currentPrice,inventoryMarkup,selectPackageVariant,refreshSelectedCard,selectedPriceQuantity,updateCartFloat,track,compactBaseVariant});
     const first=selectedPriceVariant(f);
     const specs=familySpecs(f).slice(0,4);
     const heading=clean(first.description)||clean(f.model)||clean(first.sku);
