@@ -74,3 +74,9 @@ Change a baseline only when John requests or approves that layout change.
 - Use dark grey backgrounds with white text for View All Promotions and Out-the-Door Price; match the Save banner red gradient with white text for the cart Add action. Selected battery and charger buttons use light grey with a darker grey selected border. Keep the shared scope on shopping cards.
 
 - Keep Base Unit Price vertical padding compact: 2px at each box edge and no additional button padding, retaining the enlarged centered text.
+
+## Manufacturer base-price labels (October 26, 2026)
+
+- Label base prices with the manufacturer name, such as STIHL Base Price: and YANMAR Base Price:, without MSRP terminology.
+- Give the base price a pale manufacturer tint: STIHL orange; Yanmar/Toro/Honda/RedMax red; Greenworks green. Use a neutral pale background for unconfigured brands.
+- Keep the same neutral unselected border and green selected border as the package box. Background color never indicates selection. Preserve compact padding and centered large text on tool/package cards.
