@@ -710,7 +710,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-kit-lines1"></script><script src="universal/package-pricing.js?v=20261026-tractor-corrections1"></script><script src="universal/equipment-package-pricing.js?v=20261026-four-rules1"></script><script src="universal/marketplace-card.js?v=20261026-four-rules1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261026-four-rules1"></head>
+<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-kit-lines1"></script><script src="universal/package-pricing.js?v=20261026-energy-tabs1"></script><script src="universal/equipment-package-pricing.js?v=20261026-energy-tabs1"></script><script src="universal/marketplace-card.js?v=20261026-energy-tabs1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261026-energy-tabs1"></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -1931,9 +1931,9 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     const key=financeSummaryKey(f),url=new URL(buildHref||catalogBuildUrl(f));url.hash='';
     const bottom=new URL(url);bottom.hash='wep-itemized-quote';
     const links='<div class="market-card-price-links"><a class="market-payment-options" target="_blank" rel="noopener noreferrer" href="'+esc(url.href)+'">View All Promotions</a><a class="market-payment-options" target="_blank" rel="noopener noreferrer" href="'+esc(bottom.href)+'">Out-the-Door Price</a></div>';
-    if(!key || /\|$/.test(key))return '<div class="market-payment-options-only">'+links+'</div>';
+    if(!key || /\|$/.test(key))return links;
     const summary=DATA.financeSummaryCache.get(key);if(!summary)requestMarketplaceFinanceSummary(f);
-    if(!summary||summary.none)return '<div class="market-payment-options-only">'+(!summary?'<div role="status" style="text-align:center;padding:5px;font-size:11px">Updating financing…</div>':'')+links+'</div>';
+    if(!summary||summary.none)return (!summary?'<div class="market-finance-pending" role="status">Updating financing…</div>':'')+links;
     return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+'<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+((summary.expirationLabel||((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false))?'<div class="market-card-finance-note">'+esc(summary.expirationLabel||'')+((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false?' <span class="market-card-finance-rebate">(In lieu of customer rebate)</span>':'')+'</div>':'')+links+'</div>';
   }
 
