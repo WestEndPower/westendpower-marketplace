@@ -220,7 +220,7 @@
 
 /* Emphasize the base price and break up the green with red purchase actions. */
 #market-app .wep-restored-card .pp-box[data-pp-box=tool]{container-type:inline-size}
-#market-app .wep-restored-card [data-pp-select=tool]{font-size:clamp(18px,5.4cqi,30px);padding-block:4px}
+#market-app .wep-restored-card [data-pp-select=tool]{font-size:clamp(20px,6.2cqi,36px);padding-block:4px}
 #market-app .wep-restored-card .market-card-action-row .pp-add-cart,#market-app .wep-restored-card .market-card-price-links .market-payment-options{background:#c8102e;border-color:#a60e26;color:#fff}
 #market-app .wep-restored-card .market-card-action-row .pp-add-cart:hover,#market-app .wep-restored-card .market-card-price-links .market-payment-options:hover{background:#a60e26}
 #market-app .wep-restored-card .market-card-action-row .pp-add-cart:focus-visible,#market-app .wep-restored-card .market-card-price-links .market-payment-options:focus-visible{outline:2px solid #761020;outline-offset:2px}
