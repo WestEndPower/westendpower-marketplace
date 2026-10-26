@@ -85,7 +85,7 @@ h1 svg{width:30px;height:30px;color:#c8102e}
     </div>
 
     <button type="button" class="review" id="review-order">
-      Review & Place Order
+      Build &amp; Buy
     </button>
   </div>
 
@@ -326,12 +326,12 @@ function drawCart(){
           ${x.description?`<p class="line-description">${esc(x.description)}</p>`:""}
           <small>SKU ${esc(x.sku)}</small>
           ${x.type==='tool'&&x.packageId?`<small><strong>${x.inventoryId?'In-Stock Unit':'Build-to-Order Unit'}</strong></small>`:''}
-          ${isEquipmentPackageRow(x)&&x.type==='tool'&&x.packageId?`<a href="product-options.html?brand=${encodeURIComponent(x.brandId)}&amp;sku=${encodeURIComponent(x.equipmentSku||x.sku)}">Edit Package</a>`:''}
+          ${!x.cardConfiguration&&isEquipmentPackageRow(x)&&x.type==='tool'&&x.packageId?`<a href="product-options.html?brand=${encodeURIComponent(x.brandId)}&amp;sku=${encodeURIComponent(x.equipmentSku||x.sku)}">Edit Package</a>`:''}
           ${String(x.assemblyOption||'').trim().toUpperCase()==='T'&&Number(x.assemblyAmount)>0?`<label><input type="checkbox" data-cart-install="${i}" ${x.setupSelected?'checked':''}> Optional Dealer Installation: ${money(Number(x.assemblyAmount))} per item</label>`:cartSetup(x)>0?`<small>Required Set-Up / Assembly: ${money(cartSetup(x))} per item</small>`:''}
           <label class="qty-row">
             Qty
             <input type="number" class="qty-input" min="1" max="99"
-              value="${x.quantity}" data-cart-qty="${i}">
+              value="${x.quantity}" data-cart-qty="${i}" ${x.packageComponent?'readonly aria-readonly="true"':''}>
           </label>
           <button type="button" class="remove" data-remove="${i}">Remove</button>
         </div>
@@ -346,7 +346,7 @@ function drawCart(){
 
   $("clear-cart").disabled=!cart.length;
   $("review-order").disabled=!cart.length;
-  $("review-order").textContent='Review Quote / Checkout';
+  $("review-order").textContent='Build & Buy';
 
   document.querySelectorAll('[data-cart-install]').forEach(input=>{input.onchange=()=>{const row=cart[Number(input.dataset.cartInstall)];if(String(row.assemblyOption||'').trim().toUpperCase()!=='T')return;row.setupSelected=input.checked;row.setupAmount=input.checked?Number(row.assemblyAmount)||0:0;saveCart();resetShipping();drawCart();};});
   document.querySelectorAll("[data-cart-qty]").forEach(input=>{
@@ -362,7 +362,12 @@ function drawCart(){
         qty=99;
       }
 
-      cart[Number(input.dataset.cartQty)].quantity=qty;
+      const row=cart[Number(input.dataset.cartQty)];
+      if(row.packageComponent)return;
+      const components=row.cardConfiguration&&row.type==='tool'?cart.filter(x=>x.packageId===row.packageId&&x.packageComponent):[];
+      for(const component of components)qty=Math.min(qty,Math.max(1,Math.floor(99/component.perToolQuantity)));
+      row.quantity=qty;
+      for(const component of components)component.quantity=component.perToolQuantity*qty;
 
       saveCart();
       resetShipping();

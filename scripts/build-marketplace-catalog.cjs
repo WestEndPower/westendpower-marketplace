@@ -30,7 +30,15 @@ function buildCatalog({root=path.resolve(__dirname,'..')}={}){
   const files={batteries:'batteries.csv',chargers:'chargers.csv',compatibility:'compatibility-runtime.csv',financePrograms:'finance-programs.csv'};
   const tables={};for(const [name,file] of Object.entries(files))tables[name]=packTable(readTable(root,'brands/stihl/data/'+file));
   tables.settingsRows=packTable(readTable(root,'data/dealer-settings.csv'));
-  const bundle={schema:1,brands:BRANDS,componentBrand:'STIHL',productSources,tables};
+  const componentSources=BRANDS.map(brand=>{
+    const source={brand};
+    for(const [name,file] of Object.entries({batteries:'batteries.csv',chargers:'chargers.csv',compatibility:'compatibility-runtime.csv',packages:'packages.csv'})){
+      const rel='brands/'+brand.toLowerCase()+'/data/'+file;
+      source[name]=packTable(fs.existsSync(path.join(root,rel))?readTable(root,rel):{headers:[],rows:[]});
+    }
+    return source;
+  });
+  const bundle={schema:1,brands:BRANDS,componentBrand:'STIHL',productSources,tables,componentSources};
   const json=JSON.stringify(bundle)+'\n';
   const version=crypto.createHash('sha256').update(json).digest('hex').slice(0,16);
   const htmlFile=path.join(root,'marketplace.html');

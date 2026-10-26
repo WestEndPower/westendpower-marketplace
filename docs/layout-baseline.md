@@ -13,8 +13,8 @@ John requested that approved layouts be preserved across later changes (October 
 - Keep the results count, Compare Selected, and Compare All in View. Comparison uses the currently filtered products.
 - Keep the responsive equipment-card grid. The three shopping routes use `universal/marketplace-card.js` for card markup.
 - Keep card headings on one line inside the header; fit long descriptions to the available width.
-- Keep specifications below the card body. Battery cards retain individual-unit and package price boxes with an inventory button in each, plus Run & Charge Times. Compact tractors retain their workbook-backed factory and tire selectors.
-- The right column uses the shared Package Prices heading. Tractor factory equipment and tires occupy separate labeled rows above the combined MSRP; battery unit/package boxes retain their prices, savings and individual inventory checks until component-SKU workbook selections are supplied.
+- Keep specifications below the card body. Battery cards show Tool Only and Package / Build Your Own Package boxes with inventory checks and Run & Charge Times. Battery and charger names are single-choice toggle rows (click again to remove); quantity options use × 2. The lowest-priced complete listed kit is prefilled, while the customer explicitly selects the purchase box. Prices use the exact kit SKU when contents match, otherwise the individual components. Add to Cart preserves distinct configurations; Cart → Build & Buy opens the combined quote. Compact tractors retain their workbook-backed factory and tire selectors.
+- The right column uses the shared Package Pricing heading. Tractor Only MSRP appears above the factory equipment and tire rows, with selected-package MSRP below. Warranty text appears under the specifications when supplied; a valid HTTP(S) WarrantyURL makes it a manufacturer statement link.
 - Image banners contain only rebate/save amounts and `Expires Oct. 31, 2026` style dates; financing remains in its payment area.
 - Do not replace these controls with the generated-page dropdown toolbar.
 
@@ -36,3 +36,9 @@ John requested that approved layouts be preserved across later changes (October 
 Before publishing layout changes, check the Yanmar Compact Tractors results on all three routes at desktop and phone widths: sidebar location, series and specification filters, visible product count, comparison, mobile drawer, navigation spacing, and no horizontal page overflow. Also check a generated mower page to confirm its compact toolbar remains intact.
 
 Change a baseline only when John requests or approves that layout change.
+
+## Package and warranty data
+
+- Keep factory tractor P flags unchanged. Battery/charger kit contents come from public Packages rows: ParentSKU, BatterySKU1 / BatteryQty1, ChargerSKU1 / ChargerQty1, and additional numbered slots. ParentSKU resolves to the product row that owns kit MSRP and sale pricing.
+- Battery and charger names, compatibility and recommendations come from their existing public tables and compatibility-runtime. Component buttons never display raw SKUs. Kit-only products without a published bare-tool SKU retain their fixed kit purchase option.
+- WarrantyResidentialUse and WarrantyCommercialUse supply the compact warranty line. WarrantyURL (also WarrantyStatementURL / ManufacturerWarrantyURL) supplies the optional manufacturer statement link. No warranty text means no empty placeholder.

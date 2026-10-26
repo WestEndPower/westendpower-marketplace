@@ -17,6 +17,7 @@
  }
  function render(f,context){
   const {selectedPriceVariant,priceChoices,pricePanel,selectedStock,stockHeaderMarkup,sawHeaderBars,cardFinanceMarkup,paymentSelectionUrl,state}=context;
+  const packageMarkup=window.WestEndPackagePricing?.render(f,context)??null;
   const v=selectedPriceVariant(f),heading=clean(v.description)||clean(f.model)||clean(v.sku);
   const product='product.html?'+new URLSearchParams({brand:f.brand,sku:v.sku||''});
   const build=new URL(paymentSelectionUrl(f));build.pathname=build.pathname.replace(/payment-options(?:\.html)?\/?$/,'product-options.html');
@@ -37,11 +38,12 @@
     '<div class="market-detail-actions"><a class="market-product-details" href="'+escape(product)+'">View Details</a><label class="market-product-details market-compare-detail"><input type="checkbox" data-compare="'+escape(f.key)+'" '+(state.compare.has(f.key)?'checked':'')+'> <span>Compare</span></label></div>'+
     cardFinanceMarkup(f)+
    '</section><section class="market-buy">'+
-    '<h4 class="market-package-prices-title">Package Prices</h4><div class="market-price-lines">'+choices.map(choice=>pricePanel(choice.label,choice.v,choice.isPackage,f,choice.variants)).join('')+'</div>'+
+    '<h4 class="market-package-prices-title">Package Pricing</h4><div class="market-price-lines">'+(packageMarkup??choices.map(choice=>pricePanel(choice.label,choice.v,choice.isPackage,f,choice.variants)).join(''))+'</div>'+
     (battery?'<div class="market-actions"><a href="'+escape(runtime.href)+'" data-wep-runtime-brand="'+escape(f.brand)+'" data-wep-runtime-sku="'+escape(v.sku)+'">Run &amp; Charge Times</a></div>':'')+
-    '<a class="market-product-page-link wep-card-build" href="'+escape(build.href)+'">Build &amp; Buy ↗</a><p class="wep-card-build-note">Configure your equipment and review current pricing.</p>'+
+    (window.WestEndPackagePricing?.actions(f,context)||'')+
+    '<a '+(packageMarkup!==null?'data-pp-build ':'')+'class="market-product-page-link wep-card-build" href="'+escape(build.href)+'">Build &amp; Buy ↗</a><p class="wep-card-build-note">Configure your equipment and review current pricing.</p>'+
    '</section></div>'+
-   (specs.length?'<dl class="market-specs market-card-footer-specs">'+specs.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+escape(value)+'</dd></div>').join('')+'</dl>':'')+'</article>';
+   (specs.length?'<dl class="market-specs market-card-footer-specs">'+specs.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+escape(value)+'</dd></div>').join('')+'</dl>':'')+(window.WestEndPackagePricing?.warranty(v.marketplaceRow||{})||'')+'</article>';
  }
  window.WestEndMarketplaceCard={render,expiration};
 })();
