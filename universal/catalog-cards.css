@@ -252,3 +252,6 @@
 #market-app .wep-restored-card .pp-compact-package .market-tire-guide,#market-app .wep-restored-card .pp-compact-package [role=status]{grid-column:2}
 #market-app .wep-restored-card .pp-compact-package .market-tire-guide summary{padding:2px!important}
 @media(max-width:420px){#market-app .wep-restored-card .pp-compact-package .market-factory-options,#market-app .wep-restored-card .pp-compact-package .market-compact-tires{grid-template-columns:72px minmax(0,1fr);gap:4px}}
+
+/* Compact base controls use their SKU handler but share the battery base font scale. */
+#market-app .wep-restored-card .pp-compact-base .pp-price-select{font-size:clamp(20px,6.2cqi,36px);padding-block:0}
