@@ -3,7 +3,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 function runtime(file){
  let source=fs.readFileSync(file,'utf8');
  if(file.endsWith('.html')){const start=source.indexOf("(() => {\n  'use strict';\n\n  const DATA");source=source.slice(start,source.indexOf('</script>',start));}
- source=source.slice(0,source.indexOf("  document.addEventListener('DOMContentLoaded',init);"))+"window.test={DATA,loadMarketplaceProducts,financeSummaryKey,selectPackageVariant};})();";
+ source=source.slice(0,source.indexOf("  document.addEventListener('DOMContentLoaded',init);"))+"window.test={DATA,loadMarketplaceProducts,financeSummaryKey,selectPackageVariant,selectedPriceVariant,selectCardVariant};})();";
  const paths=[];const window={WestEndPayments:{},addEventListener(){},WESTEND_BRANDS:{STIHL:{id:'STIHL',dataRoot:'brands/stihl/data/'},YANMAR:{id:'YANMAR',dataRoot:'brands/yanmar/data/'}}};
  vm.runInNewContext(source,{window,document:{querySelector(){return null},querySelectorAll(){return []},addEventListener(){}},fetch:async path=>{paths.push(path);return {ok:true,text:async()=> 'SKU,BrandID,PowerType,Active\n'+(path.includes('yanmar')?'TRACTOR,YANMAR,Diesel,T':'TOOL,STIHL,Battery,T')}}});
  return {...window.test,paths};
@@ -11,4 +11,17 @@ function runtime(file){
 for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-brand.html']){
  test(file+': CSV recovery loads all published brands without needing an existing product list',async()=>{const r=runtime(file),rows=await r.loadMarketplaceProducts();assert.equal(rows.length,2);assert.equal(rows[1].SKU,'TRACTOR');assert.deepEqual(r.paths,['brands/stihl/data/products.csv','brands/yanmar/data/products.csv']);});
  test(file+': changing package components invalidates the financing preview',()=>{const r=runtime(file),tool={sku:'TOOL',price:100,type:'Tool'},f={key:'STIHL|TOOL',brand:'STIHL',category:'Blowers',variants:[tool]};const select=(sku,quantity)=>r.selectPackageVariant(f,{...tool,recommendedPackage:true,packageItems:[{sku,quantity,price:50}]});select('BAT-A',1);const first=r.financeSummaryKey(f);select('BAT-B',1);assert.notEqual(r.financeSummaryKey(f),first);const second=r.financeSummaryKey(f);select('BAT-B',2);assert.notEqual(r.financeSummaryKey(f),second);});
+}
+
+for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-brand.html']){
+ test(file+': compact defaults to loader only, other equipment to base, and customer removal persists',()=>{
+  const r=runtime(file);
+  const variant=(sku,price,flags,type='Tool')=>({sku,price,msrp:price,type,workbookSort:0,marketplaceRow:{'B2-Tires':'R-4','P1-Loader':flags[0]?'T':'F','P2-Backhoe':flags[1]?'T':'F','P3-Mower':flags[2]?'T':'F','P4-Cab':'F'}});
+  const base=variant('SA325BI',19999,[]),loader=variant('SA325BI-L',24999,[true]),backhoe=variant('SA325BI-LB',32999,[true,true]);
+  const f={key:'SA325',brand:'YANMAR',category:'Compact Tractors',model:'SA325',variants:[base,backhoe,loader]};
+  assert.equal(r.selectedPriceVariant(f).sku,'SA325BI-L');
+  r.selectCardVariant(f,0);assert.equal(r.selectedPriceVariant(f).sku,'SA325BI');
+  const mower={key:'RZ142',brand:'STIHL',category:'Zero-Turn Mowers',variants:[variant('RZ142-BAG',4200,[],'Package'),variant('RZ142',3500,[])]};
+  assert.equal(r.selectedPriceVariant(mower).sku,'RZ142');
+ });
 }
