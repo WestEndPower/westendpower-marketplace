@@ -179,3 +179,19 @@
 #market-app .wep-restored-card .pp-package>.market-price-inventory{text-align:center}
 @media(max-width:850px){#market-app .wep-restored-card .market-card-overview{--card-overview-height:180px}}
 @media(max-width:420px){#market-app .wep-restored-card .market-card-overview{gap:8px}#market-app .wep-restored-card .pp-box[data-pp-box=tool]{gap:5px}#market-app .wep-restored-card .pp-prices strong{font-size:18px}}
+
+/* Compact shopping actions and shared pricing destinations. */
+#market-app .wep-restored-card .market-card-body{gap:6px!important}
+#market-app .wep-restored-card .market-card-warranty{padding:0 2px;font-size:11px}
+#market-app .wep-restored-card .pp-box[data-pp-box=tool]{display:block}
+#market-app .wep-restored-card .pp-component-row>div{display:flex;flex-wrap:wrap;overflow:visible;justify-content:flex-start;padding-bottom:0}
+#market-app .wep-restored-card .pp-component-row button{flex:1 0 auto;min-width:0;padding:4px;font-size:11px}
+#market-app .wep-restored-card .market-card-action-row{display:flex;align-items:stretch;gap:4px;flex-wrap:wrap}
+#market-app .wep-restored-card .market-card-action-row>button,#market-app .wep-restored-card .market-card-action-row>a,#market-app .wep-restored-card .market-card-action-row>label{display:flex;align-items:center;justify-content:center;gap:3px;flex:1 0 auto;width:auto;min-height:32px;margin:0;padding:5px 6px;border:1px solid #9ebda7;border-radius:5px;background:#fff;color:#155d2d;font:700 11px/1.2 Arial,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap}
+#market-app .wep-restored-card .market-card-action-row input{margin:0;width:13px;height:13px}
+#market-app .wep-restored-card .market-card-action-row .pp-add-cart{background:#238b45;color:#fff}
+#market-app .wep-restored-card .market-card-price-links{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#fff}
+#market-app .wep-restored-card .market-card-price-links .market-payment-options{display:flex;align-items:center;justify-content:center;width:auto;min-width:0;min-height:36px;padding:7px 4px;font:800 12px/1.25 Arial,sans-serif}
+#market-app .wep-restored-card .market-factory-options [role=group],#market-app .wep-restored-card .market-compact-tires [role=group]{display:flex!important;width:100%;gap:3px!important}
+#market-app .wep-restored-card .market-factory-options button,#market-app .wep-restored-card .market-compact-tires button{flex:1 0 auto;min-width:0;padding:4px!important;font-size:11px!important}
+.pp-inventory-sku{display:block;color:#526057;font-size:11px}

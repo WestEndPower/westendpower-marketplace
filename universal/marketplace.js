@@ -834,23 +834,14 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     return clean(f.brand).toUpperCase()+'|'+skuKey(variant.sku)+'|'+cardSelectionFor(f).index+'|'+selectedPriceQuantity(f)+'|'+(selectedInventoryId(f)===undefined?'AUTO':selectedInventoryId(f)||'ORDER')+'|'+JSON.stringify(variant.recommendedPackage?variant.packageItems||[]:[]);
   }
 
-  function cardFinanceMarkup(f){
-    const key=financeSummaryKey(f);
-    const variant=marketplaceFinanceVariant(f);
-    const url=catalogBuildUrl(f);
-    const button='<a class="market-payment-options" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">Out-the-Door Price</a>';
-    const paymentButton='<a class="market-card-finance-head market-payment-options" style="border-top:0" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">View Current Promotions</a>';
-    if(!key || /\|$/.test(key)) return '<div class="market-payment-options-only">'+button+'</div>';
-    const summary=DATA.financeSummaryCache.get(key);
-    if(!summary) requestMarketplaceFinanceSummary(f);
-    if(!summary || summary.none) return '<div class="market-payment-options-only">'+paymentButton+
-      (!summary?'<div role="status" style="text-align:center;padding:5px;font-size:11px">Updating financing…</div>':'')+button+'</div>';
-    return '<div class="market-card-finance">'+
-      paymentButton+
-      '<div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+
-      '<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+
-(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+
-      (summary.expirationLabel?'<div class="market-card-finance-note">'+esc(summary.expirationLabel)+'</div>':'')+button+'</div>';
+  function cardFinanceMarkup(f,buildHref){
+    const key=financeSummaryKey(f),url=new URL(buildHref||catalogBuildUrl(f));url.hash='';
+    const bottom=new URL(url);bottom.hash='wep-itemized-quote';
+    const links='<div class="market-card-price-links"><a class="market-payment-options" target="_blank" rel="noopener noreferrer" href="'+esc(url.href)+'">View Promos</a><a class="market-payment-options" target="_blank" rel="noopener noreferrer" href="'+esc(bottom.href)+'">Out-the-Door Price</a></div>';
+    if(!key || /\|$/.test(key))return '<div class="market-payment-options-only">'+links+'</div>';
+    const summary=DATA.financeSummaryCache.get(key);if(!summary)requestMarketplaceFinanceSummary(f);
+    if(!summary||summary.none)return '<div class="market-payment-options-only">'+(!summary?'<div role="status" style="text-align:center;padding:5px;font-size:11px">Updating financing…</div>':'')+links+'</div>';
+    return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div><div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+(summary.expirationLabel?'<div class="market-card-finance-note">'+esc(summary.expirationLabel)+'</div>':'')+links+'</div>';
   }
 
   async function requestMarketplaceFinanceSummary(f){
@@ -2077,7 +2068,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     return parts.length ? parts.join(' and ')+' included' : '';
   }
 
-  function pricePanel(label,v,isPackage,f,variantGroup){
+  function pricePanel(label,v,isPackage,f,variantGroup,hideInventory=false){
     if(!v) return '';
     const selected=selectedPriceVariant(f),group=Array.isArray(variantGroup)?variantGroup:[v];
     if(group.includes(selected))v=selected;
@@ -2118,7 +2109,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       (promo && promo.type==='rebate'?'<small class="market-promo-price-note">After customer rebate</small>':'')+
       (savings?'<small class="market-package-savings">'+esc(savings)+'</small>':'')+
       '</button>'+
-      '<div class="market-price-inventory">'+inventoryMarkup(f,v,isPackage?'package':'unit')+'</div>'+
+      (hideInventory?'':'<div class="market-price-inventory">'+inventoryMarkup(f,v,isPackage?'package':'unit')+'</div>')+
     '</div>';
   }
 
