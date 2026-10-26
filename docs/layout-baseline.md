@@ -13,7 +13,7 @@ John requested that approved layouts be preserved across later changes (October 
 - Keep the results count, Compare Selected, and Compare All in View. Comparison uses the currently filtered products.
 - Keep the responsive equipment-card grid. The three shopping routes use `universal/marketplace-card.js` for card markup.
 - Keep card headings on one line inside the header; fit long descriptions to the available width.
-- Keep the image on the left and specifications on the right, aligned at the top and bottom. Specifications show four stacked rows, with additional rows available by scrolling. Purchase boxes span the full card width below that row. Battery cards show Base Price and Package Price boxes (combined MSRP/current price, battery row, charger row) with a shared inventory popup and compact Run Times action. Battery and charger names are single-choice toggle rows (click again to remove); quantity options use × 2. The lowest-priced complete promotional kit is selected by default when available; otherwise the lowest-priced complete listed kit is prefilled and the customer selects the purchase box. Prices use the exact kit SKU when contents match, otherwise the individual components. Add to Cart preserves distinct configurations; Cart → Build & Buy opens the combined quote. Compact tractors retain their workbook-backed factory and tire selectors.
+- Keep the image on the left and specifications on the right, aligned at the top and bottom. Specifications show four stacked rows, with additional rows available by scrolling. Purchase boxes span the full card width below that row. Battery cards show Base Price and Package Price boxes (combined MSRP/current price, battery row, charger row) with a shared inventory popup and compact Run Times action. Battery and charger names are single-choice toggle rows (click again to remove); quantity options use × 2. The lowest-priced complete promotional kit is selected by default when available; otherwise the lowest-priced complete listed kit is selected; tools without a kit select the recommended battery and charger. Prices use the exact kit SKU when contents match, otherwise the individual components. Add to Cart preserves distinct configurations; Cart → Build & Buy opens the combined quote. Compact tractors retain their workbook-backed factory and tire selectors.
 - The purchase area follows the image/specification row. Base Price appears above the factory equipment and tire rows, with Package Price below. Warranty text appears directly below the image/specification row when supplied; a valid HTTP(S) WarrantyURL makes it a manufacturer statement link.
 - Image banners contain only rebate/save amounts and `Expires Oct. 31, 2026` style dates; financing remains in its payment area.
 - Do not replace these controls with the generated-page dropdown toolbar.
@@ -54,7 +54,7 @@ Change a baseline only when John requests or approves that layout change.
 
 - Use Base Price and Package Price without MSRP labels or a separate package-savings line. Compare the sum of bare-tool and selected-component MSRP with the current matching kit price (including active advertised promotions), or current separate-component total when no kit matches. Show one amount when equal; only cross out a higher, fully known combined MSRP.
 - Center option rows with equal left/right insets and a subtle selected box border. Keep choices visible by wrapping.
-- Default to the lowest-priced complete package with an active promotion when available; otherwise prefill the lowest-priced complete package. A promotional default is selected immediately so its image banner, pricing and purchase actions agree.
+- Default to the lowest-priced complete package with an active promotion when available; otherwise select the lowest-priced complete package or recommended battery/charger combination. A promotional default is selected immediately so its image banner, pricing and purchase actions agree.
 
 ## Battery series and kit itemization (October 26, 2026)
 
@@ -82,3 +82,9 @@ Change a baseline only when John requests or approves that layout change.
 - Keep the same neutral unselected border and green selected border as the package box. Background color never indicates selection. Preserve compact padding and centered large text on tool/package cards.
 
 - Use 2px borders on both tool and package boxes, retaining the green selected treatment. Package Price label and amounts use 16px text, below the responsive 20px–36px manufacturer Base Price.
+
+## Equipment defaults (October 26, 2026)
+
+- Battery equipment starts with a complete kit selected (active promotional kit preferred), or the recommended battery and charger when no kit exists. Customers can remove/change components; preserve their choices after initialization.
+- Compact tractors start with a loader-only configuration, preferring R-4 tires where available. Explicit catalog filters still constrain defaults. Other equipment starts with the base unit; bags, mulch kits and other accessories are customer choices.
+- Keep the bare/base price visible while the package or attachments change. Use a 55%/45% split for image/specs so the image gains about 24px on a typical desktop card, retaining aligned top/bottom edges.
