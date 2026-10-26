@@ -45,7 +45,7 @@ test('custom card selection restores quantities, clears stale extras, and reject
 test('package comparison uses component MSRP and omits savings and MSRP labels',()=>{
  const {window,f,c}=fixture();f.variants[1].msrp=999;
  const html=window.WestEndPackagePricing.render(f,c);
- assert.match(html,/>Base Price</);assert.doesNotMatch(html,/Package savings|MSRP|Sale/);
+ assert.match(html,/>Base Unit Price:</);assert.doesNotMatch(html,/Package savings|MSRP|Sale/);
  const price=html.match(/class="pp-price-select pp-package-total"[\s\S]*?<\/button>/)[0];
  assert.match(price,/<del>\$200\.00<\/del>/);assert.match(price,/<strong>\$180\.00<\/strong>/);assert.doesNotMatch(price,/999/);
 });
