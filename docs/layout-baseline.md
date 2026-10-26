@@ -139,3 +139,9 @@ Change a baseline only when John requests or approves that layout change.
 - Battery family buttons (AP Series / Pro AP Series, or 82BD / CORE as available) appear above one visible battery-model row. Family clicks only change the displayed choices; existing selected package contents remain until a model is clicked. Single-family tools use a heading or the available series button. Chargers heading sits above its single model row.
 - Never wrap option rows or headings. Use compact button padding, retaining all choices; allow horizontal overflow only when a narrow card cannot fit the complete row.
 - No eligible financing means no finance panel or reserved financing space; retain View All Promotions / Out-the-Door Price. This supersedes the previous reserved empty financing-window rule.
+
+## Recommended battery series defaults (October 26, 2026)
+
+- Initialize the visible series from the default kit battery or recommended battery. Preserve customer series browsing and component deselections after initialization.
+- Greenworks selector labels are 82BD Series and Core Series, using published compatible batteries only. Series metadata and battery model prefixes resolve to the same families.
+- The unit inventory feed may omit component SKUs. Only an explicit component inventory record overrides published component stock fields for sell-remaining eligibility; a missing record is not an explicit zero. Explicit zero stock still hides a sell-remaining-only battery.

@@ -74,6 +74,10 @@
   return [...result.values()];
  }
  function batteryGroup(row,brand){
+  if(key(brand)==='GREENWORKS'){
+   const family=key(row.BatterySeries||row.Series);
+   if(/^(82BD|CORE)(?:SERIES)?$/.test(family))return family.startsWith('82BD')?'82BD Series':'CORE Series';
+  }
   if(clean(row.BatterySeries))return clean(row.BatterySeries);
   const name=key(row.BatteryID||row.Model);
   if(key(brand)==='STIHL')return /^AP(?:\d+\.\d|\d+P)/.test(name)?'PRO AP Series':/^(AP|AR)/.test(name)?'AP / AR Series':'Batteries';

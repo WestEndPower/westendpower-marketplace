@@ -37,7 +37,12 @@
   if(models.has(f.key))return models.get(f.key);
   const tool=f.variants.find(v=>!v.recommendedPackage&&!/kit|package/i.test(v.type)&&v.price>0);
   if(!tool)return null; // A kit-only SKU cannot be dismantled into an invented bare-tool SKU.
-  const inventory=c.DATA.inventoryByBrand?.get(key(f.brand)),visible=r=>!Kit||Kit.visible(r,inventory?.loaded?(inventory.get(key(r.SKU))?.quantity||0):undefined);
+  // The unit feed can omit batteries/chargers entirely. Only an explicit component
+  // record overrides its published stock fields; a missing record is not zero stock.
+  const inventory=c.DATA.inventoryByBrand?.get(key(f.brand)),visible=r=>{
+   const record=inventory?.loaded?inventory.get(key(r.SKU).replace(/[^A-Z0-9]/g,'')):undefined;
+   return !Kit||Kit.visible(r,record?.quantity);
+  };
   const batteries=(source.batteries||[]).filter(visible),chargers=(source.chargers||[]).filter(visible),runtime=source.compatibility||[];
   let compat=runtime.filter(r=>(!clean(r.Active)||yes(r.Active))&&!clean(r.AttachmentSKU)&&key(r.ToolSKU)===key(tool.sku));
   if(!compat.length)compat=runtime.filter(r=>(!clean(r.Active)||yes(r.Active))&&!clean(r.AttachmentSKU)&&key(r.Model)&&key(r.Model)===key(tool.model||f.model));
@@ -65,7 +70,7 @@
   models.set(f.key,m);return m;
  }
  function state(f,m){
-  if(!states.has(f.key))states.set(f.key,{choice:'package',battery:m.defaultBattery,charger:m.defaultCharger});
+  if(!states.has(f.key))states.set(f.key,{choice:'package',battery:m.defaultBattery,charger:m.defaultCharger,batterySeries:m.defaultBattery.length&&Kit?Kit.batteryGroup(m.defaultBattery[0].row,f.brand):null});
   return states.get(f.key);
  }
  function configured(m,s,c){
@@ -100,7 +105,7 @@
   const selectedGroup=selected.length?(Kit?Kit.batteryGroup(selected[0].row,f.brand):'Batteries'):null;
   if(!groups.has(s.batterySeries))s.batterySeries=groups.has(selectedGroup)?selectedGroup:ordered[0][0];
   const series=ordered.length>1||ordered[0][0]!=='Batteries';
-  const label=group=>group==='AP / AR Series'?'AP Series':group==='PRO AP Series'?'Pro AP Series':group;
+  const label=group=>group==='AP / AR Series'?'AP Series':group==='PRO AP Series'?'Pro AP Series':group==='CORE Series'?'Core Series':group;
   return '<div class="pp-energy-row">'+(series?'<div class="pp-series-tabs" role="group" aria-label="Battery series">'+ordered.map(([group])=>'<button type="button" data-pp-series="'+esc(group)+'" aria-pressed="'+(group===s.batterySeries)+'">'+esc(label(group))+'</button>').join('')+'</div>':'<strong class="pp-energy-heading">Batteries</strong>')+'<div role="group" aria-label="Battery models">'+groups.get(s.batterySeries).join('')+'</div></div>';
 
  }
