@@ -556,7 +556,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
   function yanmarSelectedVariant(f){
     const candidates=relevantVariants(f);
-    return candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>(isCompactTractor(f)?Number(!compactFlags(a).every((on,i)=>on===(i===0)))-Number(!compactFlags(b).every((on,i)=>on===(i===0)))||Number(compactTire(a)!=='R-4')-Number(compactTire(b)!=='R-4'):0)||(a.workbookSort===b.workbookSort?0:a.workbookSort-b.workbookSort)||Number(a.price)-Number(b.price))[0]||candidates[0]||(f.variants||[])[0]||{};
+    return candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>(isCompactTractor(f)?Number(compactFlags(a).some(Boolean))-Number(compactFlags(b).some(Boolean))||Number(compactTire(a)!=='R-4')-Number(compactTire(b)!=='R-4'):0)||(a.workbookSort===b.workbookSort?0:a.workbookSort-b.workbookSort)||Number(a.price)-Number(b.price))[0]||candidates[0]||(f.variants||[])[0]||{};
   }
   // WEP_COMPACT_CARD_OPTIONS_V1: select complete catalog SKUs, never add guessed option prices.
   function isCompactTractor(f){return /^compact tractors?$/i.test(clean(f.category));}
@@ -611,7 +611,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   function compactHeaderOptions(f){
     if(!isCompactTractor(f))return '';
     const flags=compactFlags(selectedPriceVariant(f));
-    return '<div class="market-factory-options" style="text-align:center;margin:8px 0"><div class="market-package-row-label">Factory Equipment</div><span role="group" aria-label="Factory-installed options" style="display:inline-flex;gap:4px;justify-content:center;flex-wrap:wrap">'+compactFields.map(([label],i)=>{
+    return '<div class="market-factory-options" style="text-align:center;margin:8px 0"><div class="market-package-row-label">Factory Installed</div><span role="group" aria-label="Factory-installed options" style="display:inline-flex;gap:4px;justify-content:center;flex-wrap:wrap">'+compactFields.map(([label],i)=>{
       const offered=compactVariants(f).some(v=>compactFlags(v)[i]);if(!offered||(selectedStock(f)&&!flags[i]))return '';
       const candidate=compactOptionCandidate(f,i),disabled=!candidate;
       if(!flags[i]&&!candidate)return '';
@@ -841,7 +841,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     if(!key || /\|$/.test(key))return '<div class="market-payment-options-only">'+links+'</div>';
     const summary=DATA.financeSummaryCache.get(key);if(!summary)requestMarketplaceFinanceSummary(f);
     if(!summary||summary.none)return '<div class="market-payment-options-only">'+(!summary?'<div role="status" style="text-align:center;padding:5px;font-size:11px">Updating financing…</div>':'')+links+'</div>';
-    return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div><div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+(summary.expirationLabel?'<div class="market-card-finance-note">'+esc(summary.expirationLabel)+'</div>':'')+links+'</div>';
+    return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+(isCompactTractor(f)&&summary.rebateCompatible===false?'<div class="market-card-finance-rebate">In lieu of customer rebate</div>':'')+'<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+(summary.expirationLabel?'<div class="market-card-finance-note">'+esc(summary.expirationLabel)+'</div>':'')+links+'</div>';
   }
 
   async function requestMarketplaceFinanceSummary(f){

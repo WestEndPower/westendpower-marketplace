@@ -255,3 +255,11 @@
 
 /* Compact base controls use their SKU handler but share the battery base font scale. */
 #market-app .wep-restored-card .pp-compact-base .pp-price-select{font-size:clamp(20px,6.2cqi,36px);padding-block:0}
+
+/* Tractor-specific alignment and financing hierarchy; battery card styles stay unchanged. */
+#market-app .wep-restored-card .pp-box.pp-compact-base[data-pp-box=tool]{display:flex;align-items:center}
+#market-app .wep-restored-card .pp-compact-base .pp-price-select{align-items:center;min-height:40px;line-height:1.1}
+#market-app .wep-restored-card .pp-compact-base .pp-prices{align-items:center;line-height:1.1}
+#market-app .wep-restored-card:has(.pp-compact-base) .market-card-finance-apr{font:800 18px/1.25 Arial,sans-serif;padding:6px 3px 2px}
+#market-app .wep-restored-card:has(.pp-compact-base) .market-card-finance-payment,#market-app .wep-restored-card:has(.pp-compact-base) .market-card-finance-payment strong{font-size:16px;line-height:1.2}
+#market-app .wep-restored-card:has(.pp-compact-base) .market-card-finance-rebate{font:700 11px/1.3 Arial,sans-serif;color:#53604f;margin:1px 4px 3px;text-align:center}
