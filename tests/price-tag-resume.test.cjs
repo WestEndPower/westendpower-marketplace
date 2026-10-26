@@ -39,6 +39,8 @@ for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-br
   assert.match(html,/pp-box pp-compact-base" data-pp-box="tool"/);
   assert.match(html,/pp-compact-package pp-selected/);
   assert.ok(html.indexOf('Package Price:')<html.indexOf('Factory Installed'));
+  assert.match(html,/<div class="market-compact-tire-label"><div class="market-package-row-label">Tires<\/div><details/);
+  assert.match(html,/aria-label="Tire guide">Guide<\/summary>/);
   assert.match(html,/data-compact-sku="SA325BI" aria-pressed="false"/);
   assert.match(html,/data-compact-sku="SA325BI-L" aria-pressed="true"/);
   assert.match(html,/\$19,999\.00/);assert.match(html,/\$25,299\.00/);
@@ -49,13 +51,13 @@ for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-br
 }
 
 for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-brand.html']){
- test(file+': tractor finance note follows rebate compatibility and sits below program terms',()=>{
+ test(file+': tractor finance condition follows the expiration date in parentheses',()=>{
   const r=runtime(file),base={sku:'SA325BI',price:19999,msrp:19999,type:'Tool',workbookSort:0,marketplaceRow:{'B2-Tires':'R-4'}},f={key:'SA325-note',brand:'YANMAR',category:'Compact Tractors',model:'SA325',variants:[base]};
   for(const compatible of [false,true]){
-   const key=r.financeSummaryKey(f);r.DATA.financeSummaryCache.set(key,{aprLabel:'0.00%',termMonths:84,monthly:264.36,rebateCompatible:compatible});
+   const key=r.financeSummaryKey(f);r.DATA.financeSummaryCache.set(key,{aprLabel:'0.00%',termMonths:84,monthly:264.36,expirationLabel:'Expires Oct. 31, 2026',rebateCompatible:compatible});
    const html=r.cardFinanceMarkup(f,'https://dealer.example/product-options.html?sku=SA325BI');
    assert.equal(html.includes('In lieu of customer rebate'),!compatible);
-   if(!compatible){assert.ok(html.indexOf('84 Months')<html.indexOf('In lieu'));assert.ok(html.indexOf('In lieu')<html.indexOf('$264.36'));}
+   if(!compatible){assert.ok(html.indexOf('84 Months')<html.indexOf('In lieu'));assert.ok(html.indexOf('$264.36')<html.indexOf('Expires Oct. 31, 2026'));assert.ok(html.indexOf('Expires Oct. 31, 2026')<html.indexOf('(In lieu of customer rebate)'));}
   }
  });
 }
