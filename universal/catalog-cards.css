@@ -217,3 +217,10 @@
 #market-app .wep-restored-card .pp-component-row button{flex:1 0 auto;max-width:100%;padding:5px 7px;min-height:29px;font:400 12px/1.2 Arial,sans-serif;white-space:nowrap}
 #market-app .wep-restored-card .pp-package-contents{display:block;text-align:center;margin:4px 8px 0;font:11px/1.35 Arial,sans-serif;color:#43594a;overflow-wrap:anywhere}
 @media(max-width:420px){#market-app .wep-restored-card .pp-component-row{grid-template-columns:72px minmax(0,1fr);gap:4px}}
+
+/* Emphasize the base price and break up the green with red purchase actions. */
+#market-app .wep-restored-card .pp-box[data-pp-box=tool]{container-type:inline-size}
+#market-app .wep-restored-card [data-pp-select=tool]{font-size:clamp(18px,5.4cqi,30px);padding-block:4px}
+#market-app .wep-restored-card .market-card-action-row .pp-add-cart,#market-app .wep-restored-card .market-card-price-links .market-payment-options{background:#c8102e;border-color:#a60e26;color:#fff}
+#market-app .wep-restored-card .market-card-action-row .pp-add-cart:hover,#market-app .wep-restored-card .market-card-price-links .market-payment-options:hover{background:#a60e26}
+#market-app .wep-restored-card .market-card-action-row .pp-add-cart:focus-visible,#market-app .wep-restored-card .market-card-price-links .market-payment-options:focus-visible{outline:2px solid #761020;outline-offset:2px}
