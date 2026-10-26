@@ -78,5 +78,5 @@ Change a baseline only when John requests or approves that layout change.
 ## Manufacturer base-price labels (October 26, 2026)
 
 - Label base prices with the manufacturer name, such as STIHL Base Price: and YANMAR Base Price:, without MSRP terminology.
-- Give the base price a pale manufacturer tint: STIHL orange; Yanmar/Toro/Honda/RedMax red; Greenworks green. Use a neutral pale background for unconfigured brands.
+- Give the base price a solid manufacturer color: STIHL orange with dark text; Yanmar/Toro/Honda/RedMax red with white text; Greenworks green with dark text. Use a neutral pale background for unconfigured brands. The price uses the same contrasting text color as its label.
 - Keep the same neutral unselected border and green selected border as the package box. Background color never indicates selection. Preserve compact padding and centered large text on tool/package cards.
