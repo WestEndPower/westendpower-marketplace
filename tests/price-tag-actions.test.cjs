@@ -42,3 +42,24 @@ test('custom card selection restores quantities, clears stale extras, and reject
  const draft=JSON.parse(saved.values().next().value);assert.equal(draft.items[0].quantity,2);assert.equal(draft.items[1].quantity,4);assert.equal(checks[1].checked,false);assert.equal(checks[2].checked,false);assert.equal(new URL(sandbox.history.href).searchParams.has('cardOptions'),false);
  saved.clear();qs.set('cardOptions',JSON.stringify([{type:'battery',sku:'UNKNOWN',quantity:1}]));sandbox.restore(checks);assert.equal(saved.size,0);assert.match(nodes['options-message'].textContent,/no longer available/);
 });
+test('package comparison uses component MSRP and omits savings and MSRP labels',()=>{
+ const {window,f,c}=fixture();f.variants[1].msrp=999;
+ const html=window.WestEndPackagePricing.render(f,c);
+ assert.match(html,/>Base Price</);assert.doesNotMatch(html,/Package savings|MSRP|Sale/);
+ const price=html.match(/class="pp-price-select pp-package-total"[\s\S]*?<\/button>/)[0];
+ assert.match(price,/<del>\$200\.00<\/del>/);assert.match(price,/<strong>\$180\.00<\/strong>/);assert.doesNotMatch(price,/999/);
+});
+test('equal combined and package prices display one amount, and missing MSRP never invents a comparison',()=>{
+ for(const missing of [false,true]){
+  const {window,f,c}=fixture();f.variants[1].price=200;if(missing)c.DATA.batteries[0].MSRP='';
+  const html=window.WestEndPackagePricing.render(f,c),price=html.match(/class="pp-price-select pp-package-total"[\s\S]*?<\/button>/)[0];
+  assert.doesNotMatch(price,/<del>/);assert.equal((price.match(/\$200\.00/g)||[]).length,1);
+ }
+});
+test('a complete promotional kit is selected before the image banner renders, ahead of cheaper nonpromotional kits',()=>{
+ const {window,f,c}=fixture();
+ f.variants.push({sku:'CHEAPER',type:'Kit',description:'Other kit',price:150,msrp:150});c.DATA.packages.push({ParentSKU:'CHEAPER',BatterySKU1:'BAT2',ChargerSKU1:'CHG'});
+ c.promoInfo=v=>v.sku==='KIT'?{type:'sale',savings:20,end:'2026-12-31'}:null;
+ const html=window.WestEndMarketplaceCard.render(f,c);
+ assert.equal(c.selectedPriceVariant(f).sku,'KIT');assert.match(html,/data-pp-select="package" aria-pressed="true"/);assert.match(html,/Save 20/);
+});

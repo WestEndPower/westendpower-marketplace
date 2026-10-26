@@ -195,3 +195,14 @@
 #market-app .wep-restored-card .market-factory-options [role=group],#market-app .wep-restored-card .market-compact-tires [role=group]{display:flex!important;width:100%;gap:3px!important}
 #market-app .wep-restored-card .market-factory-options button,#market-app .wep-restored-card .market-compact-tires button{flex:1 0 auto;min-width:0;padding:4px!important;font-size:11px!important}
 .pp-inventory-sku{display:block;color:#526057;font-size:11px}
+
+/* Package prices compare the selected components with their current package cost. */
+#market-app .wep-restored-card .pp-box{border-color:#c7d3ca;padding:7px 10px}
+#market-app .wep-restored-card .pp-selected{border-color:#238b45;box-shadow:inset 0 0 0 1px #238b45}
+#market-app .wep-restored-card .pp-component-row{margin:3px 8px 0;padding:4px 0;min-inline-size:0}
+#market-app .wep-restored-card .pp-component-row legend{margin-inline:auto;padding:0 5px}
+#market-app .wep-restored-card .pp-component-row>div{justify-content:center;gap:4px}
+#market-app .wep-restored-card .pp-component-row button{flex:0 1 auto;min-height:27px;padding:4px 7px}
+#market-app .wep-restored-card .pp-package-total{gap:6px;padding-bottom:5px}
+#market-app .wep-restored-card .market-factory-options [role=group],#market-app .wep-restored-card .market-compact-tires [role=group]{width:calc(100% - 16px);margin-inline:auto;justify-content:center!important}
+#market-app .wep-restored-card .market-factory-options button,#market-app .wep-restored-card .market-compact-tires button{flex:0 1 auto;padding:4px 7px!important}
