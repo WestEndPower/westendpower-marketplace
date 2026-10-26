@@ -72,3 +72,7 @@ test('card selection adds priced required connection items once and carries them
  const add={closest(s){return s==='.wep-restored-card'?host:s==='[data-pp-add]'?{}:null;}};api.handle({target:add});
  const cart=JSON.parse(stored.get('wepCart'));assert.equal(cart.filter(r=>r.sku==='CABLE').length,1);assert.equal(cart.find(r=>r.sku==='CABLE').packageComponent,true);assert.equal(cart.reduce((n,r)=>n+r.itemPrice*r.quantity,0),210);
 });
+
+test('all shopping entries load component definitions before package card initialization',()=>{
+ for(const file of ['marketplace.html','shop-by-product.html','shop-by-brand.html']){const html=fs.readFileSync(file,'utf8');assert.ok(html.indexOf('src="universal/package-components.js')<html.indexOf('src="universal/package-pricing.js'),file);}
+});

@@ -89,7 +89,7 @@
  function row(f,m,s,type){
   const field=type.toLowerCase(),choices=m[field+'Options'],selected=s[field];
   const groups=new Map(),seen=new Set(),identity=parts=>parts.map(p=>key(p.row.SKU)).sort().join('|');
-  choices.forEach((parts,i)=>{const id=identity(parts);if(seen.has(id))return;seen.add(id);const group=type==='Battery'&&Kit?Kit.batteryGroup(parts[0].row,f.brand):'Chargers';if(!groups.has(group))groups.set(group,[]);
+  choices.forEach((parts,i)=>{const id=identity(parts);if(seen.has(id))return;seen.add(id);const group=type==='Battery'?(Kit?Kit.batteryGroup(parts[0].row,f.brand):'Batteries'):'Chargers';if(!groups.has(group))groups.set(group,[]);
    const active=id===identity(selected),disabled=type==='Charger'&&!compatibleCharger(parts,s.battery),label=parts.map(p=>Kit?Kit.shortName(p.row,group):optionName([p],type)).join(' + ');
    groups.get(group).push('<button type="button" data-pp-component="'+field+'" data-pp-index="'+i+'" aria-pressed="'+active+'" '+(disabled?'disabled ':'')+'title="'+esc((active?'Click to remove ':'Select ')+optionName(parts,type))+'">'+esc(label)+'</button>');
   });
