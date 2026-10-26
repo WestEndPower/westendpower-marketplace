@@ -227,9 +227,10 @@
 #market-app .wep-restored-card .market-card-price-links .market-payment-options:hover{background:#303438}
 #market-app .wep-restored-card .market-card-action-row .pp-add-cart:focus-visible,#market-app .wep-restored-card .market-card-price-links .market-payment-options:focus-visible{outline:2px solid #303438;outline-offset:2px}
 
-/* Pale manufacturer tints identify base pricing; borders retain purchase selection state. */
-#market-app .wep-restored-card{--base-price-tint:#f3f1eb}
-#market-app .wep-restored-card[data-brand=STIHL]{--base-price-tint:#fff0e2}
-#market-app .wep-restored-card[data-brand=YANMAR],#market-app .wep-restored-card[data-brand=TORO],#market-app .wep-restored-card[data-brand=HONDA],#market-app .wep-restored-card[data-brand=REDMAX]{--base-price-tint:#fae9e9}
-#market-app .wep-restored-card[data-brand=GREENWORKS]{--base-price-tint:#edf4df}
+/* Solid manufacturer colors identify base pricing; borders retain purchase selection state. */
+#market-app .wep-restored-card{--base-price-tint:#f3f1eb;--base-price-ink:#252525}
+#market-app .wep-restored-card[data-brand=STIHL]{--base-price-tint:#f37a1f;--base-price-ink:#252525}
+#market-app .wep-restored-card[data-brand=YANMAR],#market-app .wep-restored-card[data-brand=TORO],#market-app .wep-restored-card[data-brand=HONDA],#market-app .wep-restored-card[data-brand=REDMAX]{--base-price-tint:#c8102e;--base-price-ink:#fff}
+#market-app .wep-restored-card[data-brand=GREENWORKS]{--base-price-tint:#70a82f;--base-price-ink:#252525}
 #market-app .wep-restored-card .pp-box[data-pp-box=tool],#market-app .wep-restored-card .market-base-choice,#market-app .wep-restored-card .pp-tractor-base{background:var(--base-price-tint)}
+#market-app .wep-restored-card .pp-box[data-pp-box=tool] .pp-price-select,#market-app .wep-restored-card .pp-box[data-pp-box=tool] .pp-prices strong,#market-app .wep-restored-card .pp-box[data-pp-box=tool] .pp-prices del,#market-app .wep-restored-card .market-base-choice .market-price-heading,#market-app .wep-restored-card .market-base-choice .market-price-pair strong,#market-app .wep-restored-card .market-base-choice .market-price-pair del,#market-app .wep-restored-card .pp-tractor-base{color:var(--base-price-ink)}
