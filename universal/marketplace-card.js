@@ -18,7 +18,7 @@
  function render(f,context){
   const {selectedPriceVariant,priceChoices,pricePanel,selectedStock,stockHeaderMarkup,sawHeaderBars,cardFinanceMarkup,paymentSelectionUrl,state}=context;
   const packageMarkup=window.WestEndPackagePricing?.render(f,context)??null;
-  const v=selectedPriceVariant(f),tool=(!selectedStock(f)&&/^compact tractors?$/i.test(clean(f.category))?context.compactBaseVariant?.(f,v):null)||window.WestEndPackagePricing?.tool(f,context)||v,heading=clean(tool.description)||clean(f.model)||clean(tool.sku);
+  const compact=/^compact tractors?$/i.test(clean(f.category)),v=selectedPriceVariant(f),tool=(compact?context.compactBaseVariant?.(f,v,true):null)||window.WestEndPackagePricing?.tool(f,context)||v,heading=clean(tool.description)||clean(f.model)||clean(tool.sku),displaySku=compact?v.sku:tool.sku;
   let product='product.html?'+new URLSearchParams({brand:f.brand,sku:tool.sku||''});
   try{const url=new URL(clean(tool.marketplaceRow?.ProductURL||tool.productUrl||f.productUrl));if(['http:','https:'].includes(url.protocol))product=url.href;}catch{}
   const build=new URL(window.WestEndPackagePricing?.buildUrl(f,context)||paymentSelectionUrl(f));build.pathname=build.pathname.replace(/payment-options(?:\.html)?\/?$/,'product-options.html');
@@ -33,7 +33,7 @@
    if(!window.WEPBuildBuy&&!document.querySelector('script[src*="build-buy-tools.js"]')){const script=document.createElement('script');script.src='universal/build-buy-tools.js';document.head.append(script);}
   }
   return '<article class="market-card wep-blended-card wep-restored-card" data-key="'+escape(f.key)+'" data-brand="'+escape(clean(f.brand).toUpperCase())+'">'+
-   '<header class="market-card-head"><h3><strong class="market-card-title" title="'+escape(heading)+'">'+escape(heading)+'</strong><div class="wep-card-sku"><span>SKU: '+escape(tool.sku)+sawHeaderBars(f)+'</span>'+stockHeaderMarkup(f)+'</div></h3></header>'+
+   '<header class="market-card-head"><h3><strong class="market-card-title" title="'+escape(heading)+'">'+escape(heading)+'</strong><div class="wep-card-sku"><span>SKU: '+escape(displaySku)+sawHeaderBars(f)+'</span>'+stockHeaderMarkup(f)+'</div></h3></header>'+
    '<div class="market-card-body"><div class="market-card-overview"><section class="market-card-left">'+
     '<div class="market-image-wrap">'+banner(v,context)+'<a class="market-image" href="'+escape(product)+'" target="_blank" rel="noopener noreferrer" title="View product details" aria-label="View product details for '+escape(heading)+'">'+(image?'<img src="'+escape(image)+'" alt="'+escape(heading)+'" loading="lazy">':'<span>Image Coming Soon</span>')+'</a></div>'+
    '</section>'+
