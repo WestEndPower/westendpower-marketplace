@@ -76,3 +76,19 @@ test('card selection adds priced required connection items once and carries them
 test('all shopping entries load component definitions before package card initialization',()=>{
  for(const file of ['marketplace.html','shop-by-product.html','shop-by-brand.html']){const html=fs.readFileSync(file,'utf8');assert.ok(html.indexOf('src="universal/package-components.js')<html.indexOf('src="universal/package-pricing.js'),file);}
 });
+
+test('nonpromotional kits and recommended custom packages are selected immediately without resetting customer changes',()=>{
+ for(const listedKit of [true,false]){
+  const {window,f,c}=fixture();
+  if(!listedKit){f.variants=f.variants.slice(0,1);c.DATA.packages=[];c.DATA.compatibility=[{ToolSKU:'TOOL',BatteryID1:'AK20',ChargerID1:'AL101',RecommendedBatteryID1:'AK20',RecommendedChargerID1:'AL101'}];}
+  const api=window.WestEndPackagePricing,html=api.render(f,c);
+  assert.match(html,/data-pp-select="package" aria-pressed="true"/);
+  assert.equal(c.selectedPriceVariant(f).sku,listedKit?'KIT':'TOOL');
+  assert.equal(c.selectedPriceVariant(f).price,listedKit?180:190);
+  assert.match(html,/>STIHL Base Price:</);assert.match(html,/<strong>\$100\.00<\/strong>/);
+  const host={dataset:{key:f.key}},button={dataset:{ppSelect:'tool'}};
+  api.handle({target:{closest(s){return s==='.wep-restored-card'?host:s==='[data-pp-select]'?button:null;}}});
+  assert.match(api.render(f,c),/data-pp-select="tool" aria-pressed="true"/);
+  assert.equal(c.selectedPriceVariant(f).sku,'TOOL');
+ }
+});
