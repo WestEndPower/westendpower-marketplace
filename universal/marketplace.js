@@ -556,7 +556,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
   function yanmarSelectedVariant(f){
     const candidates=relevantVariants(f);
-    return candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>(isCompactTractor(f)?Number(compactFlags(a).some(Boolean))-Number(compactFlags(b).some(Boolean))||Number(compactTire(a)!=='R-4')-Number(compactTire(b)!=='R-4'):0)||(a.workbookSort===b.workbookSort?0:a.workbookSort-b.workbookSort)||Number(a.price)-Number(b.price))[0]||candidates[0]||(f.variants||[])[0]||{};
+    return candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>(isCompactTractor(f)?Number(!compactFlags(a).every((on,i)=>on===(i===0)))-Number(!compactFlags(b).every((on,i)=>on===(i===0)))||Number(compactTire(a)!=='R-4')-Number(compactTire(b)!=='R-4'):0)||(a.workbookSort===b.workbookSort?0:a.workbookSort-b.workbookSort)||Number(a.price)-Number(b.price))[0]||candidates[0]||(f.variants||[])[0]||{};
   }
   // WEP_COMPACT_CARD_OPTIONS_V1: select complete catalog SKUs, never add guessed option prices.
   function isCompactTractor(f){return /^compact tractors?$/i.test(clean(f.category));}
@@ -639,22 +639,18 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const selected=selectedPriceVariant(f),tire=compactTire(selected),flags=compactFlags(selected);
     const offered=compactTires.filter(([code])=>selectedStock(f)?code===tire:compactVariants(f).some(v=>compactTire(v)===code));
     const extra=tire&&!compactTires.some(([code])=>code===tire)?[[tire]]:[];
-    const note=cardSelectionFor(f).compactNote||'';
     return '<div class="market-compact-tires" style="margin:7px 0;text-align:center"><div class="market-compact-tire-label"><div class="market-package-row-label">Tires</div>'+compactTireGuide(f)+'</div><div role="group" aria-label="Tire options" style="display:flex;justify-content:center;gap:4px;flex-wrap:wrap">'+offered.concat(extra).map(([code])=>{
       const active=code===tire,candidate=compactTireCandidate(f,code),disabled=!candidate;
       return '<button type="button" data-compact-family="'+esc(f.key)+'" data-compact-tire="'+esc(code)+'" aria-pressed="'+active+'" '+(disabled?'disabled ':'')+'title="'+esc(disabled?'Not listed with the selected factory options':'Select '+code+' tires')+'" style="'+compactButtonStyle(active,disabled,false)+'">'+esc(code)+'</button>';
-    }).join('')+'</div>'+(note?'<div role="status" style="font-size:11px;line-height:1.3;margin-top:4px;color:#315e3d">'+esc(note)+'</div>':'')+'</div>';
+    }).join('')+'</div>'+'</div>';
   }
   function handleCompactSelection(event){
     const button=event.target.closest('[data-compact-family]');if(!button)return false;
     const f=activeFamilies().find(f=>f.key===button.dataset.compactFamily);if(!f||!isCompactTractor(f)||button.disabled)return true;
-    const old=selectedPriceVariant(f),oldFlags=compactFlags(old),option=button.dataset.compactOption;
+    const option=button.dataset.compactOption;
     const candidate=button.dataset.compactSku?compactVariants(f).find(v=>skuKey(v.sku)===skuKey(button.dataset.compactSku)):option!==undefined?compactOptionCandidate(f,Number(option)):compactTireCandidate(f,button.dataset.compactTire);
     if(!candidate)return true;
-    const nextFlags=compactFlags(candidate);
-    const notes=compactFields.flatMap(([label],i)=>i!==Number(option)&&nextFlags[i]!==oldFlags[i]?[label+(nextFlags[i]?' included':' removed')]:[]);
     if(selectCompactVariant(f,candidate)){
-      cardSelectionFor(f).compactNote=notes.length?notes.join('; ')+'.':'';
       refreshSelectedCard(f);
       const selector=button.dataset.compactSku?'[data-compact-sku="'+CSS.escape(button.dataset.compactSku)+'"]':option!==undefined?'[data-compact-option="'+option+'"]':'[data-compact-tire="'+CSS.escape(button.dataset.compactTire)+'"]';
       document.querySelector('[data-compact-family="'+CSS.escape(f.key)+'"]'+selector)?.focus({preventScroll:true});
@@ -2068,18 +2064,18 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     return parts.length ? parts.join(' and ')+' included' : '';
   }
 
-  function compactBaseVariant(f,current=selectedPriceVariant(f)){
+  function compactBaseVariant(f,current=selectedPriceVariant(f),fixedIdentity=false){
     if(!isCompactTractor(f))return null;
     return compactVariants(f).filter(v=>!compactFlags(v).some(Boolean)&&v.price>0)
-      .sort((a,b)=>Number(compactTire(a)!==compactTire(current))-Number(compactTire(b)!==compactTire(current))||a.msrp-b.msrp)[0]||null;
+      .sort((a,b)=>Number(compactTire(a)!==(fixedIdentity?'R-4':compactTire(current)))-Number(compactTire(b)!==(fixedIdentity?'R-4':compactTire(current)))||a.msrp-b.msrp)[0]||null;
   }
   function compactPriceBoxes(f,current){
     const base=compactBaseVariant(f,current);if(!base)return null;
     const attached=compactFlags(current).some(Boolean),locked=!!selectedStock(f);
-    const amount=v=>{const offer=promoInfo(v),sale=offer?.type==='sale';return '<span class="pp-prices">'+(sale?'<del>'+money(offer.regular)+'</del>':'')+'<strong>'+money(sale?offer.price:v.msrp||v.price)+'</strong></span>';};
-    const control=(v,pressed,extra,label)=>'<button type="button" class="pp-price-select'+extra+'" data-compact-family="'+esc(f.key)+'" data-compact-sku="'+esc(v.sku)+'" aria-pressed="'+pressed+'" '+(locked?'disabled ':'')+'><span>'+esc(label)+'</span>'+amount(v)+'</button>';
+    const amount=(v,msrpOnly=false)=>{const offer=msrpOnly?null:promoInfo(v),sale=offer?.type==='sale';return '<span class="pp-prices">'+(sale?'<del>'+money(offer.regular)+'</del>':'')+'<strong>'+money(sale?offer.price:v.msrp||v.price)+'</strong></span>';};
+    const control=(v,pressed,extra,label)=>'<button type="button" class="pp-price-select'+extra+'" data-compact-family="'+esc(f.key)+'" data-compact-sku="'+esc(v.sku)+'" aria-pressed="'+pressed+'" '+(locked?'disabled ':'')+'><span>'+esc(label)+'</span>'+amount(v,label==='Package MSRP:')+'</button>';
     return '<div class="pp-box pp-compact-base'+(!attached?' pp-selected':'')+'" data-pp-box="tool">'+control(base,!attached,'',clean(f.brand)+' Base Price:')+'</div>'+
-      '<div class="pp-box pp-package pp-compact-package'+(attached?' pp-selected':'')+'" data-pp-box="package">'+control(current,attached,' pp-package-total','Package Price:')+stockUnitMarkup(f)+compactHeaderOptions(f)+compactTireMarkup(f)+'</div>';
+      '<div class="pp-box pp-package pp-compact-package'+(attached?' pp-selected':'')+'" data-pp-box="package">'+control(current,attached,' pp-package-total','Package MSRP:')+stockUnitMarkup(f)+compactHeaderOptions(f)+compactTireMarkup(f)+'</div>';
   }
 
   function pricePanel(label,v,isPackage,f,variantGroup,hideInventory=false){
