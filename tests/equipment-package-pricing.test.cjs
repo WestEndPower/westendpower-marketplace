@@ -85,3 +85,39 @@ test('Attach and Access remain empty even when compatible workbook options exist
  r.source.attachments=[];r.source.accessories=[];r.source.parts=[];html=r.api.render(r.f,r.c);
  assert.match(html,/>Attach<\/span><div role="group" aria-label="Attachments"><\/div>/);assert.match(html,/>Access<\/span><div role="group" aria-label="Accessories"><\/div>/);assert.match(html,/Package MSRP:/);
 });
+
+function sawFixture(){
+ const r=fixture();
+ const products=rows('products').filter(p=>p.Model==='MS 362 C-M');
+ Object.assign(r.f,{model:'MS 362 C-M',category:'Chainsaws',variants:products.map(row=>({sku:row.SKU,model:row.Model,description:row.Description,type:'Tool',price:Kit.current(row),msrp:Number(row.MSRP),marketplaceRow:row}))});
+ r.c.promoInfo=()=>null;
+ r.bar=sku=>r.api.handle({target:{closest:s=>s==='.wep-restored-card'?{dataset:{key:r.f.key}}:s==='[data-eqp-bar]'?{dataset:{eqpBar:sku}}:null}});
+ return r;
+}
+test('MS362C-M shows distinct standard and light sizes using the first active workbook SKU per size',()=>{
+ const r=sawFixture(),html=r.api.render(r.f,r.c);
+ const groups=[...html.matchAll(/aria-label="(Std\. Bar|Light Bar)">([\s\S]*?)<\/div>/g)];
+ assert.equal(groups.length,2);
+ assert.deepEqual([...groups[0][2].matchAll(/>(\d+)&quot;<\/button>/g)].map(x=>x[1]),['18','20','25']);
+ assert.deepEqual([...groups[1][2].matchAll(/>(\d+)&quot;<\/button>/g)].map(x=>x[1]),['25']);
+ assert.doesNotMatch(html,/data-eqp-bar="1140 200 0758"|data-eqp-bar="1140 200 0760"|data-eqp-option=/);
+ assert.equal(r.c.selectedPriceVariant(r.f).sku,'1140 200 0628');assert.match(html,/\$1,109\.99/);
+ r.f.variants.find(v=>v.sku==='1140 200 0629').marketplaceRow.Active='F';
+ assert.match(r.api.render(r.f,r.c),/data-eqp-bar="1140 200 0758"/);
+});
+test('bar selection updates exact price, identity, builder and cart and stays selected across refreshes',()=>{
+ const r=sawFixture();r.api.render(r.f,r.c);r.bar('1140 200 0764');
+ assert.equal(r.c.selectedPriceVariant(r.f).sku,'1140 200 0764');assert.equal(r.c.selectedPriceVariant(r.f).msrp,1189.99);
+ assert.match(r.api.render(r.f,r.c),/data-eqp-bar="1140 200 0764" aria-pressed="true"/);
+ assert.match(r.api.tool(r.f).description,/25" Light Bar/);
+ assert.equal(new URL(r.api.buildUrl(r.f,r.c)).searchParams.get('sku'),'1140 200 0764');
+ r.add();let cart=JSON.parse(r.saved.get('wepCart'));assert.equal(cart.length,1);assert.equal(cart[0].sku,'1140 200 0764');assert.equal(cart[0].itemPrice,1189.99);
+ r.bar('1140 200 0629');assert.equal(r.c.selectedPriceVariant(r.f).msrp,1119.99);r.add();cart=JSON.parse(r.saved.get('wepCart'));assert.equal(cart.length,2);
+ r.bar('1140 200 0758');assert.equal(r.c.selectedPriceVariant(r.f).sku,'1140 200 0629');
+ r.c.selectedStock=()=>({selectionId:'UNIT'});assert.equal(r.api.render(r.f,r.c),null);
+});
+test('bar rows support added sizes without duplicates and keep empty Light Bar row',()=>{
+ const r=sawFixture();r.f.variants=r.f.variants.filter(v=>!v.description.includes('Light Bar'));
+ for(const size of [12,14,16,28,32,36])r.f.variants.push({...r.f.variants[0],sku:'TEST-'+size,description:'Chainsaw w/'+size+'"',marketplaceRow:{...r.f.variants[0].marketplaceRow,SKU:'TEST-'+size,SortOrder:600+size}});
+ const html=r.api.render(r.f,r.c);assert.equal((html.match(/data-eqp-bar=/g)||[]).length,9);assert.match(html,/aria-label="Light Bar"><\/div>/);
+});
