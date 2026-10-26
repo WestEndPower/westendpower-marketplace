@@ -21,10 +21,10 @@ function fixture(published=false){
  const toggle=sku=>click('[data-eqp-option]',{dataset:{eqpOption:sku}}),base=()=>click('[data-eqp-select]',{dataset:{eqpSelect:'tool'}}),add=()=>click('[data-eqp-add]',{});
  return {api,f,c,source,tool,saved,status,toggle,base,add,window,context,setQuantity:q=>quantity=q};
 }
-test('real RZ142 workbook rows drive base/default layout and compatible button names',()=>{
+test('RZ142 keeps base pricing and blank option rows',()=>{
  const r=fixture(),html=r.api.render(r.f,r.c);
  assert.match(html,/pp-equipment-base pp-selected/);assert.match(html,/STIHL Base Price:/);assert.match(html,/Package MSRP:/);assert.match(html,/\$4,399\.99/);
- for(const sku of ['WB00 007 1005','WB00 007 1010','WB00 700 9700','WB00 780 2700']){const row=r.source.attachments.find(p=>p.SKU===sku);assert.equal(r.api.shortName(row),row.Description);assert.ok(html.includes('title="'+row.Description.replaceAll('&','&amp;').replaceAll('\"','&quot;')+'"'));}
+ assert.doesNotMatch(html,/data-eqp-option=/);
  assert.match(html,/role="group" aria-label="Accessories"><\/div>/);assert.doesNotMatch(html,/>Mower Boot Kit<|>Bagging Blower</);
  assert.equal(r.c.selectedPriceVariant(r.f).sku,r.tool.sku);assert.equal(r.c.selectedPriceVariant(r.f).price,3999.99);
  assert.match(r.api.tool(r.f).marketplaceRow.ImageURL,/RZ142\.jpg$/);
@@ -77,11 +77,11 @@ test('the published combined workbook export contains the RZ142 choices and corr
  assert.equal(r.c.selectedPriceVariant(r.f).msrp,5309.97);assert.equal(r.c.selectedPriceVariant(r.f).packageItems.length,2);
 });
 
-test('Attachments and Accessories show every full name and remain empty when no options apply',()=>{
+test('Attach and Access remain empty even when compatible workbook options exist',()=>{
  const r=fixture();
  for(let i=0;i<6;i++)r.source.accessories.push({SKU:'ACCESS-'+i,Description:'Accessory '+i,Active:'T',MSRP:'10',SortOrder:String(i),'WB01 011 3600 US':'T'});
  let html=r.api.render(r.f,r.c);assert.equal((html.match(/class="pp-component-row"/g)||[]).length,2);
- for(let i=0;i<6;i++)assert.ok(html.includes('data-eqp-option="ACCESS-'+i+'"'));
+ assert.doesNotMatch(html,/data-eqp-option=/);
  r.source.attachments=[];r.source.accessories=[];r.source.parts=[];html=r.api.render(r.f,r.c);
- assert.match(html,/>Attach\.<\/span><div role="group" aria-label="Attachments"><\/div>/);assert.match(html,/>Acces\.<\/span><div role="group" aria-label="Accessories"><\/div>/);assert.match(html,/Package MSRP:/);
+ assert.match(html,/>Attach<\/span><div role="group" aria-label="Attachments"><\/div>/);assert.match(html,/>Access<\/span><div role="group" aria-label="Accessories"><\/div>/);assert.match(html,/Package MSRP:/);
 });
