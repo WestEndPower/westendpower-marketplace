@@ -56,22 +56,23 @@
    const r=compat[0]||{},id=key(r['Recommended'+type+'ID1']),amount=qty(r['Recommended'+type+'Qty1']);
    return choices.find(parts=>parts.length===1&&parts[0].qty===amount&&[parts[0].row.SKU,parts[0].row[type+'ID'],parts[0].row.Model].some(v=>key(v)&&key(v)===id))||[];
   };
-  const cheapest=packages.find(p=>p.battery.length&&p.charger.length);
-  const m={tool,packages,batteryOptions,chargerOptions,defaultBattery:cheapest?.battery||recommended('Battery',batteries,batteryOptions),defaultCharger:cheapest?.charger||recommended('Charger',chargers,chargerOptions)};
+  const complete=packages.filter(p=>p.battery.length&&p.charger.length);
+  const promotional=complete.find(p=>c.promoInfo(p.variant)?.savings>0),cheapest=promotional||complete[0];
+  const m={tool,packages,batteryOptions,chargerOptions,defaultPackage:promotional,defaultBattery:cheapest?.battery||recommended('Battery',batteries,batteryOptions),defaultCharger:cheapest?.charger||recommended('Charger',chargers,chargerOptions)};
   models.set(f.key,m);return m;
  }
  function state(f,m){
-  if(!states.has(f.key))states.set(f.key,{choice:null,battery:m.defaultBattery,charger:m.defaultCharger});
+  if(!states.has(f.key))states.set(f.key,{choice:m.defaultPackage?'package':null,battery:m.defaultBattery,charger:m.defaultCharger});
   return states.get(f.key);
  }
  function configured(m,s,c){
   const parts=addParts(s.battery.map(p=>({...p,type:'battery'})),s.charger.map(p=>({...p,type:'charger'}))),match=m.packages.find(p=>signature(p.battery)===signature(s.battery)&&signature(p.charger)===signature(s.charger));
   const priced=parts.every(p=>c.currentPrice(p.row)>0);
   const separate=m.tool.price+parts.reduce((n,p)=>n+c.currentPrice(p.row)*p.qty,0);
-  if(match)return {variant:match.variant,regular:match.variant.msrp||match.variant.price,price:match.variant.price,savings:priced?Math.max(0,separate-match.variant.price):0,parts,kit:true};
-  const regular=m.tool.msrp+parts.reduce((n,p)=>n+number(p.row.MSRP)*p.qty,0);
+  const regular=m.tool.msrp>0&&parts.every(p=>number(p.row.MSRP)>0)?m.tool.msrp+parts.reduce((n,p)=>n+number(p.row.MSRP)*p.qty,0):0;
+  if(match)return {variant:match.variant,regular,price:match.variant.price,parts,kit:true};
   const variant={...m.tool,type:'Package',recommendedPackage:true,price:priced?separate:0,msrp:regular,sale:0,rebate:0,packageItems:parts.map(p=>({sku:clean(p.row.SKU),name:clean(p.row.BatteryID||p.row.ChargerID||p.row.Model||p.row.Description),quantity:p.qty,price:c.currentPrice(p.row)}))};
-  return {variant,regular,price:priced?separate:0,savings:0,parts,kit:false};
+  return {variant,regular,price:priced?separate:0,parts,kit:false};
  }
  function prices(regular,price){if(!(price>0))return '<strong>Confirm price</strong>';return '<span class="pp-prices">'+(regular>price+.005?'<del>'+money(regular)+'</del>':'')+'<strong>'+money(price)+'</strong></span>';}
  function optionName(parts,type){return parts.map(p=>(/^(AS|AK|AP|AR|AL)\s*\d/i.test(clean(p.row[type+'ID']||p.row.Model))?clean(p.row[type+'ID']||p.row.Model).replace(/\s+/g,''):clean(p.row[type+'ID']||p.row.Model||p.row.ChargerName||p.row.Description))+(p.qty>1?' × '+p.qty:'')).join(' + ');}
@@ -89,12 +90,13 @@
  function inventory(c,f,v,kind){return '<div class="market-price-inventory">'+c.inventoryMarkup(f,v,kind)+'</div>';}
  function render(f,c){
   contexts.set(f.key,{f,c});const m=model(f,c);if(!m)return null;
-  const s=state(f,m),pkg=configured(m,s,c);
+  const initial=!states.has(f.key),s=state(f,m),pkg=configured(m,s,c);
+  if(initial&&m.defaultPackage)c.selectPackageVariant(f,pkg.variant);
   return '<div class="pp-box'+(s.choice==='tool'?' pp-selected':'')+'" data-pp-box="tool">'+
-   '<button class="pp-price-select" type="button" data-pp-select="tool" aria-pressed="'+(s.choice==='tool')+'"><span>Unit <small>'+(m.tool.msrp>m.tool.price+.005?'MSRP / Sale':'MSRP')+'</small></span>'+prices(m.tool.msrp,m.tool.price)+'</button></div>'+
+   '<button class="pp-price-select" type="button" data-pp-select="tool" aria-pressed="'+(s.choice==='tool')+'"><span>Base Price</span>'+prices(m.tool.msrp,m.tool.price)+'</button></div>'+
    '<div class="pp-box pp-package'+(s.choice==='package'?' pp-selected':'')+'" data-pp-box="package">'+
-   '<button class="pp-price-select pp-package-total" type="button" data-pp-select="package" aria-pressed="'+(s.choice==='package')+'"><span>Package Price <small>'+((pkg.regular>pkg.price+.005?'MSRP / Sale':pkg.kit?'Kit MSRP':'Combined MSRP'))+'</small></span>'+prices(pkg.regular,pkg.price)+'</button>'+
-   (pkg.savings>.005?'<small class="market-package-savings pp-savings">Package savings '+money(pkg.savings)+'</small>':'')+row(f,m,s,'Battery')+row(f,m,s,'Charger')+'</div>';
+   '<button class="pp-price-select pp-package-total" type="button" data-pp-select="package" aria-pressed="'+(s.choice==='package')+'"><span>Package Price</span>'+prices(pkg.regular,pkg.price)+'</button>'+
+   row(f,m,s,'Battery')+row(f,m,s,'Charger')+'</div>';
  }
  function popup(message,opener){
   document.querySelector('.pp-dialog')?.remove();const dialog=document.createElement('dialog');dialog.className='pp-dialog';dialog.setAttribute('aria-label','Choose your purchase option');
@@ -118,7 +120,7 @@
   return rows;
  }
  function add(f,c,m,s,opener,increment=true){
-  if(m&&!s.choice){popup('No option selected. Please select Unit or Package Price to continue.',opener);return false;}
+  if(m&&!s.choice){popup('No option selected. Please select Base Price or Package Price to continue.',opener);return false;}
   try{
    const rows=cartRows(f,c,m,s),saved=JSON.parse(localStorage.getItem('wepCart')||'[]');if(!Array.isArray(saved))throw Error('Your cart could not be read.');
    for(const row of rows){const old=saved.find(x=>x.packageId===row.packageId&&x.type===row.type&&key(x.sku)===key(row.sku));if(old){if(!increment)continue;if(Number(old.quantity)+row.quantity>99)throw Error('Your cart already contains the maximum quantity for this configuration.');old.quantity=Number(old.quantity)+row.quantity;}else saved.push(row);}
