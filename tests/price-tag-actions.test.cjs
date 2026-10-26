@@ -92,3 +92,12 @@ test('nonpromotional kits and recommended custom packages are selected immediate
   assert.equal(c.selectedPriceVariant(f).sku,'TOOL');
  }
 });
+
+test('tractor card keeps bare tractor identity while a loader configuration is selected',()=>{
+ const {window,f,c}=fixture();f.category='Compact Tractors';f.brand='YANMAR';f.power='Diesel';
+ const base=f.variants[0];base.sku='SA325BI';base.description='Yanmar SA325BI Compact Tractor';
+ f.variants[1].sku='SA325BI-L';f.variants[1].description='Yanmar SA325BI-L Compact Tractor';c.compactBaseVariant=()=>base;
+ const html=window.WestEndMarketplaceCard.render(f,c);
+ assert.match(html,/SKU: SA325BI<\/span>/);assert.match(html,/title="Yanmar SA325BI Compact Tractor"/);assert.doesNotMatch(html,/SKU: SA325BI-L/);
+ assert.equal(c.selectedPriceVariant(f).sku,'SA325BI-L');
+});
