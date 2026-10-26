@@ -65,7 +65,7 @@
   return states.get(f.key);
  }
  function configured(m,s,c){
-  const parts=addParts(s.battery,s.charger),match=m.packages.find(p=>signature(p.battery)===signature(s.battery)&&signature(p.charger)===signature(s.charger));
+  const parts=addParts(s.battery.map(p=>({...p,type:'battery'})),s.charger.map(p=>({...p,type:'charger'}))),match=m.packages.find(p=>signature(p.battery)===signature(s.battery)&&signature(p.charger)===signature(s.charger));
   const priced=parts.every(p=>c.currentPrice(p.row)>0);
   const separate=m.tool.price+parts.reduce((n,p)=>n+c.currentPrice(p.row)*p.qty,0);
   if(match)return {variant:match.variant,regular:match.variant.msrp||match.variant.price,price:match.variant.price,savings:priced?Math.max(0,separate-match.variant.price):0,parts,kit:true};
@@ -113,8 +113,8 @@
   const tool=m&&config&&!config.kit?m.tool:v;
   const toolType=/^batteries$/i.test(f.category)?'battery':/^chargers$/i.test(f.category)?'charger':/^attachments?$/i.test(f.category)?'attachment':/^accessories$/i.test(f.category)?'accessory':/^parts$/i.test(f.category)?'part':'tool';
   const toolRow=make({...tool.marketplaceRow,SKU:tool.sku,Description:tool.description},toolType,q,tool.price);
-  if(config)toolRow.description=config.parts.map(p=>optionName([p],p.row.BatteryID?'Battery':'Charger')).join(' · ');
-  const rows=[toolRow,...components.map(p=>({...make(p.row,p.row.BatteryID?'battery':'charger',p.qty*q,c.currentPrice(p.row)),packageComponent:true,perToolQuantity:p.qty}))];
+  if(config)toolRow.description=config.parts.map(p=>optionName([p],p.type==='battery'?'Battery':'Charger')).join(' · ');
+  const rows=[toolRow,...components.map(p=>({...make(p.row,p.type,p.qty*q,c.currentPrice(p.row)),packageComponent:true,perToolQuantity:p.qty}))];
   if(rows.some(r=>!Number.isInteger(r.quantity)||r.quantity<1||r.quantity>99))throw Error('Please reduce the quantity before adding this package.');
   return rows;
  }
