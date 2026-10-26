@@ -41,7 +41,7 @@ Change a baseline only when John requests or approves that layout change.
 
 - Keep factory tractor P flags unchanged. Battery/charger kit contents come from public Packages rows: ParentSKU, BatterySKU1 / BatteryQty1, ChargerSKU1 / ChargerQty1, and additional numbered slots. ParentSKU resolves to the product row that owns kit MSRP and sale pricing.
 - Battery and charger names, compatibility and recommendations come from their existing public tables and compatibility-runtime. Component buttons never display raw SKUs. Kit-only products without a published bare-tool SKU retain their fixed kit purchase option.
-- WarrantyResidentialUse and WarrantyCommercialUse supply the compact warranty line. WarrantyURL (also WarrantyStatementURL / ManufacturerWarrantyURL) supplies the optional manufacturer statement link. No warranty text means no empty placeholder.
+- WarrantyResidentialUse and WarrantyCommercialUse supply the compact warranty line. WarrantyURL (also WarrantyStatementURL / ManufacturerWarrantyURL) supplies the optional manufacturer statement link. Missing warranty text retains an empty reserved warranty slot.
 
 ## Price-tag actions (October 26, 2026)
 
@@ -125,3 +125,11 @@ Change a baseline only when John requests or approves that layout change.
 - Preserve the battery and Yanmar compact modules, grid and card sizing. Missing data must retain its allotted space; no global rollout is included in this trial.
 
 - Bar-size buttons stay only slightly wider than their labels (8px horizontal padding). Center each whole label/options line within the package box; additional choices stay compact and centered, wrapping centrally only when needed.
+
+## Four rules across the shopping catalog (October 26, 2026)
+
+- Apply the shared tags to all brands on Marketplace, Shop by Product, Shop by Brand and their filtered URLs. Battery power takes precedence, including battery chainsaws; preserve battery/package selections. If compatibility is not published, retain empty Batteries/Chargers slots without inventing components.
+- Only Yanmar Compact Tractors use the existing factory-installed/tire layout. Other non-battery chainsaws use centered Std. Bar / Light Bar sizes, once per row, selecting the first active workbook SKU per size/type. All remaining equipment uses Base Price / Package MSRP and empty Attach / Access rows.
+- Preserve selected stock SKUs, stock identifiers, included equipment and checkout pricing. Stock chainsaw bar choices are locked. Generic cart actions retain the established item-type and stock handling.
+- Use three columns on desktop above 1100px, two on smaller landscape/tablet screens, one at 850px and below. Preserve blank specification, warranty and financing spaces so absent data does not collapse a tag. Battery and Yanmar selection mechanics are unchanged.
+- Earlier trial-only scope notes are superseded by this rollout. Generated SEO catalog pages retain their separate toolbar/template until migrated; filtered shopping URLs already use these four rules.
