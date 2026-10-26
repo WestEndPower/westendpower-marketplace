@@ -18,7 +18,7 @@
  function render(f,context){
   const {selectedPriceVariant,priceChoices,pricePanel,selectedStock,stockHeaderMarkup,sawHeaderBars,cardFinanceMarkup,paymentSelectionUrl,state}=context;
   const packageMarkup=window.WestEndPackagePricing?.render(f,context)??null;
-  const v=selectedPriceVariant(f),tool=window.WestEndPackagePricing?.tool(f,context)||v,heading=clean(tool.description)||clean(f.model)||clean(tool.sku);
+  const v=selectedPriceVariant(f),tool=(!selectedStock(f)&&/^compact tractors?$/i.test(clean(f.category))?context.compactBaseVariant?.(f,v):null)||window.WestEndPackagePricing?.tool(f,context)||v,heading=clean(tool.description)||clean(f.model)||clean(tool.sku);
   let product='product.html?'+new URLSearchParams({brand:f.brand,sku:tool.sku||''});
   try{const url=new URL(clean(tool.marketplaceRow?.ProductURL||tool.productUrl||f.productUrl));if(['http:','https:'].includes(url.protocol))product=url.href;}catch{}
   const build=new URL(window.WestEndPackagePricing?.buildUrl(f,context)||paymentSelectionUrl(f));build.pathname=build.pathname.replace(/payment-options(?:\.html)?\/?$/,'product-options.html');
