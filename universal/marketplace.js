@@ -2889,7 +2889,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
          bundle.productSources.some((table,i)=>table.brand!==expected[i]) || !bundle.tables){
         throw new Error('Combined catalog does not match this Marketplace');
       }
-      DATA.componentSources=Object.fromEntries((bundle.componentSources||[]).map(source=>[clean(source.brand).toUpperCase(),Object.fromEntries(['batteries','chargers','compatibility','packages'].map(name=>[name,unpackMarketplaceTable(source[name])]))]));
+      DATA.componentSources=Object.fromEntries((bundle.componentSources||[]).map(source=>[clean(source.brand).toUpperCase(),Object.fromEntries(['batteries','chargers','compatibility','packages','requirements','attachments','accessories','parts'].map(name=>[name,unpackMarketplaceTable(source[name])]))]));
       const products=bundle.productSources.flatMap(unpackMarketplaceTable);
       if(!products.length)throw new Error('Combined catalog has no products');
       window.WESTEND_PUBLISHED_BRANDS=bundle.productSources.map(table=>{
@@ -2935,7 +2935,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
           if(!response.ok) throw new Error('HTTP '+response.status);
 
           const data=await response.json();
-          const inventory=new Map();
+          const inventory=new Map();inventory.loaded=true;
 
           for(const item of (Array.isArray(data.availability)?data.availability:[])){
             const sku=skuKey(item.sku);
@@ -2977,9 +2977,9 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
         const profiles=marketplaceBrandProfiles().filter(profile=>batteryBrands.has(clean(profile.id).toUpperCase()));
         DATA.componentSources=Object.fromEntries(await Promise.all(profiles.map(async profile=>{
           const brand=clean(profile.id).toUpperCase(),base='brands/'+brand.toLowerCase()+'/data/';
-          const names=['batteries','chargers','compatibility','packages'];
+          const names=['batteries','chargers','compatibility','packages','requirements','attachments','accessories','parts'];
           const existing={batteries,chargers,compatibility};
-          const rows=await Promise.all(names.map(name=>brand==='STIHL'&&name!=='packages'?Promise.resolve(existing[name]):csv(base+(name==='compatibility'?'compatibility-runtime':name)+'.csv').catch(()=>[])));
+          const rows=await Promise.all(names.map(name=>brand==='STIHL'&&Object.hasOwn(existing,name)?Promise.resolve(existing[name]):csv(base+(name==='compatibility'?'compatibility-runtime':name==='requirements'?'battery-requirements':name)+'.csv').catch(()=>[])));
           return [brand,Object.fromEntries(names.map((name,i)=>[name,rows[i]]))];
         })));
       }

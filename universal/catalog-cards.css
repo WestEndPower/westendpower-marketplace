@@ -206,3 +206,11 @@
 #market-app .wep-restored-card .pp-package-total{gap:6px;padding-bottom:5px}
 #market-app .wep-restored-card .market-factory-options [role=group],#market-app .wep-restored-card .market-compact-tires [role=group]{width:calc(100% - 16px);margin-inline:auto;justify-content:center!important}
 #market-app .wep-restored-card .market-factory-options button,#market-app .wep-restored-card .market-compact-tires button{flex:0 1 auto;padding:4px 7px!important}
+
+/* Series headings occupy the left column; the choices share the remaining width. */
+#market-app .wep-restored-card .pp-component-row{display:grid;grid-template-columns:80px minmax(0,1fr);align-items:center;gap:6px;margin:3px 8px 0;border-top:0;padding:3px 0}
+#market-app .wep-restored-card .pp-component-label{font:700 10px/1.2 Arial,sans-serif;color:#43594a;text-align:left}
+#market-app .wep-restored-card .pp-component-row>div{min-width:0;display:flex;flex-wrap:wrap;justify-content:center;gap:4px}
+#market-app .wep-restored-card .pp-component-row button{padding:4px 5px;min-height:27px;white-space:nowrap}
+#market-app .wep-restored-card .pp-package-contents{display:block;text-align:center;margin:4px 8px 0;font:11px/1.35 Arial,sans-serif;color:#43594a;overflow-wrap:anywhere}
+@media(max-width:420px){#market-app .wep-restored-card .pp-component-row{grid-template-columns:65px minmax(0,1fr);margin-inline:3px;gap:4px}}

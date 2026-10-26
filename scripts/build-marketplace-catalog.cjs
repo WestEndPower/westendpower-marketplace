@@ -32,7 +32,7 @@ function buildCatalog({root=path.resolve(__dirname,'..')}={}){
   tables.settingsRows=packTable(readTable(root,'data/dealer-settings.csv'));
   const componentSources=BRANDS.map(brand=>{
     const source={brand};
-    for(const [name,file] of Object.entries({batteries:'batteries.csv',chargers:'chargers.csv',compatibility:'compatibility-runtime.csv',packages:'packages.csv'})){
+    for(const [name,file] of Object.entries({batteries:'batteries.csv',chargers:'chargers.csv',compatibility:'compatibility-runtime.csv',packages:'packages.csv',requirements:'battery-requirements.csv',attachments:'attachments.csv',accessories:'accessories.csv',parts:'parts.csv'})){
       const rel='brands/'+brand.toLowerCase()+'/data/'+file;
       source[name]=packTable(fs.existsSync(path.join(root,rel))?readTable(root,rel):{headers:[],rows:[]});
     }

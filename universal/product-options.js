@@ -217,16 +217,17 @@ const implementFreightNote='Additional freight charges apply. We’ll contact yo
 function implementFreightMarkup(){return '<p class="wep-implement-freight-note" role="note">'+esc(implementFreightNote)+'</p>';}
 
 let factoryPackageIncludedSkus=new Set();
+let factoryKit=null,batteryRequirementRules=[];
 function packageIncludedSku(value){
  const key=clean(value).toUpperCase();
- return factoryPackageIncludedSkus.has(key)||requiredPackageComponents.some(item=>clean(item.sku).toUpperCase()===key)||inventoryPackageIncludes.some(item=>clean(item.sku).toUpperCase()===key&&Number(item.quantity)>0);
+ return (factoryKit?.parts||[]).some(p=>clean(p.row.SKU).toUpperCase()===key)||factoryPackageIncludedSkus.has(key)||requiredPackageComponents.some(item=>clean(item.sku).toUpperCase()===key)||inventoryPackageIncludes.some(item=>clean(item.sku).toUpperCase()===key&&Number(item.quantity)>0);
 }
 function refreshPackageIncludedLabels(){
  document.querySelectorAll('[data-package-included-sku]').forEach(label=>{label.hidden=!packageIncludedSku(label.dataset.packageIncludedSku);});
 }
 
 function packageInclusions(){
- const product=selectedProduct||{},names=[];
+ const product=selectedProduct||{},names=(factoryKit?.parts||[]).map(p=>clean(p.row.Description||p.row.Model||p.row.SKU)+(p.qty>1?' (Qty '+p.qty+')':''));
  for(const [field,label] of [['P1-Loader','Front loader'],['P2-Backhoe','Backhoe'],['P3-Mower','Mower'],['P4-Cab','Cab']])if(trueish(product[field]))names.push(label);
  for(const item of inventoryPackageIncludes){const name=clean(item.description)||clean(item.sku),quantity=Number(item.quantity);if(name&&quantity>0)names.push(name+(quantity>1?' (Qty '+quantity+')':''));}
  for(const item of requiredPackageComponents){
@@ -334,6 +335,14 @@ function syncOptionRequirements(){
   return item?{...item,quantity:Number(document.querySelector('[data-qty="'+CSS.escape(c.dataset.sku)+'"]')?.value)}:null;
  }).filter(Boolean);
  const desired=optionRequirementPlan(selected);
+ if(window.WEPKitComponents&&batteryRequirementRules.length){
+  const mainQuantity=Number($('equipment-qty')?.value||1),batteries=[...selected.filter(p=>p.type==='battery').map(p=>({row:p.row,qty:p.quantity/mainQuantity})),...(factoryKit?.parts.filter(p=>p.type==='battery')||[])];
+  const catalog={};for(const p of optionRequirementCatalog){const name={battery:'batteries',charger:'chargers',accessory:'accessories',attachment:'attachments',part:'parts'}[p.type];(catalog[name]||=[]).push(p.row);}
+  for(const p of WEPKitComponents.required(factoryKit?.tool||selectedProduct,batteries,batteryRequirementRules,catalog)){
+   const included=(factoryKit?.parts||[]).filter(x=>x.type===p.type&&clean(x.row.SKU)===clean(p.row.SKU)).reduce((n,x)=>n+x.qty,0),quantity=Math.max(0,p.qty-included)*mainQuantity;
+   if(quantity)desired.set(p.type+':'+clean(p.row.SKU).toUpperCase(),{...p,sku:clean(p.row.SKU),quantity,parent:'battery:'+clean(batteries[0]?.row.SKU).toUpperCase()});
+  }
+ }
  for(const [id,original] of optionRequirementState)if(!desired.has(id)){
   const {check,qty,button}=original;check.checked=original.checked;check.disabled=original.disabled;qty.value=original.quantity;qty.readOnly=original.readOnly;
   if(button)button.disabled=original.buttonDisabled;
@@ -402,11 +411,15 @@ function addPackageToCart(){
   const c=[...document.querySelectorAll('.option-check')].find(c=>c.dataset.sku===row.sku&&c.dataset.type===row.type);
   // Keep the pricing choice when editing the same quantity; current inventory is rechecked on return.
   const previous=previousPackage.find(old=>old.type===row.type&&old.sku===row.sku&&Number(old.quantity)===row.qty);
-  cart.push({autoRequiredComponent:c?.dataset.wepAutoRequired==='true',inventoryId:window.WEPBuildInventorySelection?.(row.type,row.sku,row.qty)??previous?.inventoryId??'',quoteStockChoice:(window.WEPBuildInventorySelection?.(row.type,row.sku,row.qty)??previous?.inventoryId)?'stock':'orderable',brandId:selectedBrand.toUpperCase(),packageId:group,equipmentSku:sku,type:row.type,sku:row.sku,quantity:row.qty,productName:row.type==='tool'?(clean(selectedProduct.Description)||clean(selectedProduct.Model)||sku):c.dataset.name,itemPrice:row.type==='tool'?currentPrice(selectedProduct):Number(c.dataset.price),assemblyOption:row.type==='tool'?assemblyCode(selectedProduct):c.dataset.setupOption,assemblyAmount:row.type==='tool'?assemblyAmount(selectedProduct):Number(c.dataset.setup||0),setupSelected:row.setupSelected,setupAmount:row.setupSelected?(row.type==='tool'?assemblyAmount(selectedProduct):Number(c.dataset.setup||0)):0,shipping:null});
+  cart.push({...(row.type==='tool'&&factoryKit?listedKitBreakdown(row.qty):{}),autoRequiredComponent:c?.dataset.wepAutoRequired==='true',inventoryId:window.WEPBuildInventorySelection?.(row.type,row.sku,row.qty)??previous?.inventoryId??'',quoteStockChoice:(window.WEPBuildInventorySelection?.(row.type,row.sku,row.qty)??previous?.inventoryId)?'stock':'orderable',brandId:selectedBrand.toUpperCase(),packageId:group,equipmentSku:sku,type:row.type,sku:row.sku,quantity:row.qty,productName:row.type==='tool'?(clean(selectedProduct.Description)||clean(selectedProduct.Model)||sku):c.dataset.name,itemPrice:row.type==='tool'?currentPrice(selectedProduct):Number(c.dataset.price),assemblyOption:row.type==='tool'?assemblyCode(selectedProduct):c.dataset.setupOption,assemblyAmount:row.type==='tool'?assemblyAmount(selectedProduct):Number(c.dataset.setup||0),setupSelected:row.setupSelected,setupAmount:row.setupSelected?(row.type==='tool'?assemblyAmount(selectedProduct):Number(c.dataset.setup||0)):0,shipping:null});
  });
  buildStorage.setItem('wepCart',JSON.stringify(cart));
  renderSavedCartSubtotal();
  $('options-message').textContent='Package saved in cart. Review your quote for setup, freight, delivery and payment totals.';
+}
+function listedKitBreakdown(quantity){
+ try{return {kitComponents:WEPKitComponents.breakdown(factoryKit,currentPrice(selectedProduct),quantity,{price:currentPrice})};}
+ catch(error){return {kitBreakdownIssue:error.message};}
 }
 function renderSavedCartSubtotal(){
  const target=$('wep-cart-subtotal');if(!target)return;
@@ -442,15 +455,21 @@ function renderBuildPackageReview(quote=null,message=""){
   else if(confirmed){line.unit=null;line.itemTotal=null;}
   else line.itemTotal=Number.isInteger(line.qty)&&line.qty>=1&&line.qty<=20?line.unit*line.qty:null;
  });
+ lines=lines.flatMap(line=>{
+  if(line.type!=='tool'||!factoryKit)return [line];
+  let children=line.live?.kitComponents;if(!children&&!confirmed)children=listedKitBreakdown(mainQty).kitComponents;
+  if(!children?.length){line.breakdownIssue=line.live?.kitBreakdownIssue||listedKitBreakdown(mainQty).kitBreakdownIssue;return [line];}
+  return children.map((child,i)=>({...line,...child,name:child.productName,qty:child.quantity,unit:child.unitPrice,regular:child.regularUnitPrice,itemTotal:child.itemTotal,required:true,requiredLabel:'Included in package '+sku,setup:i===0?line.setup:0,code:i===0?line.code:'',fee:i===0?line.fee:0,packageHeading:i===0?line:null}));
+ });
  container.innerHTML='<div class="wep-itemized-status" role="status"></div><div class="wep-package-table-scroll"><table class="wep-package-table"><caption class="wep-visually-hidden">Selected equipment and options with quantities, prices, and installation</caption><thead><tr><th scope="col">Equipment &amp; options</th><th scope="col">Qty</th><th scope="col">Installation / Set-Up</th><th scope="col">Unit price</th><th scope="col">Sale price</th><th scope="col">Item total</th></tr></thead><tbody>'+lines.map(line=>{
-  const valid=Number.isInteger(line.qty)&&line.qty>=1&&line.qty<=20;
+  const valid=Number.isInteger(line.qty)&&line.qty>=1&&line.qty<=(line.parentSku?2000:20);
   const optional=line.code==='T'&&line.fee>0;
   const regular=amount(line.unit)?Math.max(line.unit,amount(line.regular)?line.regular:0):null;
   const sale=amount(line.unit)&&amount(regular)&&Math.round(regular*100)>Math.round(line.unit*100)?line.unit:null;
   const installation=optional?'<label class="wep-itemized-install"><input type="checkbox" data-review-install-type="'+esc(line.type)+'" data-review-install-sku="'+esc(line.sku)+'" aria-label="Dealer installation for '+esc(line.name)+': '+fmt(line.fee)+' per item" '+(line.setup>0?'checked':'')+'><span>'+fmt(line.fee)+' / item</span></label>':valid&&line.setup>0?'<span class="wep-itemized-install">'+fmt(line.setup*line.qty)+(line.code==='F'?' (required)':'')+'</span>':'—';
   const source=line.live?.pricingSource==='stock'?'In-Stock Unit':line.live?.pricingSource==='orderable'?(line.type==='tool'?'Build-to-Order Unit':'Available to Order'):'';
   const additionalFreight=confirmed?line.live?.factoryFreightExcluded===true:line.type==='attachment'&&horsepowerImplementSkus.has(clean(line.sku).toUpperCase());
-  return '<tr'+(additionalFreight?' class="wep-has-implement-freight"':'')+'><th scope="row">'+esc(line.name)+(additionalFreight?' <sup>*</sup>':'')+(line.type==='tool'&&packageInclusions().length?'<div class="wep-itemized-meta wep-itemized-includes">Includes: '+esc(packageInclusions().join(' · '))+'</div>':'')+'<div class="wep-itemized-meta"><span>SKU '+esc(line.sku)+'</span>'+(source?'<span class="wep-itemized-source">'+source+'</span>':'')+(line.required?'<span>'+esc(line.requiredLabel)+'</span>':'')+(line.type!=='tool'&&!line.required?'<button type="button" data-review-remove-type="'+esc(line.type)+'" data-review-remove-sku="'+esc(line.sku)+'" aria-label="Remove '+esc(line.name)+'">Remove</button>':'')+'</div>'+'</th><td><input class="qty wep-review-qty" '+(line.required?'readonly aria-readonly="true" ':'')+'type="number" min="1" max="20" value="'+esc(line.qty)+'" data-review-qty-type="'+esc(line.type)+'" data-review-qty-sku="'+esc(line.sku)+'" aria-label="Quantity for '+esc(line.name)+'"><span class="wep-print-qty">'+esc(line.qty)+'</span></td><td>'+installation+'</td><td class="wep-itemized-money">'+(amount(regular)?fmt(regular):'Needs confirmation')+'</td><td class="wep-itemized-money">'+(amount(sale)?fmt(sale):'—')+'</td><td>'+(valid?(amount(line.itemTotal)?fmt(line.itemTotal):'Needs confirmation'):'Check quantity')+'</td></tr>';
+  return (line.packageHeading?'<tr class="wep-kit-heading"><th colspan="6">Package SKU '+esc(sku)+' · Qty '+mainQty+' · '+fmt(line.packageHeading.itemTotal)+'</th></tr>':'')+'<tr'+(additionalFreight?' class="wep-has-implement-freight"':'')+'><th scope="row">'+esc(line.name)+(line.breakdownIssue?'<div class="wep-itemized-meta">Component allocation needs store confirmation.</div>':'')+(additionalFreight?' <sup>*</sup>':'')+(line.type==='tool'&&packageInclusions().length?'<div class="wep-itemized-meta wep-itemized-includes">Includes: '+esc(packageInclusions().join(' · '))+'</div>':'')+'<div class="wep-itemized-meta"><span>SKU '+esc(line.sku)+'</span>'+(source?'<span class="wep-itemized-source">'+source+'</span>':'')+(line.required?'<span>'+esc(line.requiredLabel)+'</span>':'')+(line.type!=='tool'&&!line.required?'<button type="button" data-review-remove-type="'+esc(line.type)+'" data-review-remove-sku="'+esc(line.sku)+'" aria-label="Remove '+esc(line.name)+'">Remove</button>':'')+'</div>'+'</th><td><input class="qty wep-review-qty" '+(line.required?'readonly aria-readonly="true" ':'')+'type="number" min="1" max="20" value="'+esc(line.qty)+'" data-review-qty-type="'+esc(line.type)+'" data-review-qty-sku="'+esc(line.sku)+'" aria-label="Quantity for '+esc(line.name)+'"><span class="wep-print-qty">'+esc(line.qty)+'</span></td><td>'+installation+'</td><td class="wep-itemized-money">'+(amount(regular)?fmt(regular):'Needs confirmation')+'</td><td class="wep-itemized-money">'+(amount(sale)?fmt(sale):'—')+'</td><td>'+(valid?(amount(line.itemTotal)?fmt(line.itemTotal):'Needs confirmation'):'Check quantity')+'</td></tr>';
  }).join('')+'</tbody></table></div><div class="wep-itemized-footer"><div class="wep-itemized-payment"></div><div class="wep-itemized-totals"><dl></dl></div></div><strong id="selected-total" hidden></strong><p class="note">Installation is shown separately from merchandise. Prices and availability are subject to confirmation.</p>';
  const status=container.querySelector('.wep-itemized-status');
  status.textContent=message||(confirmed?(pricingIssues(quote).length?'Some items need store confirmation.':'Current prices for your selected equipment and options.'):'Listed item prices — updating freight, tax and payment totals…');
@@ -562,7 +581,7 @@ function restoreCardSelection(checks){
   if(!Array.isArray(parts)||parts.length>30||!Number.isInteger(quantity)||quantity<1||quantity>20)throw Error('Invalid card selection.');
   const seen=new Set(),items=[{type:'tool',sku,quantity,setupSelected:mainSetupSelected()}];
   for(const part of parts){
-   if(!['battery','charger'].includes(part.type)||!Number.isInteger(part.quantity)||part.quantity<1||part.quantity*quantity>20)throw Error('Invalid component quantity.');
+   if(!['battery','charger','accessory','attachment','part'].includes(part.type)||!Number.isInteger(part.quantity)||part.quantity<1||part.quantity*quantity>20)throw Error('Invalid component quantity.');
    const check=checks.find(c=>c.dataset.type===part.type&&c.dataset.sku===part.sku&&!c.disabled),id=part.type+':'+part.sku;
    if(!check||seen.has(id))throw Error('A selected component is no longer available for this tool.');seen.add(id);
    items.push({type:part.type,sku:part.sku,quantity:part.quantity*quantity,setupSelected:optionSetupSelected(check)});
@@ -660,13 +679,16 @@ async function init(){
   if(matches.length>1)throw new Error('This SKU belongs to more than one brand. Return to Marketplace and select the brand.');
   if(matches.length===1){root=matches[0].root;selectedBrand=matches[0].brand;}
   if(!root)throw new Error('Product SKU not found: '+sku);
-  const [products,runtime,batteries,chargers,attachments,accessories,parts]=await Promise.all([
-   csv(root+'products.csv'),csv(root+'compatibility-runtime.csv',true),csv(root+'batteries.csv',true),csv(root+'chargers.csv',true),csv(root+'attachments.csv',true),csv(root+'accessories.csv',true),csv(root+'parts.csv',true)
+  const [products,runtime,batteries,chargers,attachments,accessories,parts,packages,batteryRequirements]=await Promise.all([
+   csv(root+'products.csv'),csv(root+'compatibility-runtime.csv',true),csv(root+'batteries.csv',true),csv(root+'chargers.csv',true),csv(root+'attachments.csv',true),csv(root+'accessories.csv',true),csv(root+'parts.csv',true),csv(root+'packages.csv',true),csv(root+'battery-requirements.csv',true)
   ]);
   stockLocations=await csv('data/locations.csv').catch(()=>[]);
   const product=products.find(x=>clean(x.SKU)===sku);
   if(!product)throw new Error('Product SKU not found: '+sku);
   selectedProduct=product;
+  batteryRequirementRules=batteryRequirements;
+  try{factoryKit=window.WEPKitComponents?.definition(product,products,packages,{batteries,chargers,attachments,accessories,parts})||null;}catch(error){factoryKit=null;console.warn(error.message);}
+
   // WEP_PUBLIC_BUILD_REBATE_OFFERS_V1: customer promotion metadata only; pricing remains server-calculated.
   window.WEPBuildRebateOffers=[['tool',[product]],['attachment',attachments],['accessory',accessories],['part',parts],['battery',batteries],['charger',chargers]].flatMap(([type,rows])=>rows.flatMap(row=>{
    const amount=Number(String(row.RebateToCustomer||row.CustomerRebateAmount||'').trim().replace(/[$,]/g,'')),id=clean(row.SKU||row.StihlID||row.BatteryID||row.ChargerID);
@@ -690,14 +712,15 @@ async function init(){
   const impls=horsepowerImplements(attachments,sku).filter(WEPBuildBuy.usable);
   horsepowerImplementSkus=new Set(impls.map(item=>clean(item.SKU).toUpperCase()));
   if(implementBrowser){renderImplementBrowser(impls);return;}
-  const accs=compatibleRows(accessories,sku).filter(WEPBuildBuy.usable);
-  const prts=compatibleRows(parts,sku).filter(WEPBuildBuy.usable);
+  const connectionIds=new Set(batteryRequirements.filter(r=>clean(r.ToolSKU)===clean(factoryKit?.tool.SKU||sku)).map(r=>clean(r.RequiredSKU)));
+  const accs=accessories.filter(r=>WEPBuildBuy.usable(r)&&(connectionIds.has(clean(r.SKU))||compatibilityChoice(r,sku)===true));
+  const prts=parts.filter(r=>WEPBuildBuy.usable(r)&&(connectionIds.has(clean(r.SKU))||compatibilityChoice(r,sku)===true));
   requiredPackageComponents=factoryComponentRequirements(product,atts);
   // The same factory equipment flags that supply the package Includes summary.
   const factoryCategories=[['P1-Loader',/^(front\s+)?loaders?$/i],['P2-Backhoe',/^backhoes?$/i],['P3-Mower',/mower/i],['P4-Cab',/^cabs?$/i]];
   factoryPackageIncludedSkus=new Set(atts.filter(row=>factoryCategories.some(([flag,category])=>trueish(product[flag])&&category.test(clean(row.SubCategory)))).map(row=>clean(row.SKU).toUpperCase()));
-  optionRequirementRows=[...atts.map(row=>({type:'attachment',row})),...accs.map(row=>({type:'accessory',row})),...prts.map(row=>({type:'part',row}))];
-  optionRequirementCatalog=[...attachments.map(row=>({type:'attachment',row})),...accessories.map(row=>({type:'accessory',row})),...parts.map(row=>({type:'part',row}))];
+  optionRequirementRows=[...bats.map(row=>({type:'battery',row})),...chgs.map(row=>({type:'charger',row})),...atts.map(row=>({type:'attachment',row})),...accs.map(row=>({type:'accessory',row})),...prts.map(row=>({type:'part',row}))];
+  optionRequirementCatalog=[...batteries.map(row=>({type:'battery',row})),...chargers.map(row=>({type:'charger',row})),...attachments.map(row=>({type:'attachment',row})),...accessories.map(row=>({type:'accessory',row})),...parts.map(row=>({type:'part',row}))];
   const name=clean(product.Model)||clean(product.Description)||sku;
   const base=currentPrice(product);
   const kit=['kit','package'].includes(clean(product.ProductType).toLowerCase());

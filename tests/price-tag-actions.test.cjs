@@ -1,8 +1,8 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 function fixture(){
- const window={},document={querySelector(){return null},createElement(){return {}},head:{append(){}}};
- const context={window,document,URL,URLSearchParams,Intl,CSS:{escape:x=>x}};
+ const window={WEPKitComponents:require('../universal/package-components.js')},document={querySelector(){return null},createElement(){return {}},head:{append(){}}};
+ const stored=new Map();const context={window,document,URL,URLSearchParams,Intl,CSS:{escape:x=>x},CustomEvent:class{constructor(name){this.type=name;}},localStorage:{getItem:k=>stored.get(k)||'[]',setItem:(k,v)=>stored.set(k,v)}};window.dispatchEvent=()=>{};
  vm.runInNewContext(fs.readFileSync('universal/package-pricing.js','utf8'),context);
  vm.runInNewContext(fs.readFileSync('universal/marketplace-card.js','utf8'),context);
  const tool={sku:'TOOL',description:'Bare Blower',type:'Tool',price:100,msrp:100,marketplaceRow:{ProductURL:'https://manufacturer.example/blower',Warranty:'3 years'}};
@@ -10,7 +10,7 @@ function fixture(){
  const f={key:'blower',brand:'STIHL',model:'Blower',power:'Battery',variants:[tool,kit],specs:{Weight:'5 lb'}};
  let selected=kit;
  const c={selectedPriceVariant:()=>selected,selectedStock:()=>null,DATA:{batteries:[{SKU:'BAT',BatteryID:'AK30',MSRP:60},{SKU:'BAT2',BatteryID:'AK20',MSRP:50}],chargers:[{SKU:'CHG',ChargerID:'AL101',MSRP:40}],compatibility:[{ToolSKU:'TOOL',BatteryID1:'AK20'}],packages:[{ParentSKU:'KIT',BatterySKU1:'BAT',ChargerSKU1:'CHG'}]},currentPrice:r=>Number(r.MSRP),paymentSelectionUrl:()=>`https://dealer.example/payment-options.html?brand=STIHL&sku=${selected.sku}&quantity=1`,inventoryMarkup:()=>'',priceChoices:()=>[],pricePanel:()=>'',stockHeaderMarkup:()=>'',sawHeaderBars:()=>'',state:{compare:new Set()},promoInfo:()=>null,money:String,cardFinanceMarkup:()=>'',selectPackageVariant:(_,v)=>selected=v,refreshSelectedCard(){}};
- return {window,document,f,c};
+ c.selectedPriceQuantity=()=>1;c.updateCartFloat=()=>{};c.track=()=>{};return {window,document,f,c,stored};
 }
 test('package cards keep bare-tool identity, link the image, and share compact actions',()=>{
  const {window,f,c}=fixture(),html=window.WestEndMarketplaceCard.render(f,c);
@@ -62,4 +62,13 @@ test('a complete promotional kit is selected before the image banner renders, ah
  c.promoInfo=v=>v.sku==='KIT'?{type:'sale',savings:20,end:'2026-12-31'}:null;
  const html=window.WestEndMarketplaceCard.render(f,c);
  assert.equal(c.selectedPriceVariant(f).sku,'KIT');assert.match(html,/data-pp-select="package" aria-pressed="true"/);assert.match(html,/Save 20/);
+});
+
+test('card selection adds priced required connection items once and carries them into the cart',()=>{
+ const {window,f,c,stored}=fixture();c.DATA.componentSources={STIHL:{...c.DATA,requirements:[{ToolSKU:'TOOL',BatterySKU:'BAT2',RequiredType:'accessory',RequiredSKU:'CABLE',RequiredQty:1}],accessories:[{SKU:'CABLE',Description:'Full connection cable',MSRP:20}]}};
+ const api=window.WestEndPackagePricing;api.render(f,c);const host={dataset:{key:f.key}},button={dataset:{ppComponent:'battery',ppIndex:'0'},disabled:false};
+ const target={closest(s){return s==='.wep-restored-card'?host:s==='[data-pp-component]'?button:null;}};api.handle({target});
+ const html=api.render(f,c);assert.match(html,/Required items included/);assert.equal(c.selectedPriceVariant(f).price,210);
+ const add={closest(s){return s==='.wep-restored-card'?host:s==='[data-pp-add]'?{}:null;}};api.handle({target:add});
+ const cart=JSON.parse(stored.get('wepCart'));assert.equal(cart.filter(r=>r.sku==='CABLE').length,1);assert.equal(cart.find(r=>r.sku==='CABLE').packageComponent,true);assert.equal(cart.reduce((n,r)=>n+r.itemPrice*r.quantity,0),210);
 });

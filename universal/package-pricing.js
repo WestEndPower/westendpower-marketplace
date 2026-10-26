@@ -9,6 +9,7 @@
  const number=v=>{const n=Number(clean(v).replace(/[$,]/g,''));return Number.isFinite(n)?n:0;};
  const qty=v=>{const n=clean(v)?Number(v):1;return Number.isInteger(n)&&n>0&&n<=99?n:0;};
  const models=new Map(),states=new Map(),contexts=new Map();
+ const Kit=window.WEPKitComponents;
  const signature=parts=>parts.map(p=>key(p.row.SKU)+'*'+p.qty).sort().join('|');
  const addParts=(a,b)=>[...a,...b];
  function packageParts(row,type,rows){
@@ -36,7 +37,8 @@
   if(models.has(f.key))return models.get(f.key);
   const tool=f.variants.find(v=>!v.recommendedPackage&&!/kit|package/i.test(v.type)&&v.price>0);
   if(!tool)return null; // A kit-only SKU cannot be dismantled into an invented bare-tool SKU.
-  const batteries=source.batteries||[],chargers=source.chargers||[],runtime=source.compatibility||[];
+  const inventory=c.DATA.inventoryByBrand?.get(key(f.brand)),visible=r=>!Kit||Kit.visible(r,inventory?.loaded?(inventory.get(key(r.SKU))?.quantity||0):undefined);
+  const batteries=(source.batteries||[]).filter(visible),chargers=(source.chargers||[]).filter(visible),runtime=source.compatibility||[];
   let compat=runtime.filter(r=>(!clean(r.Active)||yes(r.Active))&&!clean(r.AttachmentSKU)&&key(r.ToolSKU)===key(tool.sku));
   if(!compat.length)compat=runtime.filter(r=>(!clean(r.Active)||yes(r.Active))&&!clean(r.AttachmentSKU)&&key(r.Model)&&key(r.Model)===key(tool.model||f.model));
   const packages=[];
@@ -45,9 +47,10 @@
    const variant=f.variants.find(v=>!v.recommendedPackage&&key(v.sku)===key(row.ParentSKU)&&v.price>0);if(!variant)continue;
    const battery=packageParts(row,'Battery',batteries),charger=packageParts(row,'Charger',chargers);
    if(!battery||!charger||(!battery.length&&!charger.length))continue;
-   // Non-energy inclusions are fixed kit contents; changing them requires Build & Buy.
-   if(Object.keys(row).some(h=>/^(Attachment|Accessory|Part)SKU\d+$/i.test(h)&&clean(row[h])))continue;
-   packages.push({variant,battery,charger});
+   const fixed=[];let invalid=false;
+   for(const type of ['Attachment','Accessory','Part']){const parts=packageParts(row,type,source[{Attachment:'attachments',Accessory:'accessories',Part:'parts'}[type]]||[]);if(parts===null){invalid=true;break;}fixed.push(...parts.map(p=>({...p,type:type.toLowerCase()})));}
+   if(invalid)continue;
+   packages.push({variant,battery,charger,fixed});
   }
   packages.sort((a,b)=>a.variant.price-b.variant.price);
   const batteryOptions=options(batteries,'Battery',compat,packages),chargerOptions=options(chargers,'Charger',compat,packages);
@@ -58,7 +61,7 @@
   };
   const complete=packages.filter(p=>p.battery.length&&p.charger.length);
   const promotional=complete.find(p=>c.promoInfo(p.variant)?.savings>0),cheapest=promotional||complete[0];
-  const m={tool,packages,batteryOptions,chargerOptions,defaultPackage:promotional,defaultBattery:cheapest?.battery||recommended('Battery',batteries,batteryOptions),defaultCharger:cheapest?.charger||recommended('Charger',chargers,chargerOptions)};
+  const m={tool,packages,batteryOptions,chargerOptions,source,defaultPackage:promotional,defaultBattery:cheapest?.battery||recommended('Battery',batteries,batteryOptions),defaultCharger:cheapest?.charger||recommended('Charger',chargers,chargerOptions)};
   models.set(f.key,m);return m;
  }
  function state(f,m){
@@ -66,11 +69,14 @@
   return states.get(f.key);
  }
  function configured(m,s,c){
-  const parts=addParts(s.battery.map(p=>({...p,type:'battery'})),s.charger.map(p=>({...p,type:'charger'}))),match=m.packages.find(p=>signature(p.battery)===signature(s.battery)&&signature(p.charger)===signature(s.charger));
+  const energy=addParts(s.battery.map(p=>({...p,type:'battery'})),s.charger.map(p=>({...p,type:'charger'}))),match=m.packages.find(p=>signature(p.battery)===signature(s.battery)&&signature(p.charger)===signature(s.charger));
+  const included=[...energy,...(match?.fixed||[])];let extras=[];
+  try{extras=(Kit?.required({...m.tool.marketplaceRow,SKU:m.tool.sku},s.battery,m.source.requirements||[],m.source)||[]).map(p=>({...p,qty:Math.max(0,p.qty-included.filter(x=>x.type===p.type&&key(x.row.SKU)===key(p.row.SKU)).reduce((n,x)=>n+x.qty,0))})).filter(p=>p.qty>0);}catch(error){return {variant:{...m.tool,price:0},regular:0,price:0,parts:included,kit:false,error:error.message};}
+  const parts=[...included,...extras];
   const priced=parts.every(p=>c.currentPrice(p.row)>0);
   const separate=m.tool.price+parts.reduce((n,p)=>n+c.currentPrice(p.row)*p.qty,0);
   const regular=m.tool.msrp>0&&parts.every(p=>number(p.row.MSRP)>0)?m.tool.msrp+parts.reduce((n,p)=>n+number(p.row.MSRP)*p.qty,0):0;
-  if(match)return {variant:match.variant,regular,price:match.variant.price,parts,kit:true};
+  if(match){const added=extras.reduce((n,p)=>n+c.currentPrice(p.row)*p.qty,0),price=extras.every(p=>c.currentPrice(p.row)>0)?match.variant.price+added:0,variant=extras.length?{...match.variant,recommendedPackage:true,price,packageItems:extras.map(p=>({sku:p.row.SKU,name:p.row.Description,quantity:p.qty,price:c.currentPrice(p.row)}))}:match.variant;return {variant,regular,price,parentPrice:match.variant.price,parts,extras,included,kit:true};}
   const variant={...m.tool,type:'Package',recommendedPackage:true,price:priced?separate:0,msrp:regular,sale:0,rebate:0,packageItems:parts.map(p=>({sku:clean(p.row.SKU),name:clean(p.row.BatteryID||p.row.ChargerID||p.row.Model||p.row.Description),quantity:p.qty,price:c.currentPrice(p.row)}))};
   return {variant,regular,price:priced?separate:0,parts,kit:false};
  }
@@ -82,10 +88,13 @@
  }
  function row(f,m,s,type){
   const field=type.toLowerCase(),choices=m[field+'Options'],selected=s[field];
-  return '<fieldset class="pp-component-row"><legend>'+type+(selected.length?'':': None')+'</legend><div>'+choices.map((parts,i)=>{
-   const active=signature(parts)===signature(selected),disabled=type==='Charger'&&!compatibleCharger(parts,s.battery);
-   return '<button type="button" data-pp-component="'+field+'" data-pp-index="'+i+'" aria-pressed="'+active+'" '+(disabled?'disabled ':'')+'title="'+esc((active?'Click to remove ':'Select ')+optionName(parts,type))+'">'+esc(optionName(parts,type))+'</button>';
-  }).join('')+'</div></fieldset>';
+  const groups=new Map(),seen=new Set(),identity=parts=>parts.map(p=>key(p.row.SKU)).sort().join('|');
+  choices.forEach((parts,i)=>{const id=identity(parts);if(seen.has(id))return;seen.add(id);const group=type==='Battery'&&Kit?Kit.batteryGroup(parts[0].row,f.brand):'Chargers';if(!groups.has(group))groups.set(group,[]);
+   const active=id===identity(selected),disabled=type==='Charger'&&!compatibleCharger(parts,s.battery),label=parts.map(p=>Kit?Kit.shortName(p.row,group):optionName([p],type)).join(' + ');
+   groups.get(group).push('<button type="button" data-pp-component="'+field+'" data-pp-index="'+i+'" aria-pressed="'+active+'" '+(disabled?'disabled ':'')+'title="'+esc((active?'Click to remove ':'Select ')+optionName(parts,type))+'">'+esc(label)+'</button>');
+  });
+  const order=['Batteries','AP / AR Series','PRO AP Series','82BD Series','CORE Series','Chargers'];
+  return [...groups].sort((a,b)=>(order.indexOf(a[0])<0?99:order.indexOf(a[0]))-(order.indexOf(b[0])<0?99:order.indexOf(b[0]))).map(([group,buttons])=>'<div class="pp-component-row"><span class="pp-component-label">'+esc(group)+'</span><div role="group" aria-label="'+esc(group)+'">'+buttons.join('')+'</div></div>').join('');
  }
  function inventory(c,f,v,kind){return '<div class="market-price-inventory">'+c.inventoryMarkup(f,v,kind)+'</div>';}
  function render(f,c){
@@ -96,7 +105,7 @@
    '<button class="pp-price-select" type="button" data-pp-select="tool" aria-pressed="'+(s.choice==='tool')+'"><span>Base Price</span>'+prices(m.tool.msrp,m.tool.price)+'</button></div>'+
    '<div class="pp-box pp-package'+(s.choice==='package'?' pp-selected':'')+'" data-pp-box="package">'+
    '<button class="pp-price-select pp-package-total" type="button" data-pp-select="package" aria-pressed="'+(s.choice==='package')+'"><span>Package Price</span>'+prices(pkg.regular,pkg.price)+'</button>'+
-   row(f,m,s,'Battery')+row(f,m,s,'Charger')+'</div>';
+   row(f,m,s,'Battery')+row(f,m,s,'Charger')+((pkg.parts.some(p=>p.qty>1)||pkg.parts.some(p=>!['battery','charger'].includes(p.type)))?'<small class="pp-package-contents">Includes: '+esc(['battery','charger'].map(type=>{const count=pkg.parts.filter(p=>p.type===type).reduce((n,p)=>n+p.qty,0);return count?count+' '+(type==='battery'?(count===1?'battery':'batteries'):(count===1?'charger':'chargers')):'';}).filter(Boolean).concat(pkg.parts.some(p=>!['battery','charger'].includes(p.type))?['Required items included']:[]).join(' · '))+'</small>':'')+(pkg.error?'<small class="pp-package-contents">'+esc(pkg.error)+'</small>':'')+'</div>';
  }
  function popup(message,opener){
   document.querySelector('.pp-dialog')?.remove();const dialog=document.createElement('dialog');dialog.className='pp-dialog';dialog.setAttribute('aria-label','Choose your purchase option');
@@ -107,13 +116,14 @@
   const selected=c.selectedPriceVariant(f),stock=c.selectedStock(f),q=c.selectedPriceQuantity(f);
   const config=m&&s.choice==='package'?configured(m,s,c):null,v=m?(s.choice==='tool'?m.tool:config.variant):selected;
   if(!(v.price>0))throw Error('Pricing is not available for this selection.');
-  const components=config&&!config.kit?config.parts:[];
+  const components=config?(config.kit?config.extras||[]:config.parts):[];
   const identity=JSON.stringify([key(f.brand),key(v.sku),stock?.selectionId||'',signature(components)]);
   const packageId=key(f.brand)+':'+clean(v.sku)+':card:'+encodeURIComponent(identity);
   const make=(row,type,quantity,price)=>({brandId:key(f.brand),type,sku:clean(row.SKU),quantity,productName:clean(row.Description||row.Model||row.SKU),description:'',itemPrice:price,shipping:null,packageId,equipmentSku:clean(v.sku),inventoryId:type==='tool'?stock?.selectionId||'':'',quoteStockChoice:type==='tool'&&stock?'stock':'orderable',assemblyOption:clean(row.AssemblyOption),assemblyAmount:number(row.AssemblyAmount),setupSelected:clean(row.AssemblyOption).toUpperCase()==='F',setupAmount:clean(row.AssemblyOption).toUpperCase()==='F'?number(row.AssemblyAmount):0,cardConfiguration:true});
   const tool=m&&config&&!config.kit?m.tool:v;
   const toolType=/^batteries$/i.test(f.category)?'battery':/^chargers$/i.test(f.category)?'charger':/^attachments?$/i.test(f.category)?'attachment':/^accessories$/i.test(f.category)?'accessory':/^parts$/i.test(f.category)?'part':'tool';
-  const toolRow=make({...tool.marketplaceRow,SKU:tool.sku,Description:tool.description},toolType,q,tool.price);
+  const toolRow=make({...tool.marketplaceRow,SKU:tool.sku,Description:tool.description},toolType,q,config?.kit?config.parentPrice:tool.price);
+  if(config?.kit&&Kit){try{toolRow.kitComponents=Kit.breakdown({parent:{SKU:tool.sku},tool:{...m.tool.marketplaceRow,SKU:m.tool.sku,Description:m.tool.description},parts:config.included},config.parentPrice,q,{price:c.currentPrice,toolPrice:m.tool.price});}catch(error){toolRow.kitBreakdownIssue=error.message;}}
   if(config)toolRow.description=config.parts.map(p=>optionName([p],p.type==='battery'?'Battery':'Charger')).join(' · ');
   const rows=[toolRow,...components.map(p=>({...make(p.row,p.type,p.qty*q,c.currentPrice(p.row)),packageComponent:true,perToolQuantity:p.qty}))];
   if(rows.some(r=>!Number.isInteger(r.quantity)||r.quantity<1||r.quantity>99))throw Error('Please reduce the quantity before adding this package.');
@@ -134,12 +144,12 @@
   const {f,c}=entry,m=model(f,c),s=m&&state(f,m),component=event.target.closest('[data-pp-component]');
   let select=event.target.closest('[data-pp-select]');const box=event.target.closest('[data-pp-box]');
   if(!select&&box&&!event.target.closest('button,a,.market-inventory-wrap'))select={dataset:{ppSelect:box.dataset.ppBox}};
-  if(component&&m){const field=component.dataset.ppComponent,parts=m[field+'Options'][Number(component.dataset.ppIndex)];if(!parts||component.disabled)return true;s[field]=signature(parts)===signature(s[field])?[]:parts;if(field==='battery'&&!compatibleCharger(s.charger,s.battery))s.charger=[];s.choice='package';apply(f,m,s,c);document.querySelector('.market-card[data-key="'+CSS.escape(f.key)+'"] [data-pp-component="'+field+'"][data-pp-index="'+component.dataset.ppIndex+'"]')?.focus({preventScroll:true});return true;}
+  if(component&&m){const field=component.dataset.ppComponent,parts=m[field+'Options'][Number(component.dataset.ppIndex)];if(!parts||component.disabled)return true;const same=parts.map(p=>key(p.row.SKU)).sort().join('|')===s[field].map(p=>key(p.row.SKU)).sort().join('|');s[field]=same?[]:parts;if(!same){const kit=m.packages.find(p=>p[field].length&&p[field].every(x=>parts.some(y=>key(y.row.SKU)===key(x.row.SKU)))&&(field==='battery'?signature(p.charger)===signature(s.charger):signature(p.battery)===signature(s.battery)));if(kit){s.battery=kit.battery;s.charger=kit.charger;}}if(field==='battery'&&!compatibleCharger(s.charger,s.battery))s.charger=[];s.choice='package';apply(f,m,s,c);document.querySelector('.market-card[data-key="'+CSS.escape(f.key)+'"] [data-pp-component="'+field+'"][data-pp-index="'+component.dataset.ppIndex+'"]')?.focus({preventScroll:true});return true;}
   if(select&&m){s.choice=s.choice===select.dataset.ppSelect?null:select.dataset.ppSelect;apply(f,m,s,c);return true;}
   const check=event.target.closest('[data-pp-inventory]');if(check){
    const dialog=document.createElement('dialog');dialog.className='pp-dialog pp-inventory-dialog';dialog.setAttribute('aria-label','Tool and package inventory');
    const variants=m?[m.tool,...m.packages.map(p=>p.variant)]:f.variants;
-   const parts=m?[...m.batteryOptions.flat(),...m.chargerOptions.flat()]:[];
+   const parts=m?[...m.batteryOptions.flat(),...m.chargerOptions.flat(),...configured(m,s,c).parts]:[];
    const items=[...variants.filter(v=>!v.recommendedPackage).map(v=>({row:{...v.marketplaceRow,SKU:v.sku,Description:v.description},qty:1})),...parts];
    const seen=new Set();
    dialog.innerHTML='<h2>Tool &amp; Package Inventory</h2>'+items.filter(p=>{const id=key(p.row.SKU);if(seen.has(id))return false;seen.add(id);return true;}).map((p,i)=>{const v={sku:p.row.SKU,marketplaceRow:p.row,description:p.row.Description},template=document.createElement('template');template.innerHTML=c.inventoryMarkup(f,v,'component-'+i);return '<section><strong>'+esc(clean(p.row.BatteryID||p.row.ChargerID||p.row.Description||p.row.SKU))+'</strong><small class="pp-inventory-sku">SKU: '+esc(p.row.SKU)+'</small>'+(template.content.querySelector('.market-inventory-popover')?.innerHTML||'Contact us to confirm availability.')+'</section>';}).join('')+'<button type="button">Close</button>';
@@ -156,7 +166,7 @@
   url.searchParams.set('cardOptions','[]');
   const m=model(f,c);if(m){const s=state(f,m),pkg=s.choice==='tool'?null:configured(m,s,c),v=pkg?.variant||m.tool;
    url.searchParams.set('sku',v.sku);url.searchParams.delete('package');
-   url.searchParams.set('cardOptions',JSON.stringify((pkg&&!pkg.kit?pkg.parts:[]).map(p=>({type:p.type,sku:clean(p.row.SKU),quantity:p.qty}))));
+   url.searchParams.set('cardOptions',JSON.stringify((pkg?(pkg.kit?pkg.extras||[]:pkg.parts):[]).map(p=>({type:p.type,sku:clean(p.row.SKU),quantity:p.qty}))));
   }
   return url.href;
  }
