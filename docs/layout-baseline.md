@@ -58,6 +58,12 @@ Change a baseline only when John requests or approves that layout change.
 
 ## Battery series and kit itemization (October 26, 2026)
 
-- Left-align compact series headings beside centered option buttons: AP / AR Series, PRO AP Series, 82BD Series, CORE Series and Chargers. One battery selection spans all battery rows. Empty rows are hidden; wrapping keeps all options visible.
+- Center bold series headings beside equally sized option text: AP / AR Series, PRO AP Series, 82BD Series, CORE Series and Chargers. One battery selection spans all battery rows. Empty rows are hidden; wrapping keeps all options visible.
 - Button labels omit shared series prefixes only in the named row. A short Includes line describes multi-battery/charger quantities or required connection items.
 - Package component quantities are locked to the package SKU. Itemized builder, cart and quote displays retain full names/SKUs. The package total stays authoritative and component splits never introduce additional charges. See battery-series-and-kit-lines.md for allocation and workbook fields.
+
+## Centered price and option rows (October 26, 2026)
+
+- Center Base Unit Price: and Package Price: beside their amounts with matching label/amount font sizes; retain room for a crossed-out regular price when discounted.
+- Center bold battery/charger row headings, use the same 12px size for option names, and let buttons expand when fewer options are present.
+- Keep equal responsive outside insets (up to 48px, approximately half an inch) and wrap larger option groups without hiding choices.
