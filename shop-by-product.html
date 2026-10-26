@@ -705,7 +705,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261026-guide-finance1"><script src="universal/package-components.js?v=20261026-kit-lines1"></script><script src="universal/package-pricing.js?v=20261026-tractor-corrections1"></script><script src="universal/marketplace-card.js?v=20261026-tractor-msrp1"></script></head>
+<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261026-rz-package1"><script src="universal/package-components.js?v=20261026-kit-lines1"></script><script src="universal/package-pricing.js?v=20261026-tractor-corrections1"></script><script src="universal/equipment-package-pricing.js?v=20261026-rz-package1"></script><script src="universal/marketplace-card.js?v=20261026-rz-package1"></script></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -1938,7 +1938,7 @@ root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,
     if(!key || /\|$/.test(key))return '<div class="market-payment-options-only">'+links+'</div>';
     const summary=DATA.financeSummaryCache.get(key);if(!summary)requestMarketplaceFinanceSummary(f);
     if(!summary||summary.none)return '<div class="market-payment-options-only">'+(!summary?'<div role="status" style="text-align:center;padding:5px;font-size:11px">Updating financing…</div>':'')+links+'</div>';
-    return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+'<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+((summary.expirationLabel||(isCompactTractor(f)&&summary.rebateCompatible===false))?'<div class="market-card-finance-note">'+esc(summary.expirationLabel||'')+(isCompactTractor(f)&&summary.rebateCompatible===false?' <span class="market-card-finance-rebate">(In lieu of customer rebate)</span>':'')+'</div>':'')+links+'</div>';
+    return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+'<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+((summary.expirationLabel||((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false))?'<div class="market-card-finance-note">'+esc(summary.expirationLabel||'')+((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false?' <span class="market-card-finance-rebate">(In lieu of customer rebate)</span>':'')+'</div>':'')+links+'</div>';
   }
 
   async function requestMarketplaceFinanceSummary(f){
@@ -1973,7 +1973,8 @@ root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,
         });
         // Public card estimates use published manufacturer prices, not private dealer discounts.
         const publishedPromo=promoInfo(variant),allowsRebate=window.WestEndPayments.programAllowsRebate(program);
-        const publishedUnit=!allowsRebate&&(isCompactTractor(f)||publishedPromo?.type==='rebate')?variant.msrp:variant.price;
+        const configuredPrice=window.WestEndEquipmentPackages?.publishedPrice(f,allowsRebate);
+        const publishedUnit=Number.isFinite(configuredPrice)?configuredPrice:!allowsRebate&&(isCompactTractor(f)||publishedPromo?.type==='rebate')?variant.msrp:variant.price;
         const publishedSelling=Math.max(0,Number(publishedUnit)||0)*quantity;
         const publishedSubtotal=publishedSelling+summary.freight;
         const publishedTax=/^(F|FALSE|N|NO|0)$/i.test(clean(row.Taxable))?0:Math.round((publishedSubtotal*0.0635+Number.EPSILON)*100)/100;
@@ -3569,6 +3570,7 @@ root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,
       if(host)host.style.zIndex=event.target.open?'60':'';
     },true);
     document.addEventListener('click',e=>{
+      if(window.WestEndEquipmentPackages?.handle(e))return;
       if(window.WestEndPackagePricing?.handle(e))return;
       if(handleStockToggle(e))return;
       if(handleCompactSelection(e))return;
