@@ -705,7 +705,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261026-compact-boxes2"><script src="universal/package-components.js?v=20261026-kit-lines1"></script><script src="universal/package-pricing.js?v=20261026-brand-base1"></script><script src="universal/marketplace-card.js?v=20261026-compact-boxes1"></script></head>
+<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261026-tractor-corrections1"><script src="universal/package-components.js?v=20261026-kit-lines1"></script><script src="universal/package-pricing.js?v=20261026-tractor-corrections1"></script><script src="universal/marketplace-card.js?v=20261026-compact-boxes1"></script></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -1657,7 +1657,7 @@ root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,
   }
   function yanmarSelectedVariant(f){
     const candidates=relevantVariants(f);
-    return candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>(isCompactTractor(f)?Number(!compactFlags(a).every((on,i)=>on===(i===0)))-Number(!compactFlags(b).every((on,i)=>on===(i===0)))||Number(compactTire(a)!=='R-4')-Number(compactTire(b)!=='R-4'):0)||(a.workbookSort===b.workbookSort?0:a.workbookSort-b.workbookSort)||Number(a.price)-Number(b.price))[0]||candidates[0]||(f.variants||[])[0]||{};
+    return candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>(isCompactTractor(f)?Number(compactFlags(a).some(Boolean))-Number(compactFlags(b).some(Boolean))||Number(compactTire(a)!=='R-4')-Number(compactTire(b)!=='R-4'):0)||(a.workbookSort===b.workbookSort?0:a.workbookSort-b.workbookSort)||Number(a.price)-Number(b.price))[0]||candidates[0]||(f.variants||[])[0]||{};
   }
   // WEP_COMPACT_CARD_OPTIONS_V1: select complete catalog SKUs, never add guessed option prices.
   function isCompactTractor(f){return /^compact tractors?$/i.test(clean(f.category));}
@@ -1712,7 +1712,7 @@ root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,
   function compactHeaderOptions(f){
     if(!isCompactTractor(f))return '';
     const flags=compactFlags(selectedPriceVariant(f));
-    return '<div class="market-factory-options" style="text-align:center;margin:8px 0"><div class="market-package-row-label">Factory Equipment</div><span role="group" aria-label="Factory-installed options" style="display:inline-flex;gap:4px;justify-content:center;flex-wrap:wrap">'+compactFields.map(([label],i)=>{
+    return '<div class="market-factory-options" style="text-align:center;margin:8px 0"><div class="market-package-row-label">Factory Installed</div><span role="group" aria-label="Factory-installed options" style="display:inline-flex;gap:4px;justify-content:center;flex-wrap:wrap">'+compactFields.map(([label],i)=>{
       const offered=compactVariants(f).some(v=>compactFlags(v)[i]);if(!offered||(selectedStock(f)&&!flags[i]))return '';
       const candidate=compactOptionCandidate(f,i),disabled=!candidate;
       if(!flags[i]&&!candidate)return '';
@@ -1942,7 +1942,7 @@ root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,
     if(!key || /\|$/.test(key))return '<div class="market-payment-options-only">'+links+'</div>';
     const summary=DATA.financeSummaryCache.get(key);if(!summary)requestMarketplaceFinanceSummary(f);
     if(!summary||summary.none)return '<div class="market-payment-options-only">'+(!summary?'<div role="status" style="text-align:center;padding:5px;font-size:11px">Updating financing…</div>':'')+links+'</div>';
-    return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div><div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+(summary.expirationLabel?'<div class="market-card-finance-note">'+esc(summary.expirationLabel)+'</div>':'')+links+'</div>';
+    return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+(isCompactTractor(f)&&summary.rebateCompatible===false?'<div class="market-card-finance-rebate">In lieu of customer rebate</div>':'')+'<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+(summary.expirationLabel?'<div class="market-card-finance-note">'+esc(summary.expirationLabel)+'</div>':'')+links+'</div>';
   }
 
   async function requestMarketplaceFinanceSummary(f){
