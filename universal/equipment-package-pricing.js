@@ -54,7 +54,6 @@
   const compatible=catalog.filter(p=>compatibility(p.row,product));
   const dependencies=new Set(compatible.flatMap(p=>requirementSlots(p.row,product)).map(p=>key(p.sku)));
   const options=compatible.filter(p=>p.type!=='part'&&!dependencies.has(key(p.row.SKU))).sort((a,b)=>num(a.row.SortOrder)-num(b.row.SortOrder)||clean(a.row.Description).localeCompare(clean(b.row.Description)));
-  if(!options.length)return null;
   return {tool,product,catalog,options};
  }
  function state(f){if(!states.has(f.key))states.set(f.key,{selected:new Set()});return states.get(f.key);}
@@ -78,7 +77,7 @@
   const previous=c.selectedPriceVariant(f);
   if(initial||previous.price!==config.variant.price||previous.msrp!==config.variant.msrp||JSON.stringify(previous.packageItems||[])!==JSON.stringify(config.variant.packageItems||[]))c.selectPackageVariant(f,config.variant);
   const selected=s.selected.size>0,rows=['attachment','accessory'].map(type=>{
-   const options=m.options.filter(p=>p.type===type);if(!options.length)return '';
+   const options=m.options.filter(p=>p.type===type).slice(0,4);
    const label=type==='attachment'?'Attach':'Access';
    return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+(type==='attachment'?'Attachments':'Accessories')+'">'+options.map(p=>'<button type="button" data-eqp-option="'+esc(p.row.SKU)+'" aria-pressed="'+s.selected.has(key(p.row.SKU))+'" title="'+esc(p.row.Description)+'">'+esc(shortName(p.row))+'</button>').join('')+'</div></div>';
   }).join('');
