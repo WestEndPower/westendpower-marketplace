@@ -101,3 +101,18 @@ test('tractor card keeps bare tractor identity while a loader configuration is s
  assert.match(html,/SKU: SA325BI<\/span>/);assert.match(html,/title="Yanmar SA325BI Compact Tractor"/);assert.doesNotMatch(html,/SKU: SA325BI-L/);
  assert.equal(c.selectedPriceVariant(f).sku,'SA325BI-L');
 });
+
+test('tractor inventory lists only the selected exact SKU while battery inventory retains its options',()=>{
+ for(const compact of [true,false]){
+  const {window,document,f,c}=fixture(),dialogs=[],seen=[];
+  if(compact){f.category='Compact Tractors';f.power='Diesel';}
+  document.body={append(d){dialogs.push(d);}};
+  document.createElement=tag=>tag==='template'?{content:{querySelector(){return {innerHTML:'Store availability'};}}}:{setAttribute(){},querySelector(){return {};},addEventListener(){},showModal(){}};
+  c.inventoryMarkup=(_,v)=>{seen.push(v.sku);return '';};window.WestEndPackagePricing.actions(f,c);
+  const host={dataset:{key:f.key}},check={focus(){}};
+  const target={closest(s){return s==='.wep-restored-card'?host:s==='[data-pp-inventory]'?check:null;}};
+  window.WestEndPackagePricing.handle({target});
+  if(compact){assert.deepEqual(seen,['KIT']);assert.match(dialogs[0].innerHTML,/Selected Configuration Inventory/);assert.doesNotMatch(dialogs[0].innerHTML,/SKU: TOOL/);}
+  else {assert.ok(seen.includes('TOOL'));assert.ok(seen.includes('KIT'));assert.ok(seen.includes('BAT2'));assert.match(dialogs[0].innerHTML,/Tool &amp; Package Inventory/);}
+ }
+});
