@@ -67,3 +67,8 @@ Change a baseline only when John requests or approves that layout change.
 - Center Base Unit Price: and Package Price: beside their amounts with matching label/amount font sizes; retain room for a crossed-out regular price when discounted.
 - Center bold battery/charger row headings, use the same 12px size for option names, and let buttons expand when fewer options are present.
 - Keep equal responsive outside insets (up to 48px, approximately half an inch) and wrap larger option groups without hiding choices.
+
+## Base-price emphasis and action colors (October 26, 2026)
+
+- Enlarge the centered Base Unit Price label and amount together, targeting roughly two-thirds or more of the box width at typical card sizes. Scale text with its box width and allow sale comparisons to wrap.
+- Use red backgrounds with white text for View Promos, Out-the-Door Price and the cart Add action. Keep the shared scope on shopping cards.
