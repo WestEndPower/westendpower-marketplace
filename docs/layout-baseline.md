@@ -133,3 +133,9 @@ Change a baseline only when John requests or approves that layout change.
 - Preserve selected stock SKUs, stock identifiers, included equipment and checkout pricing. Stock chainsaw bar choices are locked. Generic cart actions retain the established item-type and stock handling.
 - Use three columns on desktop above 1100px, two on smaller landscape/tablet screens, one at 850px and below. Preserve blank specification, warranty and financing spaces so absent data does not collapse a tag. Battery and Yanmar selection mechanics are unchanged.
 - Earlier trial-only scope notes are superseded by this rollout. Generated SEO catalog pages retain their separate toolbar/template until migrated; filtered shopping URLs already use these four rules.
+
+## Compact energy rows and optional finance (October 26, 2026)
+
+- Battery family buttons (AP Series / Pro AP Series, or 82BD / CORE as available) appear above one visible battery-model row. Family clicks only change the displayed choices; existing selected package contents remain until a model is clicked. Single-family tools use a heading or the available series button. Chargers heading sits above its single model row.
+- Never wrap option rows or headings. Use compact button padding, retaining all choices; allow horizontal overflow only when a narrow card cannot fit the complete row.
+- No eligible financing means no finance panel or reserved financing space; retain View All Promotions / Out-the-Door Price. This supersedes the previous reserved empty financing-window rule.

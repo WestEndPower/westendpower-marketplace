@@ -94,7 +94,15 @@
    groups.get(group).push('<button type="button" data-pp-component="'+field+'" data-pp-index="'+i+'" aria-pressed="'+active+'" '+(disabled?'disabled ':'')+'title="'+esc((active?'Click to remove ':'Select ')+optionName(parts,type))+'">'+esc(label)+'</button>');
   });
   const order=['Batteries','AP / AR Series','PRO AP Series','82BD Series','CORE Series','Chargers'];
-  return [...groups].sort((a,b)=>(order.indexOf(a[0])<0?99:order.indexOf(a[0]))-(order.indexOf(b[0])<0?99:order.indexOf(b[0]))).map(([group,buttons])=>'<div class="pp-component-row"><span class="pp-component-label">'+esc(group)+'</span><div role="group" aria-label="'+esc(group)+'">'+buttons.join('')+'</div></div>').join('');
+  const ordered=[...groups].sort((a,b)=>(order.indexOf(a[0])<0?99:order.indexOf(a[0]))-(order.indexOf(b[0])<0?99:order.indexOf(b[0])));
+  if(type==='Charger')return '<div class="pp-energy-row"><strong class="pp-energy-heading">Chargers</strong><div role="group" aria-label="Chargers">'+ordered.flatMap(([,buttons])=>buttons).join('')+'</div></div>';
+  if(!ordered.length)return '';
+  const selectedGroup=selected.length?(Kit?Kit.batteryGroup(selected[0].row,f.brand):'Batteries'):null;
+  if(!groups.has(s.batterySeries))s.batterySeries=groups.has(selectedGroup)?selectedGroup:ordered[0][0];
+  const series=ordered.length>1||ordered[0][0]!=='Batteries';
+  const label=group=>group==='AP / AR Series'?'AP Series':group==='PRO AP Series'?'Pro AP Series':group;
+  return '<div class="pp-energy-row">'+(series?'<div class="pp-series-tabs" role="group" aria-label="Battery series">'+ordered.map(([group])=>'<button type="button" data-pp-series="'+esc(group)+'" aria-pressed="'+(group===s.batterySeries)+'">'+esc(label(group))+'</button>').join('')+'</div>':'<strong class="pp-energy-heading">Batteries</strong>')+'<div role="group" aria-label="Battery models">'+groups.get(s.batterySeries).join('')+'</div></div>';
+
  }
  function inventory(c,f,v,kind){return '<div class="market-price-inventory">'+c.inventoryMarkup(f,v,kind)+'</div>';}
  function render(f,c){
@@ -142,6 +150,8 @@
  function handle(event){
   const host=event.target.closest('.wep-restored-card'),entry=host&&contexts.get(host.dataset.key);if(!entry)return false;
   const {f,c}=entry,m=model(f,c),s=m&&state(f,m),component=event.target.closest('[data-pp-component]');
+  const series=event.target.closest('[data-pp-series]');
+  if(series&&m){s.batterySeries=series.dataset.ppSeries;c.refreshSelectedCard(f);return true;}
   let select=event.target.closest('[data-pp-select]');const box=event.target.closest('[data-pp-box]');
   if(!select&&box&&!event.target.closest('button,a,.market-inventory-wrap'))select={dataset:{ppSelect:box.dataset.ppBox}};
   if(component&&m){const field=component.dataset.ppComponent,parts=m[field+'Options'][Number(component.dataset.ppIndex)];if(!parts||component.disabled)return true;const same=parts.map(p=>key(p.row.SKU)).sort().join('|')===s[field].map(p=>key(p.row.SKU)).sort().join('|');s[field]=same?[]:parts;if(!same){const kit=m.packages.find(p=>p[field].length&&p[field].every(x=>parts.some(y=>key(y.row.SKU)===key(x.row.SKU)))&&(field==='battery'?signature(p.charger)===signature(s.charger):signature(p.battery)===signature(s.battery)));if(kit){s.battery=kit.battery;s.charger=kit.charger;}}if(field==='battery'&&!compatibleCharger(s.charger,s.battery))s.charger=[];s.choice='package';apply(f,m,s,c);document.querySelector('.market-card[data-key="'+CSS.escape(f.key)+'"] [data-pp-component="'+field+'"][data-pp-index="'+component.dataset.ppIndex+'"]')?.focus({preventScroll:true});return true;}

@@ -116,3 +116,18 @@ test('tractor inventory lists only the selected exact SKU while battery inventor
   else {assert.ok(seen.includes('TOOL'));assert.ok(seen.includes('KIT'));assert.ok(seen.includes('BAT2'));assert.match(dialogs[0].innerHTML,/Tool &amp; Package Inventory/);}
  }
 });
+
+test('battery series tabs show one family at a time and preserve package selection until a model is clicked',()=>{
+ const {window,f,c}=fixture(),api=window.WestEndPackagePricing;
+ c.DATA.batteries=[{SKU:'BAT',BatteryID:'AP300S',MSRP:60},{SKU:'PRO',BatteryID:'AP20.1',MSRP:70},{SKU:'PRO2',BatteryID:'AP100.0P',MSRP:80}];
+ c.DATA.compatibility=[{ToolSKU:'TOOL',BatteryID1:'AP300S',BatteryID2:'AP20.1',BatteryID3:'AP100.0P'}];
+ let html=api.render(f,c);assert.match(html,/>AP Series<\/button>/);assert.match(html,/>Pro AP Series<\/button>/);assert.match(html,/>AP300S<\/button>/);assert.doesNotMatch(html,/>20\.1<\/button>/);
+ c.refreshSelectedCard=()=>{html=api.render(f,c);};const before=c.selectedPriceVariant(f).sku;
+ api.handle({target:{closest:s=>s==='.wep-restored-card'?{dataset:{key:f.key}}:s==='[data-pp-series]'?{dataset:{ppSeries:'PRO AP Series'}}:null}});
+ assert.equal(c.selectedPriceVariant(f).sku,before);assert.match(html,/>20\.1<\/button>/);assert.match(html,/>100\.0P<\/button>/);assert.doesNotMatch(html,/>AP300S<\/button>/);assert.match(html,/pp-energy-heading">Chargers/);
+});
+for(const path of ['universal/marketplace.js','shop-by-product.html','shop-by-brand.html'])test(path+': no financing leaves price links without an empty panel',()=>{
+ const src=fs.readFileSync(path,'utf8'),a=src.indexOf('  function cardFinanceMarkup('),b=src.indexOf('\n  }',a)+4,fn=src.slice(a,b).replace('  function cardFinanceMarkup','function cardFinanceMarkup');
+ const result=vm.runInNewContext(fn+';cardFinanceMarkup({brand:"STIHL"},"https://dealer.example/product-options.html")',{financeSummaryKey:()=> 'STIHL|SKU|1',URL,esc:x=>x,DATA:{financeSummaryCache:new Map([['STIHL|SKU|1',{none:true}]])},requestMarketplaceFinanceSummary(){}});
+ assert.match(result,/View All Promotions/);assert.match(result,/Out-the-Door Price/);assert.doesNotMatch(result,/market-card-finance|market-payment-options-only|Updating financing/);
+});
