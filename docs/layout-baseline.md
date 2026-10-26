@@ -71,4 +71,6 @@ Change a baseline only when John requests or approves that layout change.
 ## Base-price emphasis and action colors (October 26, 2026)
 
 - Enlarge the centered Base Unit Price label and amount together, targeting roughly two-thirds or more of the box width at typical card sizes. Scale text with its box width and allow sale comparisons to wrap.
-- Use dark grey backgrounds with white text for View All Promotions and Out-the-Door Price; use burgundy with white text for the cart Add action. Selected battery and charger buttons use light grey with a darker grey selected border. Keep the shared scope on shopping cards.
+- Use dark grey backgrounds with white text for View All Promotions and Out-the-Door Price; match the Save banner red gradient with white text for the cart Add action. Selected battery and charger buttons use light grey with a darker grey selected border. Keep the shared scope on shopping cards.
+
+- Keep Base Unit Price vertical padding compact: 2px at each box edge and no additional button padding, retaining the enlarged centered text.
