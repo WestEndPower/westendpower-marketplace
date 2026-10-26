@@ -281,6 +281,7 @@
 #market-app .wep-restored-card:has(.pp-equipment-base) .market-card-finance-payment,#market-app .wep-restored-card:has(.pp-equipment-base) .market-card-finance-payment strong{font-size:18px;line-height:1.2}
 #market-app .wep-restored-card:has(.pp-equipment-base) .market-card-finance-payment span{font-size:inherit}
 
-/* Keep one visible row per option type, including an empty row when none apply. */
-#market-app .wep-restored-card .pp-equipment-package .pp-component-row>div{flex-wrap:nowrap;min-height:29px}
-#market-app .wep-restored-card .pp-equipment-package .pp-component-row button{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* Full workbook option names remain visible without outside indentation or choice limits. */
+#market-app .wep-restored-card .pp-equipment-package .pp-component-row{margin-inline:0;grid-template-columns:90px minmax(0,1fr)}
+#market-app .wep-restored-card .pp-equipment-package .pp-component-row>div{flex-wrap:wrap;min-height:29px}
+#market-app .wep-restored-card .pp-equipment-package .pp-component-row button{flex:1 1 auto;min-width:0;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
