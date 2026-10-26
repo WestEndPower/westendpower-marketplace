@@ -831,7 +831,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
   function financeSummaryKey(f){
     const variant=marketplaceFinanceVariant(f);
-    return clean(f.brand).toUpperCase()+'|'+skuKey(variant.sku)+'|'+cardSelectionFor(f).index+'|'+selectedPriceQuantity(f)+'|'+(selectedInventoryId(f)===undefined?'AUTO':selectedInventoryId(f)||'ORDER');
+    return clean(f.brand).toUpperCase()+'|'+skuKey(variant.sku)+'|'+cardSelectionFor(f).index+'|'+selectedPriceQuantity(f)+'|'+(selectedInventoryId(f)===undefined?'AUTO':selectedInventoryId(f)||'ORDER')+'|'+JSON.stringify(variant.recommendedPackage?variant.packageItems||[]:[]);
   }
 
   function cardFinanceMarkup(f){
@@ -2845,8 +2845,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
 
   async function loadMarketplaceProducts(){
-    const batteryBrands=new Set(products.filter(row=>/battery/i.test(clean(row.PowerType))).map(row=>clean(row.BrandID).toUpperCase()));
-        const profiles=marketplaceBrandProfiles().filter(profile=>batteryBrands.has(clean(profile.id).toUpperCase()));
+    const profiles=marketplaceBrandProfiles();
 
     const lists=await Promise.all(
       profiles.map(profile=>{

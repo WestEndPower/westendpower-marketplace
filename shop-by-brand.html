@@ -710,7 +710,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-pricing.js?v=20261025-packages2"></script><script src="universal/marketplace-card.js?v=20261025-packages2"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261025-packages2"></head>
+<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-pricing.js?v=20261026-package-resume1"></script><script src="universal/marketplace-card.js?v=20261026-package-resume1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261026-package-resume1"></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -1928,7 +1928,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
 
   function financeSummaryKey(f){
     const variant=marketplaceFinanceVariant(f);
-    return clean(f.brand).toUpperCase()+'|'+skuKey(variant.sku)+'|'+cardSelectionFor(f).index+'|'+selectedPriceQuantity(f)+'|'+(selectedInventoryId(f)===undefined?'AUTO':selectedInventoryId(f)||'ORDER');
+    return clean(f.brand).toUpperCase()+'|'+skuKey(variant.sku)+'|'+cardSelectionFor(f).index+'|'+selectedPriceQuantity(f)+'|'+(selectedInventoryId(f)===undefined?'AUTO':selectedInventoryId(f)||'ORDER')+'|'+JSON.stringify(variant.recommendedPackage?variant.packageItems||[]:[]);
   }
 
   function cardFinanceMarkup(f){
@@ -3958,8 +3958,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
   }
 
   async function loadMarketplaceProducts(){
-    const batteryBrands=new Set(products.filter(row=>/battery/i.test(clean(row.PowerType))).map(row=>clean(row.BrandID).toUpperCase()));
-        const profiles=marketplaceBrandProfiles().filter(profile=>batteryBrands.has(clean(profile.id).toUpperCase()));
+    const profiles=marketplaceBrandProfiles();
 
     const lists=await Promise.all(
       profiles.map(profile=>{
