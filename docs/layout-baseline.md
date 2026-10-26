@@ -86,19 +86,26 @@ Change a baseline only when John requests or approves that layout change.
 ## Equipment defaults (October 26, 2026)
 
 - Battery equipment starts with a complete kit selected (active promotional kit preferred), or the recommended battery and charger when no kit exists. Customers can remove/change components; preserve their choices after initialization.
-- Compact tractors start with the bare tractor and all factory attachments unchecked, preferring R-4 tires where available. Explicit catalog filters still constrain defaults. Other equipment starts with the base unit; bags, mulch kits and other accessories are customer choices.
+- Compact tractors start with loader only and R-4 tires where available. Explicit catalog filters still constrain defaults. Other equipment starts with the base unit; bags, mulch kits and other accessories are customer choices.
 - Keep the bare/base price visible while the package or attachments change. Use a 55%/45% split for image/specs so the image gains about 24px on a typical desktop card, retaining aligned top/bottom edges.
 
 ## Compact tractor box parity (October 26, 2026)
 
-- Compact tractor heading, SKU and product image use the bare tractor matching the selected tires (SA325BI initially), with the bare tractor as the initial purchase selection.
+- Compact tractor description and product image keep the bare-tractor identity (SA325BI for this family), while the SKU follows selected factory options and tires. Loader-only plus R-4 is the initial purchase selection where offered.
 - Show separate Base Price and Package Price boxes using the approved battery card spacing, font sizes, manufacturer base background and selection borders. Package Price is above Factory Installed and Tires rows; the rows use bold left labels, equal insets, expanding buttons and grey selected choices. Preserve the tire guide and stock-unit locks.
 - Clicking the tractor base box removes factory attachments by selecting the exact bare SKU. Option/tire changes and cart/builder links continue using exact selected catalog SKUs. Battery equipment markup, rules and module remain unchanged.
 
 ## Tractor correction details (October 26, 2026)
 
-- Start SA325 on SA325BI without factory attachments. The image rebate follows that exact selected configuration; loader package rebates appear only after a loader configuration is selected.
+- SA325 starts with Loader and R-4 selected. Its description stays Yanmar SA325BI Compact Tractor; its SKU starts at SA325BI-L. The rebate, inventory and builder/cart links follow the selected configuration.
 - Center the manufacturer Base Price text vertically. Use Factory Installed as the row heading. Tractor Inventory lists only the exact selected configuration, preserving store-level availability and locked stock selections. Battery inventory behavior remains unchanged.
 - Use matching 18px tractor APR/term and monthly-payment text. Show (In lieu of customer rebate) after the expiration date only when the selected program's rebateCompatible flag is false.
 
 - Place an underlined blue Guide disclosure immediately beside the Tires label, preserving the tire information popup.
+
+## Tractor MSRP labeling (October 26, 2026)
+
+- Keep the bare-tractor Base Price visible. Label the configured tractor reference amount Package MSRP: and show manufacturer MSRP before rebates or purchase discounts. Actual purchase/payment pricing remains in Out-the-Door Price and promotions.
+- Preserve the fixed description as customers change options or tires; update the header SKU to the exact selected catalog configuration. Battery cards retain Package Price: and their approved behavior and layout.
+
+- Do not show attachment-change messages such as Loader removed. Selection highlights, SKU and prices communicate configuration changes.
