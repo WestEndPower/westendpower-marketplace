@@ -83,5 +83,5 @@ test('Attachments and Accessories show every full name and remain empty when no 
  let html=r.api.render(r.f,r.c);assert.equal((html.match(/class="pp-component-row"/g)||[]).length,2);
  for(let i=0;i<6;i++)assert.ok(html.includes('data-eqp-option="ACCESS-'+i+'"'));
  r.source.attachments=[];r.source.accessories=[];r.source.parts=[];html=r.api.render(r.f,r.c);
- assert.match(html,/>Attachments<\/span><div role="group" aria-label="Attachments"><\/div>/);assert.match(html,/>Accessories<\/span><div role="group" aria-label="Accessories"><\/div>/);assert.match(html,/Package MSRP:/);
+ assert.match(html,/>Attach\.<\/span><div role="group" aria-label="Attachments"><\/div>/);assert.match(html,/>Acces\.<\/span><div role="group" aria-label="Accessories"><\/div>/);assert.match(html,/Package MSRP:/);
 });
