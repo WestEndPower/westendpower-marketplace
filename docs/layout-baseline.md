@@ -47,7 +47,7 @@ Change a baseline only when John requests or approves that layout change.
 
 - Bare-tool heading, SKU and image stay fixed while battery/charger packages change. The image opens ProductURL, falling back to the internal product page.
 - One action row below purchase boxes contains Inventory, Compare, Run Times when applicable, and cart icon + Add. Inventory lists tool, listed kits and compatible component options together.
-- View Promos and Out-the-Door Price sit side by side below any financing offer. Both open the same builder with identical selections/payment options; View Promos opens the top, Out-the-Door Price jumps to the itemized quote. No separate View Details or Build & Buy card button.
+- View All Promotions and Out-the-Door Price sit side by side below any financing offer. Both open the same builder with identical selections/payment options; View All Promotions opens the top, Out-the-Door Price jumps to the itemized quote. No separate View Details or Build & Buy card button.
 - Component options wrap when necessary; do not hide choices in a horizontal scroller.
 
 ## Package price simplification (October 26, 2026)
@@ -71,4 +71,4 @@ Change a baseline only when John requests or approves that layout change.
 ## Base-price emphasis and action colors (October 26, 2026)
 
 - Enlarge the centered Base Unit Price label and amount together, targeting roughly two-thirds or more of the box width at typical card sizes. Scale text with its box width and allow sale comparisons to wrap.
-- Use red backgrounds with white text for View Promos, Out-the-Door Price and the cart Add action. Keep the shared scope on shopping cards.
+- Use dark grey backgrounds with white text for View All Promotions and Out-the-Door Price; use burgundy with white text for the cart Add action. Selected battery and charger buttons use light grey with a darker grey selected border. Keep the shared scope on shopping cards.
