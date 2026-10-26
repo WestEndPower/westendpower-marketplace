@@ -3,7 +3,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 function runtime(file){
  let source=fs.readFileSync(file,'utf8');
  if(file.endsWith('.html')){const start=source.indexOf("(() => {\n  'use strict';\n\n  const DATA");source=source.slice(start,source.indexOf('</script>',start));}
- source=source.slice(0,source.indexOf("  document.addEventListener('DOMContentLoaded',init);"))+"window.test={DATA,loadMarketplaceProducts,financeSummaryKey,selectPackageVariant,selectedPriceVariant,selectCardVariant,compactBaseVariant,compactPriceBoxes,selectCompactVariant,cardFinanceMarkup};})();";
+ source=source.slice(0,source.indexOf("  document.addEventListener('DOMContentLoaded',init);"))+"window.test={DATA,loadMarketplaceProducts,financeSummaryKey,selectPackageVariant,selectedPriceVariant,selectCardVariant,compactBaseVariant,compactPriceBoxes,selectCompactVariant,cardFinanceMarkup,cardSelectionFor};})();";
  const paths=[];const window={WestEndPayments:{},addEventListener(){},WESTEND_BRANDS:{STIHL:{id:'STIHL',dataRoot:'brands/stihl/data/'},YANMAR:{id:'YANMAR',dataRoot:'brands/yanmar/data/'}}};
  vm.runInNewContext(source,{window,URL,document:{querySelector(){return null},querySelectorAll(){return []},addEventListener(){}},fetch:async path=>{paths.push(path);return {ok:true,text:async()=> 'SKU,BrandID,PowerType,Active\n'+(path.includes('yanmar')?'TRACTOR,YANMAR,Diesel,T':'TOOL,STIHL,Battery,T')}}});
  return {...window.test,paths};
@@ -14,12 +14,12 @@ for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-br
 }
 
 for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-brand.html']){
- test(file+': compact starts bare, other equipment starts at base, and customer selection persists',()=>{
+ test(file+': compact starts with loader and R-4, other equipment starts at base, and customer selection persists',()=>{
   const r=runtime(file);
   const variant=(sku,price,flags,type='Tool')=>({sku,price,msrp:price,type,workbookSort:0,marketplaceRow:{'B2-Tires':'R-4','P1-Loader':flags[0]?'T':'F','P2-Backhoe':flags[1]?'T':'F','P3-Mower':flags[2]?'T':'F','P4-Cab':'F'}});
   const base=variant('SA325BI',19999,[]),loader=variant('SA325BI-L',24999,[true]),backhoe=variant('SA325BI-LB',32999,[true,true]);
   const f={key:'SA325',brand:'YANMAR',category:'Compact Tractors',model:'SA325',variants:[base,backhoe,loader]};
-  assert.equal(r.selectedPriceVariant(f).sku,'SA325BI');
+  assert.equal(r.selectedPriceVariant(f).sku,'SA325BI-L');
   r.selectCardVariant(f,2);assert.equal(r.selectedPriceVariant(f).sku,'SA325BI-L');
   r.selectCardVariant(f,0);assert.equal(r.selectedPriceVariant(f).sku,'SA325BI');
   const mower={key:'RZ142',brand:'STIHL',category:'Zero-Turn Mowers',variants:[variant('RZ142-BAG',4200,[],'Package'),variant('RZ142',3500,[])]};
@@ -33,20 +33,21 @@ for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-br
   const variant=(sku,price,loader)=>({sku,price,msrp:price,type:'Tool',workbookSort:0,marketplaceRow:{'B2-Tires':'R-4','P1-Loader':loader?'T':''}});
   const base=variant('SA325BI',19999,false),loader=variant('SA325BI-L',25299,true),f={key:'SA325',brand:'YANMAR',category:'Compact Tractors',model:'SA325',variants:[base,loader]};
   assert.equal(r.compactBaseVariant(f).sku,'SA325BI');
-  assert.equal(r.selectedPriceVariant(f).sku,'SA325BI');
+  assert.equal(r.selectedPriceVariant(f).sku,'SA325BI-L');
   r.selectCompactVariant(f,loader);
   const html=r.compactPriceBoxes(f,r.selectedPriceVariant(f));
   assert.match(html,/pp-box pp-compact-base" data-pp-box="tool"/);
   assert.match(html,/pp-compact-package pp-selected/);
-  assert.ok(html.indexOf('Package Price:')<html.indexOf('Factory Installed'));
+  assert.ok(html.indexOf('Package MSRP:')<html.indexOf('Factory Installed'));
   assert.match(html,/<div class="market-compact-tire-label"><div class="market-package-row-label">Tires<\/div><details/);
   assert.match(html,/aria-label="Tire guide">Guide<\/summary>/);
   assert.match(html,/data-compact-sku="SA325BI" aria-pressed="false"/);
   assert.match(html,/data-compact-sku="SA325BI-L" aria-pressed="true"/);
   assert.match(html,/\$19,999\.00/);assert.match(html,/\$25,299\.00/);
   r.selectCompactVariant(f,base);
+  r.cardSelectionFor(f).compactNote='Loader removed.';
   const bare=r.compactPriceBoxes(f,r.selectedPriceVariant(f));
-  assert.match(bare,/pp-compact-base pp-selected/);assert.doesNotMatch(bare,/pp-compact-package pp-selected/);
+  assert.match(bare,/pp-compact-base pp-selected/);assert.doesNotMatch(bare,/pp-compact-package pp-selected/);assert.doesNotMatch(bare,/Loader removed/);
  });
 }
 
@@ -59,5 +60,17 @@ for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-br
    assert.equal(html.includes('In lieu of customer rebate'),!compatible);
    if(!compatible){assert.ok(html.indexOf('84 Months')<html.indexOf('In lieu'));assert.ok(html.indexOf('$264.36')<html.indexOf('Expires Oct. 31, 2026'));assert.ok(html.indexOf('Expires Oct. 31, 2026')<html.indexOf('(In lieu of customer rebate)'));}
   }
+ });
+}
+
+for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-brand.html']){
+ test(file+': tractor MSRP ignores discounts and fixed identity remains on R-4 while selected tires change',()=>{
+  const r=runtime(file);
+  const v=(sku,tires,loader,msrp)=>({sku,type:'Tool',price:msrp-100,msrp,sale:msrp-100,saleStart:'2020-01-01',saleEnd:'2099-12-31',workbookSort:0,marketplaceRow:{'B2-Tires':tires,'P1-Loader':loader?'T':''}});
+  const base=v('SA325BI','R-4',false,19999),turf=v('SA325BT','R-3',false,19999),loader=v('SA325BI-L','R-4',true,25299),turfLoader=v('SA325BT-L','R-3',true,25299),f={key:'SA325-tires',brand:'YANMAR',category:'Compact Tractors',model:'SA325',variants:[turf,base,turfLoader,loader]};
+  assert.equal(r.selectedPriceVariant(f).sku,'SA325BI-L');r.selectCompactVariant(f,turfLoader);
+  assert.equal(r.compactBaseVariant(f,turfLoader).sku,'SA325BT');assert.equal(r.compactBaseVariant(f,turfLoader,true).sku,'SA325BI');
+  const html=r.compactPriceBoxes(f,turfLoader),pkg=html.slice(html.indexOf('pp-compact-package'));
+  assert.match(pkg,/Package MSRP:/);assert.match(pkg,/\$25,299\.00/);assert.doesNotMatch(pkg,/\$25,199\.00/);assert.doesNotMatch(pkg,/<del>/);
  });
 }
