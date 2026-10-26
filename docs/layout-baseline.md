@@ -88,3 +88,9 @@ Change a baseline only when John requests or approves that layout change.
 - Battery equipment starts with a complete kit selected (active promotional kit preferred), or the recommended battery and charger when no kit exists. Customers can remove/change components; preserve their choices after initialization.
 - Compact tractors start with a loader-only configuration, preferring R-4 tires where available. Explicit catalog filters still constrain defaults. Other equipment starts with the base unit; bags, mulch kits and other accessories are customer choices.
 - Keep the bare/base price visible while the package or attachments change. Use a 55%/45% split for image/specs so the image gains about 24px on a typical desktop card, retaining aligned top/bottom edges.
+
+## Compact tractor box parity (October 26, 2026)
+
+- Compact tractor heading, SKU and product image use the bare tractor matching the selected tires (SA325BI initially), while loader-only remains the initial purchase selection.
+- Show separate Base Price and Package Price boxes using the approved battery card spacing, font sizes, manufacturer base background and selection borders. Package Price is above Factory Equipment and Tires rows; the rows use bold left labels, equal insets, expanding buttons and grey selected choices. Preserve the tire guide and stock-unit locks.
+- Clicking the tractor base box removes factory attachments by selecting the exact bare SKU. Option/tire changes and cart/builder links continue using exact selected catalog SKUs. Battery equipment markup, rules and module remain unchanged.
