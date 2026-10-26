@@ -91,10 +91,10 @@
   contexts.set(f.key,{f,c});const m=model(f,c);if(!m)return null;
   const s=state(f,m),pkg=configured(m,s,c);
   return '<div class="pp-box'+(s.choice==='tool'?' pp-selected':'')+'" data-pp-box="tool">'+
-   '<button class="pp-price-select" type="button" data-pp-select="tool" aria-pressed="'+(s.choice==='tool')+'"><span>Unit <small>'+(m.tool.msrp>m.tool.price+.005?'MSRP / Sale':'MSRP')+'</small></span>'+prices(m.tool.msrp,m.tool.price)+'</button>'+inventory(c,f,m.tool,'tool-only')+'</div>'+
+   '<button class="pp-price-select" type="button" data-pp-select="tool" aria-pressed="'+(s.choice==='tool')+'"><span>Unit <small>'+(m.tool.msrp>m.tool.price+.005?'MSRP / Sale':'MSRP')+'</small></span>'+prices(m.tool.msrp,m.tool.price)+'</button></div>'+
    '<div class="pp-box pp-package'+(s.choice==='package'?' pp-selected':'')+'" data-pp-box="package">'+
    '<button class="pp-price-select pp-package-total" type="button" data-pp-select="package" aria-pressed="'+(s.choice==='package')+'"><span>Package Price <small>'+((pkg.regular>pkg.price+.005?'MSRP / Sale':pkg.kit?'Kit MSRP':'Combined MSRP'))+'</small></span>'+prices(pkg.regular,pkg.price)+'</button>'+
-   (pkg.savings>.005?'<small class="market-package-savings pp-savings">Package savings '+money(pkg.savings)+'</small>':'')+row(f,m,s,'Battery')+row(f,m,s,'Charger')+(pkg.kit?inventory(c,f,pkg.variant,'selected-package'):'<div class="market-price-inventory"><button type="button" class="market-inventory-button" data-pp-package-inventory>Check Inventory</button></div>')+'</div>';
+   (pkg.savings>.005?'<small class="market-package-savings pp-savings">Package savings '+money(pkg.savings)+'</small>':'')+row(f,m,s,'Battery')+row(f,m,s,'Charger')+'</div>';
  }
  function popup(message,opener){
   document.querySelector('.pp-dialog')?.remove();const dialog=document.createElement('dialog');dialog.className='pp-dialog';dialog.setAttribute('aria-label','Choose your purchase option');
@@ -134,22 +134,35 @@
   if(!select&&box&&!event.target.closest('button,a,.market-inventory-wrap'))select={dataset:{ppSelect:box.dataset.ppBox}};
   if(component&&m){const field=component.dataset.ppComponent,parts=m[field+'Options'][Number(component.dataset.ppIndex)];if(!parts||component.disabled)return true;s[field]=signature(parts)===signature(s[field])?[]:parts;if(field==='battery'&&!compatibleCharger(s.charger,s.battery))s.charger=[];s.choice='package';apply(f,m,s,c);document.querySelector('.market-card[data-key="'+CSS.escape(f.key)+'"] [data-pp-component="'+field+'"][data-pp-index="'+component.dataset.ppIndex+'"]')?.focus({preventScroll:true});return true;}
   if(select&&m){s.choice=s.choice===select.dataset.ppSelect?null:select.dataset.ppSelect;apply(f,m,s,c);return true;}
-  const check=event.target.closest('[data-pp-package-inventory]');if(check&&m){
-   const pkg=configured(m,s,c),dialog=document.createElement('dialog');dialog.className='pp-dialog pp-inventory-dialog';dialog.setAttribute('aria-label','Selected package inventory');
-   const items=[{row:{...m.tool.marketplaceRow,SKU:m.tool.sku,Description:m.tool.description},qty:1},...pkg.parts];
-   dialog.innerHTML='<h2>Selected Package Inventory</h2>'+items.map((p,i)=>{const v={sku:p.row.SKU,marketplaceRow:p.row,description:p.row.Description},template=document.createElement('template');template.innerHTML=c.inventoryMarkup(f,v,'component-'+i);return '<section><strong>'+esc((p.qty>1?p.qty+' × ':'')+clean(p.row.BatteryID||p.row.ChargerID||p.row.Description||p.row.SKU))+'</strong>'+(template.content.querySelector('.market-inventory-popover')?.innerHTML||'Contact us to confirm availability.')+'</section>';}).join('')+'<button type="button">Close</button>';
+  const check=event.target.closest('[data-pp-inventory]');if(check){
+   const dialog=document.createElement('dialog');dialog.className='pp-dialog pp-inventory-dialog';dialog.setAttribute('aria-label','Tool and package inventory');
+   const variants=m?[m.tool,...m.packages.map(p=>p.variant)]:f.variants;
+   const parts=m?[...m.batteryOptions.flat(),...m.chargerOptions.flat()]:[];
+   const items=[...variants.filter(v=>!v.recommendedPackage).map(v=>({row:{...v.marketplaceRow,SKU:v.sku,Description:v.description},qty:1})),...parts];
+   const seen=new Set();
+   dialog.innerHTML='<h2>Tool &amp; Package Inventory</h2>'+items.filter(p=>{const id=key(p.row.SKU);if(seen.has(id))return false;seen.add(id);return true;}).map((p,i)=>{const v={sku:p.row.SKU,marketplaceRow:p.row,description:p.row.Description},template=document.createElement('template');template.innerHTML=c.inventoryMarkup(f,v,'component-'+i);return '<section><strong>'+esc(clean(p.row.BatteryID||p.row.ChargerID||p.row.Description||p.row.SKU))+'</strong><small class="pp-inventory-sku">SKU: '+esc(p.row.SKU)+'</small>'+(template.content.querySelector('.market-inventory-popover')?.innerHTML||'Contact us to confirm availability.')+'</section>';}).join('')+'<button type="button">Close</button>';
    document.body.append(dialog);dialog.querySelector('button').onclick=()=>dialog.close();dialog.addEventListener('close',()=>{dialog.remove();check.focus();},{once:true});dialog.showModal();return true;
   }
   const addButton=event.target.closest('[data-pp-add]');if(addButton){add(f,c,m,s,addButton);return true;}
   const build=event.target.closest('[data-pp-build]');if(build&&m){event.preventDefault();if(add(f,c,m,s,build,false))location.assign('checkout.html'+(new URLSearchParams(location.search).get('api')==='local'?'?api=local':''));return true;}
   return false;
  }
- function actions(f,c){contexts.set(f.key,{f,c});return '<button class="pp-add-cart" type="button" data-pp-add>Add to Cart</button><span class="pp-cart-status" role="status" aria-live="polite"></span>';}
+ function actions(f,c){contexts.set(f.key,{f,c});return '<button class="pp-add-cart" type="button" data-pp-add title="Add selected tool or package to cart" aria-label="Add selected tool or package to cart"><span aria-hidden="true">🛒</span> Add</button>';}
+ function tool(f,c){return model(f,c)?.tool||c.selectedPriceVariant(f);}
+ function buildUrl(f,c){
+  const url=new URL(c.paymentSelectionUrl(f));url.pathname=url.pathname.replace(/payment-options(?:\.html)?\/?$/,'product-options.html');url.hash='';
+  url.searchParams.set('cardOptions','[]');
+  const m=model(f,c);if(m){const s=state(f,m),pkg=s.choice==='tool'?null:configured(m,s,c),v=pkg?.variant||m.tool;
+   url.searchParams.set('sku',v.sku);url.searchParams.delete('package');
+   url.searchParams.set('cardOptions',JSON.stringify((pkg&&!pkg.kit?pkg.parts:[]).map(p=>({type:p.type,sku:clean(p.row.SKU),quantity:p.qty}))));
+  }
+  return url.href;
+ }
  function warranty(row){
   const residential=clean(row.WarrantyResidentialUse||row.WarrantyResidential),commercial=clean(row.WarrantyCommercialUse||row.WarrantyCommercial),general=clean(row.Warranty||row.WarrantyText);
   const text=[residential&&(residential+(/residential/i.test(residential)?'':' · Residential')),commercial&&(commercial+(/commercial|professional/i.test(commercial)?'':' · Commercial'))].filter(Boolean).join(' | ')||general;if(!text)return '';
   let url='';try{const parsed=new URL(clean(row.WarrantyURL||row.WarrantyStatementURL||row.ManufacturerWarrantyURL));if(['http:','https:'].includes(parsed.protocol))url=parsed.href;}catch{}
   return '<div class="market-card-warranty">'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">':'<span>')+esc(text)+(url?'</a>':'</span>')+'</div>';
  }
- window.WestEndPackagePricing={render,actions,handle,warranty};
+ window.WestEndPackagePricing={render,actions,handle,warranty,tool,buildUrl};
 })();

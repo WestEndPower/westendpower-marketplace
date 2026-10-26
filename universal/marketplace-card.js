@@ -18,11 +18,12 @@
  function render(f,context){
   const {selectedPriceVariant,priceChoices,pricePanel,selectedStock,stockHeaderMarkup,sawHeaderBars,cardFinanceMarkup,paymentSelectionUrl,state}=context;
   const packageMarkup=window.WestEndPackagePricing?.render(f,context)??null;
-  const v=selectedPriceVariant(f),heading=clean(v.description)||clean(f.model)||clean(v.sku);
-  const product='product.html?'+new URLSearchParams({brand:f.brand,sku:v.sku||''});
-  const build=new URL(paymentSelectionUrl(f));build.pathname=build.pathname.replace(/payment-options(?:\.html)?\/?$/,'product-options.html');
+  const v=selectedPriceVariant(f),tool=window.WestEndPackagePricing?.tool(f,context)||v,heading=clean(tool.description)||clean(f.model)||clean(tool.sku);
+  let product='product.html?'+new URLSearchParams({brand:f.brand,sku:tool.sku||''});
+  try{const url=new URL(clean(tool.marketplaceRow?.ProductURL||tool.productUrl||f.productUrl));if(['http:','https:'].includes(url.protocol))product=url.href;}catch{}
+  const build=new URL(window.WestEndPackagePricing?.buildUrl(f,context)||paymentSelectionUrl(f));build.pathname=build.pathname.replace(/payment-options(?:\.html)?\/?$/,'product-options.html');
   const runtime=new URL(build);runtime.searchParams.set('view','runtime');
-  const image=clean(v.marketplaceRow?.ImageURL)||f.image;
+  const image=clean(tool.marketplaceRow?.ImageURL)||f.image;
   const packageSelected=/kit|package/i.test(v.type);
   const choices=selectedStock(f)?[{label:packageSelected?'Package:':'MSRP:',v,variants:[v],isPackage:packageSelected}]:priceChoices(f);
   const specs=Object.entries(Object.values(v.specs||{}).some(clean)?v.specs:f.specs||{}).filter(([,value])=>clean(value));
@@ -32,20 +33,18 @@
    if(!window.WEPBuildBuy&&!document.querySelector('script[src*="build-buy-tools.js"]')){const script=document.createElement('script');script.src='universal/build-buy-tools.js';document.head.append(script);}
   }
   return '<article class="market-card wep-blended-card wep-restored-card" data-key="'+escape(f.key)+'">'+
-   '<header class="market-card-head"><h3><strong class="market-card-title" title="'+escape(heading)+'">'+escape(heading)+'</strong><div class="wep-card-sku"><span>SKU: '+escape(v.sku)+sawHeaderBars(f)+'</span>'+stockHeaderMarkup(f)+'</div></h3></header>'+
+   '<header class="market-card-head"><h3><strong class="market-card-title" title="'+escape(heading)+'">'+escape(heading)+'</strong><div class="wep-card-sku"><span>SKU: '+escape(tool.sku)+sawHeaderBars(f)+'</span>'+stockHeaderMarkup(f)+'</div></h3></header>'+
    '<div class="market-card-body"><div class="market-card-overview"><section class="market-card-left">'+
-    '<div class="market-image-wrap">'+banner(v,context)+'<a class="market-image" href="'+escape(product)+'">'+(image?'<img src="'+escape(image)+'" alt="'+escape(heading)+'" loading="lazy">':'<span>Image Coming Soon</span>')+'</a></div>'+
+    '<div class="market-image-wrap">'+banner(v,context)+'<a class="market-image" href="'+escape(product)+'" target="_blank" rel="noopener noreferrer" title="View product details" aria-label="View product details for '+escape(heading)+'">'+(image?'<img src="'+escape(image)+'" alt="'+escape(heading)+'" loading="lazy">':'<span>Image Coming Soon</span>')+'</a></div>'+
    '</section>'+
    (specs.length?'<dl class="market-specs market-card-side-specs" tabindex="0" aria-label="Product specifications">'+specs.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+escape(value)+'</dd></div>').join('')+'</dl>':'')+
-   '</div><section class="market-buy">'+
-    '<div class="market-price-lines">'+(packageMarkup??choices.map(choice=>pricePanel(choice.label,choice.v,choice.isPackage,f,choice.variants)).join(''))+'</div>'+
-    '<div class="market-detail-actions"><a class="market-product-details" href="'+escape(product)+'">View Details</a><label class="market-product-details market-compare-detail"><input type="checkbox" data-compare="'+escape(f.key)+'" '+(state.compare.has(f.key)?'checked':'')+'> <span>Compare</span></label></div>'+
-    cardFinanceMarkup(f)+
-    (battery?'<div class="market-actions"><a href="'+escape(runtime.href)+'" data-wep-runtime-brand="'+escape(f.brand)+'" data-wep-runtime-sku="'+escape(v.sku)+'">Run &amp; Charge Times</a></div>':'')+
+   '</div>'+(window.WestEndPackagePricing?.warranty(tool.marketplaceRow||{})||'')+'<section class="market-buy">'+
+    '<div class="market-price-lines">'+(packageMarkup??choices.map(choice=>pricePanel(choice.label,choice.v,choice.isPackage,f,choice.variants,true)).join(''))+'</div>'+
+    '<div class="market-card-action-row"><button type="button" class="market-inventory-button" data-pp-inventory title="Check tool and package inventory"><span aria-hidden="true">✓</span> Inventory</button><label class="market-compare-detail" title="Compare this product"><input type="checkbox" data-compare="'+escape(f.key)+'" '+(state.compare.has(f.key)?'checked':'')+'> <span>Compare</span></label>'+
+    (battery?'<a href="'+escape(runtime.href)+'" title="View run and charge times" data-wep-runtime-brand="'+escape(f.brand)+'" data-wep-runtime-sku="'+escape(tool.sku)+'">Run Times</a>':'')+
     (window.WestEndPackagePricing?.actions(f,context)||'')+
-    '<a '+(packageMarkup!==null?'data-pp-build ':'')+'class="market-product-page-link wep-card-build" href="'+escape(build.href)+'">Build &amp; Buy ↗</a><p class="wep-card-build-note">Configure your equipment and review current pricing.</p>'+
-   '</section></div>'+
-   (window.WestEndPackagePricing?.warranty(v.marketplaceRow||{})||'')+'</article>';
+    '</div><span class="pp-cart-status" role="status" aria-live="polite"></span>'+cardFinanceMarkup(f,build.href)+
+   '</section></div></article>';
  }
  window.WestEndMarketplaceCard={render,expiration};
 })();

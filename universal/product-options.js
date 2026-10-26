@@ -515,6 +515,7 @@ function wireSummary(basePrice){
     if(check&&!check.disabled){if(row.autoRequiredComponent===true)check.dataset.wepAutoRequired='true';check.checked=true;document.querySelector('[data-qty="'+CSS.escape(row.sku)+'"]').value=row.quantity;const choice=setupChoice(row.type,row.sku);restoreOptionInstallation(choice,row,Number(check.dataset.setup||0));}
    });
   }catch(e){$('options-message').textContent='Your saved cart could not be restored. Review your selections.';}
+  restoreCardSelection(checks);
   $('equipment-qty').addEventListener('input',recalc);
   $('save-options').textContent='Add to Cart';
   $('review-package').addEventListener('click',()=>{try{reviewPackage(packageSpec());}catch(e){$('options-message').textContent=e.message;}});
@@ -551,6 +552,27 @@ function wireSummary(basePrice){
   $('save-options').textContent='Options Saved';
  });
  recalc();
+}
+
+// Card links carry component identities only. Current workbook rows supply all prices.
+function restoreCardSelection(checks){
+ if(!qs.has('cardOptions'))return;
+ try{
+  const parts=JSON.parse(qs.get('cardOptions')),quantity=Number(qs.get('quantity')||1);
+  if(!Array.isArray(parts)||parts.length>30||!Number.isInteger(quantity)||quantity<1||quantity>20)throw Error('Invalid card selection.');
+  const seen=new Set(),items=[{type:'tool',sku,quantity,setupSelected:mainSetupSelected()}];
+  for(const part of parts){
+   if(!['battery','charger'].includes(part.type)||!Number.isInteger(part.quantity)||part.quantity<1||part.quantity*quantity>20)throw Error('Invalid component quantity.');
+   const check=checks.find(c=>c.dataset.type===part.type&&c.dataset.sku===part.sku&&!c.disabled),id=part.type+':'+part.sku;
+   if(!check||seen.has(id))throw Error('A selected component is no longer available for this tool.');seen.add(id);
+   items.push({type:part.type,sku:part.sku,quantity:part.quantity*quantity,setupSelected:optionSetupSelected(check)});
+  }
+  sessionStorage.setItem('wepBuildDraft:'+selectedBrand.toUpperCase()+':'+sku,JSON.stringify({brandId:selectedBrand.toUpperCase(),sku,items,paymentConfirmed:false,updated:Date.now()}));
+  $('equipment-qty').value=quantity;
+  checks.forEach(check=>{const item=items.find(p=>p.type===check.dataset.type&&p.sku===check.dataset.sku);check.checked=!!item;if(item)document.querySelector('[data-qty="'+CSS.escape(item.sku)+'"]').value=item.quantity;});
+  // Consume the entry selection so a reload or factory-option change keeps later edits.
+  const url=new URL(location.href);url.searchParams.delete('cardOptions');url.searchParams.delete('quantity');history.replaceState(history.state,'',url.href);
+ }catch(error){$('options-message').textContent='Your card selection could not be restored. Please review the options: '+error.message;}
 }
 // Category photos from Yanmar public attachment pages; workbook ImageURL takes precedence.
 const implementCategoryImages={"Box Blades":"brands/yanmar/images/implements/box-blades.jpg","Grader Blades":"brands/yanmar/images/implements/grader-blades.jpg","Land Graders":"brands/yanmar/images/implements/land-graders.jpg","Landscape Rakes":"brands/yanmar/images/implements/landscape-rakes.jpg","Rotary Cutters":"brands/yanmar/images/implements/rotary-cutters.jpg","Rotary Tillers":"brands/yanmar/images/implements/rotary-tillers.jpg","Disc Harrows":"brands/yanmar/images/implements/disc-harrows.jpg","Cultivators":"brands/yanmar/images/implements/cultivators.jpg","Subsoilers":"brands/yanmar/images/implements/subsoilers.jpg","Spreaders":"brands/yanmar/images/implements/spreaders.jpg","Bed Shapers":"brands/yanmar/images/implements/bed-shapers.jpg","Disc Mowers":"brands/yanmar/images/implements/disc-mowers.jpg","Hay Balers":"brands/yanmar/images/implements/hay-balers.jpg","Hay Rakes":"brands/yanmar/images/implements/hay-rakes.jpg"};
@@ -686,6 +708,7 @@ async function init(){
    '<section id="wep-itemized-quote" class="section wep-package-review" tabindex="-1" aria-labelledby="wep-itemized-title"><div class="wep-itemized-heading"><div><div class="eyebrow">Your selected equipment &amp; options</div><h2 id="wep-itemized-title">Your Itemized Quote</h2></div><span class="wep-itemized-badge">Updates with your selections</span></div><div id="wep-package-lines" aria-live="polite"></div></section><div class="summary wep-compact-actions" aria-label="Package subtotal and actions"><div class="wep-summary-hidden"><span id="selected-count"></span><span id="selected-merchandise"></span><span id="selected-setup"></span></div><div class="wep-subtotal">Cart subtotal: <strong id="wep-cart-subtotal">$0.00</strong><small>Saved items</small></div><div class="summary-actions"><button id="save-options" type="button">Save Options</button>'+(quoteEnabled()?'<button id="review-package" type="button">Review Quote</button><a class="back" href="cart.html">View Cart</a>':'')+'<button id="wep-print-build" type="button">Print</button></div></div><p id="options-message" role="status"></p><p class="note">Prices and availability are subject to change. Totals reflect your selected equipment, options, payment method and delivery choice. Financing is subject to credit approval. Availability is confirmed before order acceptance. Pricing errors are subject to correction.</p>';
   wireSummary(base);
   wireBuildPage();
+  if(location.hash==='#wep-itemized-quote')requestAnimationFrame(()=>requestAnimationFrame(()=>{$('wep-itemized-quote')?.scrollIntoView({block:'start'});}));
   if(!implementBrowser&&window.WEPFactoryOptions){
    WEPFactoryOptions.mount({products,product,brand:selectedBrand,onChange:next=>{
     const snapshot=window.WEPBuildConfiguration?.snapshot();
