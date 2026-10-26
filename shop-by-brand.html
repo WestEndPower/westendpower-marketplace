@@ -710,7 +710,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-kit-lines1"></script><script src="universal/package-pricing.js?v=20261026-tractor-corrections1"></script><script src="universal/equipment-package-pricing.js?v=20261026-saw-bars1"></script><script src="universal/marketplace-card.js?v=20261026-saw-bars1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261026-bar-center1"></head>
+<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-kit-lines1"></script><script src="universal/package-pricing.js?v=20261026-tractor-corrections1"></script><script src="universal/equipment-package-pricing.js?v=20261026-four-rules1"></script><script src="universal/marketplace-card.js?v=20261026-four-rules1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261026-four-rules1"></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -1656,7 +1656,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     return candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>(isCompactTractor(f)?Number(!compactFlags(a).every((on,i)=>on===(i===0)))-Number(!compactFlags(b).every((on,i)=>on===(i===0)))||Number(compactTire(a)!=='R-4')-Number(compactTire(b)!=='R-4'):0)||(a.workbookSort===b.workbookSort?0:a.workbookSort-b.workbookSort)||Number(a.price)-Number(b.price))[0]||candidates[0]||(f.variants||[])[0]||{};
   }
   // WEP_COMPACT_CARD_OPTIONS_V1: select complete catalog SKUs, never add guessed option prices.
-  function isCompactTractor(f){return /^compact tractors?$/i.test(clean(f.category));}
+  function isCompactTractor(f){return clean(f.brand).toUpperCase()==='YANMAR'&&/^compact tractors?$/i.test(clean(f.category));}
   const compactFields=[['Loader','P1-Loader'],['Backhoe','P2-Backhoe'],['Mower','P3-Mower'],['Cab','P4-Cab']];
   const compactTires=[['R-1','Ag','Agricultural'],['R-3','Turf','Turf'],['R-4','Industrial','Industrial'],['Hybrid','Hybrid','Hybrid']];
   function compactVariants(f){
