@@ -123,3 +123,5 @@ Change a baseline only when John requests or approves that layout change.
 - Keep the approved purchase-box format and two option rows. For this model, replace Attach/Access with Std. Bar and Light Bar. Show only published active sizes, once per size in each row; leave absent choices empty. No safety/arborist chain selector yet.
 - For duplicate sizes within a bar type, use the first active exact SKU by workbook SortOrder. Never merge SKU prices. Selected size updates the exact SKU, description, price, inventory, promotions, financing and builder/cart links. Fixed stock selections retain their existing flow.
 - Preserve the battery and Yanmar compact modules, grid and card sizing. Missing data must retain its allotted space; no global rollout is included in this trial.
+
+- Bar-size buttons stay only slightly wider than their labels (8px horizontal padding). Center each whole label/options line within the package box; additional choices stay compact and centered, wrapping centrally only when needed.
