@@ -559,7 +559,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     return candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>(isCompactTractor(f)?Number(!compactFlags(a).every((on,i)=>on===(i===0)))-Number(!compactFlags(b).every((on,i)=>on===(i===0)))||Number(compactTire(a)!=='R-4')-Number(compactTire(b)!=='R-4'):0)||(a.workbookSort===b.workbookSort?0:a.workbookSort-b.workbookSort)||Number(a.price)-Number(b.price))[0]||candidates[0]||(f.variants||[])[0]||{};
   }
   // WEP_COMPACT_CARD_OPTIONS_V1: select complete catalog SKUs, never add guessed option prices.
-  function isCompactTractor(f){return /^compact tractors?$/i.test(clean(f.category));}
+  function isCompactTractor(f){return clean(f.brand).toUpperCase()==='YANMAR'&&/^compact tractors?$/i.test(clean(f.category));}
   const compactFields=[['Loader','P1-Loader'],['Backhoe','P2-Backhoe'],['Mower','P3-Mower'],['Cab','P4-Cab']];
   const compactTires=[['R-1','Ag','Agricultural'],['R-3','Turf','Turf'],['R-4','Industrial','Industrial'],['Hybrid','Hybrid','Hybrid']];
   function compactVariants(f){

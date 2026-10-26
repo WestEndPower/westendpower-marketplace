@@ -1,4 +1,4 @@
-/* Workbook-backed attachment packages. The first card enabled is STIHL RZ142. */
+/* Shared standard-equipment and chainsaw price tags; battery and Yanmar compact tags retain their own rules. */
 (() => {
  'use strict';
  const clean=v=>String(v??'').trim(),key=v=>clean(v).toUpperCase().replace(/[^A-Z0-9]/g,''),yes=v=>/^(T|TRUE|Y|YES|1|X)$/i.test(clean(v));
@@ -41,23 +41,24 @@
   return text;
  }
  function model(f,c){
-  const saw=key(f.model)==='MS362CM'&&/^chainsaws?$/i.test(clean(f.category));
-  if(key(f.brand)!=='STIHL'||(!/^RZ142(?:0)?$/.test(key(f.model))&&!saw)||/battery/i.test(f.power)||c.selectedStock(f))return null;
+  if((/battery/i.test(f.power)&&!c.emptyBattery)||(key(f.brand)==='YANMAR'&&/^compact tractors?$/i.test(clean(f.category))))return null;
+  const saw=!c.emptyBattery&&/^chainsaws?$/i.test(clean(f.category)),stock=c.selectedStock(f),current=c.selectedPriceVariant(f);
+  if(!clean(current.sku))return null;
   if(saw){
    const bars=[],seen=new Set();
    for(const v of [...f.variants].sort((a,b)=>num(a.marketplaceRow?.SortOrder)-num(b.marketplaceRow?.SortOrder))){
     if(v.recommendedPackage||/kit|package/i.test(v.type)||!usable({...v.marketplaceRow,SKU:v.sku}))continue;
     const match=clean(v.description).match(/(\d+(?:\.\d+)?)\s*["\u2033\u201d]/);if(!match)continue;
-    const size=Number(match[1]),light=/light\s*(?:weight\s*)?bar/i.test(clean(v.description)),id=(light?'light':'standard')+size;
+    const size=Number(match[1]),light=/\blight(?:weight)?\b/i.test(clean(v.description)),id=(light?'light':'standard')+size;
     if(seen.has(id))continue;seen.add(id);bars.push({variant:v,size,light});
    }
-   if(!bars.length)return null;
-   const chosen=bars.find(b=>b.variant.sku===states.get(f.key)?.barSku)||bars.find(b=>b.variant.sku===c.selectedPriceVariant(f).sku)||bars[0];
-   const tool={...chosen.variant,chainsawBarTrial:true,marketplaceRow:{...chosen.variant.marketplaceRow}};
-   return {tool,product:tool.marketplaceRow,catalog:[],options:[],bars};
+   const chosen=stock?current:(bars.find(b=>b.variant.sku===states.get(f.key)?.barSku)||bars.find(b=>b.variant.sku===current.sku)||bars[0])?.variant||current;
+   if(stock){const size=clean(chosen.description).match(/(\d+(?:\.\d+)?)\s*["\u2033\u201d]/),light=/\blight(?:weight)?\b/i.test(clean(chosen.description));if(size){const bar=bars.find(b=>b.size===Number(size[1])&&b.light===light);if(bar)bar.variant=chosen;}}
+   const tool={...chosen,chainsawBarTrial:true,marketplaceRow:{...chosen.marketplaceRow}};
+   return {tool,product:tool.marketplaceRow,catalog:[],options:[],bars,stock};
   }
-  const original=f.variants.find(v=>!v.recommendedPackage&&!/kit|package/i.test(v.type));
-  const source=c.DATA.componentSources?.STIHL;if(!original||!source)return null;
+  const original=stock?current:f.variants.find(v=>v.sku===current.sku&&!v.recommendedPackage)||current;
+  const source=c.DATA.componentSources?.[clean(f.brand).toUpperCase()]||{};
   const tool={...original,marketplaceRow:{...original.marketplaceRow}},product={...tool.marketplaceRow,SKU:tool.sku,Model:tool.marketplaceRow?.Model||f.model,BrandID:f.brand};
   // Correct the known public export typo using the existing, verified product photo.
   if(/\/RZ14\.jpg$/i.test(clean(tool.marketplaceRow.ImageURL)))tool.marketplaceRow.ImageURL=tool.marketplaceRow.ImageURL.replace(/\/RZ14\.jpg$/i,'/RZ142.jpg');
@@ -65,7 +66,7 @@
   const compatible=catalog.filter(p=>compatibility(p.row,product));
   const dependencies=new Set(compatible.flatMap(p=>requirementSlots(p.row,product)).map(p=>key(p.sku)));
   const options=compatible.filter(p=>p.type!=='part'&&!dependencies.has(key(p.row.SKU))).sort((a,b)=>num(a.row.SortOrder)-num(b.row.SortOrder)||clean(a.row.Description).localeCompare(clean(b.row.Description)));
-  return {tool,product,catalog,options};
+  return {tool,product,catalog,options:stock?[]:options,stock,standard:!(key(f.brand)==='STIHL'&&/^RZ142(?:0)?$/.test(key(f.model))),emptyBattery:c.emptyBattery};
  }
  function state(f){if(!states.has(f.key))states.set(f.key,{selected:new Set()});return states.get(f.key);}
  function configuration(m,s,c){
@@ -86,26 +87,26 @@
   for(const id of s.selected)if(!allowed.has(id))s.selected.delete(id);
   const config=configuration(m,s,c);contexts.set(f.key,{f,c,m,s});
   const previous=c.selectedPriceVariant(f);
-  if(initial||previous.sku!==config.variant.sku||previous.price!==config.variant.price||previous.msrp!==config.variant.msrp||JSON.stringify(previous.packageItems||[])!==JSON.stringify(config.variant.packageItems||[]))c.selectPackageVariant(f,config.variant);
+  if(!m.stock&&(!m.standard||s.selected.size>0)&&(initial||previous.sku!==config.variant.sku||previous.price!==config.variant.price||previous.msrp!==config.variant.msrp||JSON.stringify(previous.packageItems||[])!==JSON.stringify(config.variant.packageItems||[])))c.selectPackageVariant(f,config.variant);
   const selected=s.selected.size>0,rows=m.bars?[false,true].map(light=>{
    const label=light?'Light Bar':'Std. Bar';
-   return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+label+'">'+m.bars.filter(b=>b.light===light).sort((a,b)=>a.size-b.size).map(b=>'<button type="button" data-eqp-bar="'+esc(b.variant.sku)+'" aria-pressed="'+(b.variant.sku===m.tool.sku)+'">'+b.size+'&quot;</button>').join('')+'</div></div>';
+   return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+label+'">'+m.bars.filter(b=>b.light===light).sort((a,b)=>a.size-b.size).map(b=>'<button type="button" data-eqp-bar="'+esc(b.variant.sku)+'" '+(m.stock?'disabled ':'')+'aria-pressed="'+(b.variant.sku===m.tool.sku)+'">'+b.size+'&quot;</button>').join('')+'</div></div>';
   }).join(''):['attachment','accessory'].map(type=>{
-   const label=type==='attachment'?'Attach':'Access';
-   return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+(type==='attachment'?'Attachments':'Accessories')+'"></div></div>';
+   const label=m.emptyBattery?(type==='attachment'?'Batteries':'Chargers'):(type==='attachment'?'Attach':'Access');
+   return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+(m.emptyBattery?label:(type==='attachment'?'Attachments':'Accessories'))+'"></div></div>';
   }).join('');
   const offer=c.promoInfo(m.tool),sale=offer?.type==='sale',basePrice=sale?offer.price:m.tool.msrp||m.tool.price;
   return '<div class="pp-box pp-equipment-base'+(!selected?' pp-selected':'')+'" data-pp-box="tool"><button class="pp-price-select" type="button" data-eqp-select="tool" aria-pressed="'+!selected+'"><span>'+esc(f.brand)+' Base Price:</span><span class="pp-prices">'+(sale?'<del>'+c.money(offer.regular)+'</del>':'')+'<strong>'+c.money(basePrice)+'</strong></span></button></div>'+
-   '<div class="pp-box pp-package pp-equipment-package'+(selected?' pp-selected':'')+'" data-pp-box="package"><button class="pp-price-select pp-package-total" type="button" data-eqp-select="package" aria-pressed="'+selected+'"><span>Package MSRP:</span><span class="pp-prices"><strong>'+(config.error?'Confirm price':c.money(config.msrp))+'</strong></span></button>'+rows+(config.parts.some(p=>p.required)?'<small class="pp-package-contents">Includes required '+esc(config.parts.filter(p=>p.required).map(p=>p.row.Description).join(' · '))+'</small>':'')+(config.error?'<small class="pp-package-contents" role="alert">'+esc(config.error)+'</small>':'')+'</div>';
+   '<div class="pp-box pp-package pp-equipment-package'+(selected?' pp-selected':'')+'" data-pp-box="package"><button class="pp-price-select pp-package-total" type="button" data-eqp-select="package" aria-pressed="'+selected+'"><span>'+(m.emptyBattery?'Package Price:':'Package MSRP:')+'</span><span class="pp-prices"><strong>'+(config.error?'Confirm price':c.money(config.msrp))+'</strong></span></button>'+rows+(config.parts.some(p=>p.required)?'<small class="pp-package-contents">Includes required '+esc(config.parts.filter(p=>p.required).map(p=>p.row.Description).join(' · '))+'</small>':'')+(config.error?'<small class="pp-package-contents" role="alert">'+esc(config.error)+'</small>':'')+'</div>';
  }
  function tool(f){return entry(f)?.m.tool;}
- function buildUrl(f,c){const e=entry(f);if(!e)return null;const config=configuration(e.m,e.s,c),url=new URL(c.paymentSelectionUrl(f));url.pathname=url.pathname.replace(/payment-options(?:\.html)?\/?$/,'product-options.html');url.hash='';url.searchParams.set('sku',e.m.tool.sku);url.searchParams.delete('package');url.searchParams.set('cardOptions',JSON.stringify(config.parts.filter(p=>!p.required).map(p=>({type:p.type,sku:clean(p.row.SKU),quantity:p.quantity}))));return url.href;}
+ function buildUrl(f,c){const e=entry(f);if(!e||e.m.stock||e.m.standard)return null;const config=configuration(e.m,e.s,c),url=new URL(c.paymentSelectionUrl(f));url.pathname=url.pathname.replace(/payment-options(?:\.html)?\/?$/,'product-options.html');url.hash='';url.searchParams.set('sku',e.m.tool.sku);url.searchParams.delete('package');url.searchParams.set('cardOptions',JSON.stringify(config.parts.filter(p=>!p.required).map(p=>({type:p.type,sku:clean(p.row.SKU),quantity:p.quantity}))));return url.href;}
  function publishedPrice(f,allowsRebate){
-  const e=entry(f);if(!e)return undefined;const config=configuration(e.m,e.s,e.c);if(config.error)return 0;
+  const e=entry(f);if(!e||e.m.stock||e.m.standard)return undefined;const config=configuration(e.m,e.s,e.c);if(config.error)return 0;
   const rows=[{row:e.m.tool.marketplaceRow,quantity:1},...config.parts];
   return round(rows.reduce((n,p)=>n+p.quantity*(allowsRebate?e.c.currentPrice(p.row):window.WEPKitComponents.current({...p.row,RebateToCustomer:0})),0));
  }
- function actions(f,c){const e=entry(f);if(!e)return '';const config=configuration(e.m,e.s,c);return '<button class="pp-add-cart" type="button" data-eqp-add aria-label="Add selected tool or package to cart" '+(config.error?'disabled ':'')+'><span aria-hidden="true">🛒</span> Add</button>';}
+ function actions(f,c){const e=entry(f);if(!e)return '';if(e.m.stock||e.m.standard)return window.WestEndPackagePricing?.actions(f,c)||'';const config=configuration(e.m,e.s,c);return '<button class="pp-add-cart" type="button" data-eqp-add aria-label="Add selected tool or package to cart" '+(config.error?'disabled ':'')+'><span aria-hidden="true">🛒</span> Add</button>';}
  function cartRows(e){
   const {f,c,m,s}=e,config=configuration(m,s,c),q=c.selectedPriceQuantity(f);if(config.error)throw Error(config.error);
   const signature=config.parts.map(p=>key(p.row.SKU)+'*'+p.quantity).sort().join('|'),packageId=key(f.brand)+':'+clean(m.tool.sku)+':card:'+encodeURIComponent(JSON.stringify([key(f.brand),key(m.tool.sku),'',signature]));
@@ -117,8 +118,9 @@
   const host=event.target.closest('.wep-restored-card'),e=host&&contexts.get(host.dataset.key);if(!e)return false;
   const {f,c,m,s}=e,option=event.target.closest('[data-eqp-option]'),select=event.target.closest('[data-eqp-select]');
   const bar=event.target.closest('[data-eqp-bar]');
-  if(bar){if(m.bars?.some(b=>b.variant.sku===bar.dataset.eqpBar)){s.barSku=bar.dataset.eqpBar;s.selected.clear();c.refreshSelectedCard(f);}return true;}
+  if(bar){if(!m.stock&&m.bars?.some(b=>b.variant.sku===bar.dataset.eqpBar)){s.barSku=bar.dataset.eqpBar;s.selected.clear();c.refreshSelectedCard(f);}return true;}
   if(option||select){
+   if(m.stock)return true;
    if(option){const id=key(option.dataset.eqpOption);if(!m.options.some(p=>key(p.row.SKU)===id))return true;s.selected.has(id)?s.selected.delete(id):s.selected.add(id);}
    else if(select.dataset.eqpSelect==='tool')s.selected.clear();
    const config=configuration(m,s,c);c.selectPackageVariant(f,config.variant);c.refreshSelectedCard(f);return true;
