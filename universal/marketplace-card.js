@@ -25,7 +25,7 @@
   const image=clean(v.marketplaceRow?.ImageURL)||f.image;
   const packageSelected=/kit|package/i.test(v.type);
   const choices=selectedStock(f)?[{label:packageSelected?'Package:':'MSRP:',v,variants:[v],isPackage:packageSelected}]:priceChoices(f);
-  const specs=Object.entries(Object.values(v.specs||{}).some(clean)?v.specs:f.specs||{}).filter(([,value])=>clean(value)).slice(0,4);
+  const specs=Object.entries(Object.values(v.specs||{}).some(clean)?v.specs:f.specs||{}).filter(([,value])=>clean(value));
   const battery=/battery/i.test(f.power);
   if(battery){
    if(!document.querySelector('link[href*="build-buy.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='universal/build-buy.css';document.head.append(link);}
@@ -33,17 +33,19 @@
   }
   return '<article class="market-card wep-blended-card wep-restored-card" data-key="'+escape(f.key)+'">'+
    '<header class="market-card-head"><h3><strong class="market-card-title" title="'+escape(heading)+'">'+escape(heading)+'</strong><div class="wep-card-sku"><span>SKU: '+escape(v.sku)+sawHeaderBars(f)+'</span>'+stockHeaderMarkup(f)+'</div></h3></header>'+
-   '<div class="market-card-body"><section class="market-card-left">'+
+   '<div class="market-card-body"><div class="market-card-overview"><section class="market-card-left">'+
     '<div class="market-image-wrap">'+banner(v,context)+'<a class="market-image" href="'+escape(product)+'">'+(image?'<img src="'+escape(image)+'" alt="'+escape(heading)+'" loading="lazy">':'<span>Image Coming Soon</span>')+'</a></div>'+
+   '</section>'+
+   (specs.length?'<dl class="market-specs market-card-side-specs" tabindex="0" aria-label="Product specifications">'+specs.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+escape(value)+'</dd></div>').join('')+'</dl>':'')+
+   '</div><section class="market-buy">'+
+    '<div class="market-price-lines">'+(packageMarkup??choices.map(choice=>pricePanel(choice.label,choice.v,choice.isPackage,f,choice.variants)).join(''))+'</div>'+
     '<div class="market-detail-actions"><a class="market-product-details" href="'+escape(product)+'">View Details</a><label class="market-product-details market-compare-detail"><input type="checkbox" data-compare="'+escape(f.key)+'" '+(state.compare.has(f.key)?'checked':'')+'> <span>Compare</span></label></div>'+
     cardFinanceMarkup(f)+
-   '</section><section class="market-buy">'+
-    '<h4 class="market-package-prices-title">Package Pricing</h4><div class="market-price-lines">'+(packageMarkup??choices.map(choice=>pricePanel(choice.label,choice.v,choice.isPackage,f,choice.variants)).join(''))+'</div>'+
     (battery?'<div class="market-actions"><a href="'+escape(runtime.href)+'" data-wep-runtime-brand="'+escape(f.brand)+'" data-wep-runtime-sku="'+escape(v.sku)+'">Run &amp; Charge Times</a></div>':'')+
     (window.WestEndPackagePricing?.actions(f,context)||'')+
     '<a '+(packageMarkup!==null?'data-pp-build ':'')+'class="market-product-page-link wep-card-build" href="'+escape(build.href)+'">Build &amp; Buy ↗</a><p class="wep-card-build-note">Configure your equipment and review current pricing.</p>'+
    '</section></div>'+
-   (specs.length?'<dl class="market-specs market-card-footer-specs">'+specs.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+escape(value)+'</dd></div>').join('')+'</dl>':'')+(window.WestEndPackagePricing?.warranty(v.marketplaceRow||{})||'')+'</article>';
+   (window.WestEndPackagePricing?.warranty(v.marketplaceRow||{})||'')+'</article>';
  }
  window.WestEndMarketplaceCard={render,expiration};
 })();

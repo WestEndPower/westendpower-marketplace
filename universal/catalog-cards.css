@@ -158,3 +158,24 @@
 .pp-dialog{width:min(360px,calc(100vw - 36px));border:1px solid #9ebda7;border-radius:10px;padding:20px;color:#173c24;font:15px/1.5 Arial,sans-serif}
 .pp-dialog::backdrop{background:#0006}.pp-dialog p{margin:0 0 15px}.pp-dialog button{display:block;margin-left:auto;border:1px solid #176c34;border-radius:5px;padding:7px 20px;background:#238b45;color:white;font:700 14px Arial,sans-serif}
 .pp-inventory-dialog{width:min(500px,calc(100vw - 36px));max-height:85vh;overflow:auto}.pp-inventory-dialog h2{font-size:18px;margin:0 0 12px}.pp-inventory-dialog section{padding:10px 0;border-top:1px solid #d7e0d9}.pp-inventory-dialog .market-inventory-line{font-size:12px}.pp-inventory-dialog .market-inventory-contact{font-size:12px}
+
+/* Approved October 26: image and four spec rows, then full-width purchase boxes. */
+#market-app .wep-restored-card .market-card-body{display:flex!important;flex-direction:column;gap:10px!important;justify-content:flex-start}
+#market-app .wep-restored-card .market-card-overview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:stretch;--card-overview-height:190px;--card-spec-gap:5px}
+#market-app .wep-restored-card .market-image-wrap{height:var(--card-overview-height)!important}
+#market-app .wep-restored-card .market-card-overview .market-card-side-specs{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-auto-rows:calc((var(--card-overview-height) - 3 * var(--card-spec-gap)) / 4);align-content:start;gap:var(--card-spec-gap)!important;height:var(--card-overview-height);min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+#market-app .wep-restored-card .market-card-side-specs>div{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px 5px!important}
+#market-app .wep-restored-card .market-card-side-specs dt{font-size:11px;line-height:1.15}
+#market-app .wep-restored-card .market-card-side-specs dd{font-size:12px;line-height:1.2;margin:2px 0 0}
+#market-app .wep-restored-card .market-card-side-specs:focus-visible{outline:2px solid #176c34;outline-offset:-2px}
+#market-app .wep-restored-card .market-price-lines{display:flex;flex-direction:column;gap:6px}
+#market-app .wep-restored-card .pp-box{padding:7px 9px}
+#market-app .wep-restored-card .pp-box[data-pp-box=tool]{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px}
+#market-app .wep-restored-card .pp-box[data-pp-box=tool]>.market-price-inventory{margin:0}
+#market-app .wep-restored-card .pp-package-total{border-top:0;padding-top:2px}
+#market-app .wep-restored-card .pp-component-row>div{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px}
+#market-app .wep-restored-card .pp-component-row button{flex-shrink:0}
+#market-app .wep-restored-card .pp-component-row legend{margin-left:0}
+#market-app .wep-restored-card .pp-package>.market-price-inventory{text-align:center}
+@media(max-width:850px){#market-app .wep-restored-card .market-card-overview{--card-overview-height:180px}}
+@media(max-width:420px){#market-app .wep-restored-card .market-card-overview{gap:8px}#market-app .wep-restored-card .pp-box[data-pp-box=tool]{gap:5px}#market-app .wep-restored-card .pp-prices strong{font-size:18px}}

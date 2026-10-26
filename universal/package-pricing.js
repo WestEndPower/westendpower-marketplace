@@ -89,13 +89,12 @@
  function inventory(c,f,v,kind){return '<div class="market-price-inventory">'+c.inventoryMarkup(f,v,kind)+'</div>';}
  function render(f,c){
   contexts.set(f.key,{f,c});const m=model(f,c);if(!m)return null;
-  const s=state(f,m),pkg=configured(m,s,c),title=pkg.kit?'Package':'Build Your Own Package';
+  const s=state(f,m),pkg=configured(m,s,c);
   return '<div class="pp-box'+(s.choice==='tool'?' pp-selected':'')+'" data-pp-box="tool">'+
-   '<button class="pp-price-select" type="button" data-pp-select="tool" aria-pressed="'+(s.choice==='tool')+'"><span>Tool Only <small>'+(m.tool.msrp>m.tool.price+.005?'Sale':'MSRP')+'</small></span>'+prices(m.tool.msrp,m.tool.price)+'</button>'+inventory(c,f,m.tool,'tool-only')+'</div>'+
+   '<button class="pp-price-select" type="button" data-pp-select="tool" aria-pressed="'+(s.choice==='tool')+'"><span>Unit <small>'+(m.tool.msrp>m.tool.price+.005?'MSRP / Sale':'MSRP')+'</small></span>'+prices(m.tool.msrp,m.tool.price)+'</button>'+inventory(c,f,m.tool,'tool-only')+'</div>'+
    '<div class="pp-box pp-package'+(s.choice==='package'?' pp-selected':'')+'" data-pp-box="package">'+
-   '<button class="pp-package-select" type="button" data-pp-select="package" aria-pressed="'+(s.choice==='package')+'">'+title+'</button>'+row(f,m,s,'Battery')+row(f,m,s,'Charger')+
-   '<button class="pp-price-select pp-package-total" type="button" data-pp-select="package" aria-pressed="'+(s.choice==='package')+'"><span>'+(pkg.kit?'Kit MSRP':pkg.parts.length?'Combined MSRP':'Tool Only')+'</span>'+prices(pkg.regular,pkg.price)+'</button>'+
-   (pkg.savings>.005?'<small class="market-package-savings pp-savings">Package savings '+money(pkg.savings)+'</small>':'')+(pkg.kit?inventory(c,f,pkg.variant,'selected-package'):'<div class="market-price-inventory"><button type="button" class="market-inventory-button" data-pp-package-inventory>Check Inventory</button></div>')+'</div>';
+   '<button class="pp-price-select pp-package-total" type="button" data-pp-select="package" aria-pressed="'+(s.choice==='package')+'"><span>Package Price <small>'+((pkg.regular>pkg.price+.005?'MSRP / Sale':pkg.kit?'Kit MSRP':'Combined MSRP'))+'</small></span>'+prices(pkg.regular,pkg.price)+'</button>'+
+   (pkg.savings>.005?'<small class="market-package-savings pp-savings">Package savings '+money(pkg.savings)+'</small>':'')+row(f,m,s,'Battery')+row(f,m,s,'Charger')+(pkg.kit?inventory(c,f,pkg.variant,'selected-package'):'<div class="market-price-inventory"><button type="button" class="market-inventory-button" data-pp-package-inventory>Check Inventory</button></div>')+'</div>';
  }
  function popup(message,opener){
   document.querySelector('.pp-dialog')?.remove();const dialog=document.createElement('dialog');dialog.className='pp-dialog';dialog.setAttribute('aria-label','Choose your purchase option');
@@ -119,7 +118,7 @@
   return rows;
  }
  function add(f,c,m,s,opener,increment=true){
-  if(m&&!s.choice){popup('No option selected. Please select Tool Only or Package to continue.',opener);return false;}
+  if(m&&!s.choice){popup('No option selected. Please select Unit or Package Price to continue.',opener);return false;}
   try{
    const rows=cartRows(f,c,m,s),saved=JSON.parse(localStorage.getItem('wepCart')||'[]');if(!Array.isArray(saved))throw Error('Your cart could not be read.');
    for(const row of rows){const old=saved.find(x=>x.packageId===row.packageId&&x.type===row.type&&key(x.sku)===key(row.sku));if(old){if(!increment)continue;if(Number(old.quantity)+row.quantity>99)throw Error('Your cart already contains the maximum quantity for this configuration.');old.quantity=Number(old.quantity)+row.quantity;}else saved.push(row);}
