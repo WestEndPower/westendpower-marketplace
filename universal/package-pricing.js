@@ -61,11 +61,11 @@
   };
   const complete=packages.filter(p=>p.battery.length&&p.charger.length);
   const promotional=complete.find(p=>c.promoInfo(p.variant)?.savings>0),cheapest=promotional||complete[0];
-  const m={tool,packages,batteryOptions,chargerOptions,source,defaultPackage:promotional,defaultBattery:cheapest?.battery||recommended('Battery',batteries,batteryOptions),defaultCharger:cheapest?.charger||recommended('Charger',chargers,chargerOptions)};
+  const m={tool,packages,batteryOptions,chargerOptions,source,defaultPackage:cheapest,defaultBattery:cheapest?.battery||recommended('Battery',batteries,batteryOptions),defaultCharger:cheapest?.charger||recommended('Charger',chargers,chargerOptions)};
   models.set(f.key,m);return m;
  }
  function state(f,m){
-  if(!states.has(f.key))states.set(f.key,{choice:m.defaultPackage?'package':null,battery:m.defaultBattery,charger:m.defaultCharger});
+  if(!states.has(f.key))states.set(f.key,{choice:'package',battery:m.defaultBattery,charger:m.defaultCharger});
   return states.get(f.key);
  }
  function configured(m,s,c){
@@ -100,7 +100,7 @@
  function render(f,c){
   contexts.set(f.key,{f,c});const m=model(f,c);if(!m)return null;
   const initial=!states.has(f.key),s=state(f,m),pkg=configured(m,s,c);
-  if(initial&&m.defaultPackage)c.selectPackageVariant(f,pkg.variant);
+  if(initial&&s.choice==='package')c.selectPackageVariant(f,pkg.variant);
   return '<div class="pp-box'+(s.choice==='tool'?' pp-selected':'')+'" data-pp-box="tool">'+
    '<button class="pp-price-select" type="button" data-pp-select="tool" aria-pressed="'+(s.choice==='tool')+'"><span>'+esc(clean(f.brand)?clean(f.brand)+' Base Price:':'Base Price:')+'</span>'+prices(m.tool.msrp,m.tool.price)+'</button></div>'+
    '<div class="pp-box pp-package'+(s.choice==='package'?' pp-selected':'')+'" data-pp-box="package">'+
