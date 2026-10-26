@@ -238,3 +238,6 @@
 /* Strengthen purchase-box borders and keep package pricing below base-price size. */
 #market-app .wep-restored-card .pp-box{border-width:2px}
 #market-app .wep-restored-card .pp-package-total{font-size:16px}
+
+/* Give the product image about a quarter inch more room on typical desktop cards. */
+#market-app .wep-restored-card .market-card-overview{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
