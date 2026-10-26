@@ -219,10 +219,10 @@
 @media(max-width:420px){#market-app .wep-restored-card .pp-component-row{grid-template-columns:72px minmax(0,1fr);gap:4px}}
 
 /* Emphasize the base price and use muted purchase action colors. */
-#market-app .wep-restored-card .pp-box[data-pp-box=tool]{container-type:inline-size}
-#market-app .wep-restored-card [data-pp-select=tool]{font-size:clamp(20px,6.2cqi,36px);padding-block:4px}
-#market-app .wep-restored-card .market-card-action-row .pp-add-cart{background:#76253e;border-color:#612034;color:#fff}
-#market-app .wep-restored-card .market-card-action-row .pp-add-cart:hover{background:#612034}
+#market-app .wep-restored-card .pp-box[data-pp-box=tool]{container-type:inline-size;padding-block:2px}
+#market-app .wep-restored-card [data-pp-select=tool]{font-size:clamp(20px,6.2cqi,36px);padding-block:0}
+#market-app .wep-restored-card .market-card-action-row .pp-add-cart{background:linear-gradient(90deg,#990000,#d72128 35%,#c4161d 70%,#8e0000);border-color:#990000;color:#fff}
+#market-app .wep-restored-card .market-card-action-row .pp-add-cart:hover{background:#990000}
 #market-app .wep-restored-card .market-card-price-links .market-payment-options{background:#3f4347;border-color:#303438;color:#fff}
 #market-app .wep-restored-card .market-card-price-links .market-payment-options:hover{background:#303438}
 #market-app .wep-restored-card .market-card-action-row .pp-add-cart:focus-visible,#market-app .wep-restored-card .market-card-price-links .market-payment-options:focus-visible{outline:2px solid #303438;outline-offset:2px}
