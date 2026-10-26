@@ -834,9 +834,9 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const key=financeSummaryKey(f),url=new URL(buildHref||catalogBuildUrl(f));url.hash='';
     const bottom=new URL(url);bottom.hash='wep-itemized-quote';
     const links='<div class="market-card-price-links"><a class="market-payment-options" target="_blank" rel="noopener noreferrer" href="'+esc(url.href)+'">View All Promotions</a><a class="market-payment-options" target="_blank" rel="noopener noreferrer" href="'+esc(bottom.href)+'">Out-the-Door Price</a></div>';
-    if(!key || /\|$/.test(key))return '<div class="market-payment-options-only">'+links+'</div>';
+    if(!key || /\|$/.test(key))return links;
     const summary=DATA.financeSummaryCache.get(key);if(!summary)requestMarketplaceFinanceSummary(f);
-    if(!summary||summary.none)return '<div class="market-payment-options-only">'+(!summary?'<div role="status" style="text-align:center;padding:5px;font-size:11px">Updating financing…</div>':'')+links+'</div>';
+    if(!summary||summary.none)return (!summary?'<div class="market-finance-pending" role="status">Updating financing…</div>':'')+links;
     return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+'<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+((summary.expirationLabel||((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false))?'<div class="market-card-finance-note">'+esc(summary.expirationLabel||'')+((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false?' <span class="market-card-finance-rebate">(In lieu of customer rebate)</span>':'')+'</div>':'')+links+'</div>';
   }
 
