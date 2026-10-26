@@ -556,7 +556,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
   function yanmarSelectedVariant(f){
     const candidates=relevantVariants(f);
-    return candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>(isCompactTractor(f)?Number(compactTire(a)!=='R-4')-Number(compactTire(b)!=='R-4'):0)||(a.workbookSort===b.workbookSort?0:a.workbookSort-b.workbookSort)||Number(a.price)-Number(b.price))[0]||candidates[0]||(f.variants||[])[0]||{};
+    return candidates.filter(v=>Number(v.price)>0).slice().sort((a,b)=>(isCompactTractor(f)?Number(!compactFlags(a).every((on,i)=>on===(i===0)))-Number(!compactFlags(b).every((on,i)=>on===(i===0)))||Number(compactTire(a)!=='R-4')-Number(compactTire(b)!=='R-4'):0)||(a.workbookSort===b.workbookSort?0:a.workbookSort-b.workbookSort)||Number(a.price)-Number(b.price))[0]||candidates[0]||(f.variants||[])[0]||{};
   }
   // WEP_COMPACT_CARD_OPTIONS_V1: select complete catalog SKUs, never add guessed option prices.
   function isCompactTractor(f){return /^compact tractors?$/i.test(clean(f.category));}
@@ -773,7 +773,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     let selection=cardSelections.get(f.key);
     const filterKey=isCompactTractor(f)?compactFilterKey():null;
     if(!selection||!f.variants[selection.index]||(isCompactTractor(f)&&selection.compactFilterKey!==filterKey)){
-      const first=priceChoices(f)[0]?.v||f.variants[0];
+      const first=(!isCompactTractor(f)&&relevantVariants(f).find(v=>!v.recommendedPackage&&!/kit|package/i.test(v.type)))||priceChoices(f)[0]?.v||f.variants[0];
       selection={index:Math.max(0,f.variants.indexOf(first)),quantity:1,compactFilterKey:filterKey};cardSelections.set(f.key,selection);
     }
     return selection;
