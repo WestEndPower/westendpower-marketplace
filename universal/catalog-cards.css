@@ -234,3 +234,7 @@
 #market-app .wep-restored-card[data-brand=GREENWORKS]{--base-price-tint:#70a82f;--base-price-ink:#252525}
 #market-app .wep-restored-card .pp-box[data-pp-box=tool],#market-app .wep-restored-card .market-base-choice,#market-app .wep-restored-card .pp-tractor-base{background:var(--base-price-tint)}
 #market-app .wep-restored-card .pp-box[data-pp-box=tool] .pp-price-select,#market-app .wep-restored-card .pp-box[data-pp-box=tool] .pp-prices strong,#market-app .wep-restored-card .pp-box[data-pp-box=tool] .pp-prices del,#market-app .wep-restored-card .market-base-choice .market-price-heading,#market-app .wep-restored-card .market-base-choice .market-price-pair strong,#market-app .wep-restored-card .market-base-choice .market-price-pair del,#market-app .wep-restored-card .pp-tractor-base{color:var(--base-price-ink)}
+
+/* Strengthen purchase-box borders and keep package pricing below base-price size. */
+#market-app .wep-restored-card .pp-box{border-width:2px}
+#market-app .wep-restored-card .pp-package-total{font-size:16px}
