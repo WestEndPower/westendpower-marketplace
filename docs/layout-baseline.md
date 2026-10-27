@@ -139,3 +139,5 @@ Change a baseline only when John requests or approves that layout change.
 - Battery family buttons (AP Series / Pro AP Series, or 82BD / CORE as available) appear above one visible battery-model row. Family clicks only change the displayed choices; existing selected package contents remain until a model is clicked. Single-family tools use a heading or the available series button. Chargers heading sits above its single model row.
 - Never wrap option rows or headings. Use compact button padding, retaining all choices; allow horizontal overflow only when a narrow card cannot fit the complete row.
 - No eligible financing means no finance panel or reserved financing space; retain View All Promotions / Out-the-Door Price. This supersedes the previous reserved empty financing-window rule.
+
+- For sell-remaining-stock batteries/chargers, a missing SKU in the inventory response is unknown, not zero. Use the published component quantity when no inventory record exists; an explicit inventory quantity of zero still hides the discontinued choice. This also preserves complete kit/recommended defaults when their component stock is only published in workbook quantities.
