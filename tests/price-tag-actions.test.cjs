@@ -126,6 +126,43 @@ test('battery series tabs show one family at a time and preserve package selecti
  api.handle({target:{closest:s=>s==='.wep-restored-card'?{dataset:{key:f.key}}:s==='[data-pp-series]'?{dataset:{ppSeries:'PRO AP Series'}}:null}});
  assert.equal(c.selectedPriceVariant(f).sku,before);assert.match(html,/>20\.1<\/button>/);assert.match(html,/>100\.0P<\/button>/);assert.doesNotMatch(html,/>AP300S<\/button>/);assert.match(html,/pp-energy-heading">Chargers/);
 });
+
+test('BGA86 retains its published AP300S kit when the unit feed has no battery record',()=>{
+ const {window,f,c}=fixture(),{parse}=require('../scripts/marketplace-sync.cjs');
+ const source=Object.fromEntries(['products','batteries','chargers','packages','compatibility-runtime'].map(name=>[name,parse(fs.readFileSync('brands/stihl/data/'+name+'.csv','utf8')).rows]));
+ f.model='BGA 86';f.variants=source.products.filter(r=>r.Model==='BGA 86'&&r.Active==='T').map(r=>({sku:r.SKU,model:r.Model,type:r.ProductType,price:Number(r.MSRP),msrp:Number(r.MSRP),marketplaceRow:r}));
+ c.DATA={...source,compatibility:source['compatibility-runtime'],inventoryByBrand:new Map([['STIHL',Object.assign(new Map([['MOWER',{quantity:1}]]),{loaded:true})]])};
+ const html=window.WestEndPackagePricing.render(f,c);
+ assert.equal(c.selectedPriceVariant(f).sku,'BA02 211 0000 US');assert.equal(c.selectedPriceVariant(f).price,609.99);
+ assert.match(html,/data-pp-series="AP \/ AR Series" aria-pressed="true"/);
+ assert.match(html, /aria-pressed="true"[^>]*title="Click to remove AP300S"/);
+ assert.match(html, /aria-pressed="true"[^>]*title="Click to remove AL301"/);
+});
+
+for(const brand of ['STIHL','GREENWORKS'])test(brand+': recommended custom battery sets the initial series, price, builder and cart',()=>{
+ const {window,f,c,stored}=fixture(),api=window.WestEndPackagePricing;
+ f.brand=brand;f.variants=f.variants.slice(0,1);
+ const first=brand==='STIHL'?'AP300S':'82BD250',recommended=brand==='STIHL'?'AP300P':'CORE530',group=brand==='STIHL'?'PRO AP Series':'CORE Series';
+ c.DATA.componentSources={[brand]:{batteries:[{SKU:'BAT-A',BatteryID:first,MSRP:60},{SKU:'BAT-B',BatteryID:recommended,MSRP:70}],chargers:[{SKU:'CHG',ChargerID:'AL101',MSRP:40}],packages:[],compatibility:[{ToolSKU:'TOOL',BatteryID1:first,BatteryID2:recommended,ChargerID1:'AL101',RecommendedBatteryID1:recommended,RecommendedChargerID1:'AL101'}]}};
+ let html=api.render(f,c);assert.equal(c.selectedPriceVariant(f).price,210);
+ assert.ok(html.includes('data-pp-series="'+group+'" aria-pressed="true"'));
+ if(brand==='GREENWORKS'){assert.match(html,/>82BD Series<\/button>/);assert.match(html,/>Core Series<\/button>/);}
+ const parts=JSON.parse(new URL(api.buildUrl(f,c)).searchParams.get('cardOptions'));assert.ok(parts.some(p=>p.sku==='BAT-B'));assert.ok(parts.some(p=>p.sku==='CHG'));
+ const host={dataset:{key:f.key}};api.handle({target:{closest:s=>s==='.wep-restored-card'?host:s==='[data-pp-add]'?{}:null}});
+ const cart=JSON.parse(stored.get('wepCart'));assert.ok(cart.some(p=>p.sku==='BAT-B'));assert.equal(cart.reduce((n,p)=>n+p.quantity*p.itemPrice,0),210);
+ // Removing the recommended battery stays removed on subsequent renders.
+ const button=html.match(/data-pp-component="battery" data-pp-index="(\d+)" aria-pressed="true"/);assert.ok(button);
+ api.handle({target:{closest:s=>s==='.wep-restored-card'?host:s==='[data-pp-component]'?{dataset:{ppComponent:'battery',ppIndex:button[1]},disabled:false}:null}});
+ html=api.render(f,c);assert.equal(c.selectedPriceVariant(f).price,140);assert.doesNotMatch(html,/data-pp-component="battery"[^>]*aria-pressed="true"/);
+});
+
+test('explicit zero-stock battery records override published stock and keep stock-only batteries hidden',()=>{
+ const {window,f,c}=fixture();f.variants=f.variants.slice(0,1);c.DATA.packages=[];
+ c.DATA.batteries=[{SKU:'BAT',BatteryID:'AP300S',MSRP:60,SellRemainingStockOnly:'T',QtyNewMilford:'1'},{SKU:'NEW',BatteryID:'AP300P',MSRP:70}];
+ c.DATA.compatibility=[{ToolSKU:'TOOL',BatteryID1:'AP300S',BatteryID2:'AP300P',ChargerID1:'AL101',RecommendedBatteryID1:'AP300S',RecommendedChargerID1:'AL101'}];
+ c.DATA.inventoryByBrand=new Map([['STIHL',Object.assign(new Map([['BAT',{quantity:0}]]),{loaded:true})]]);
+ assert.doesNotMatch(window.WestEndPackagePricing.render(f,c),/>AP300S<\/button>/);
+});
 for(const path of ['universal/marketplace.js','shop-by-product.html','shop-by-brand.html'])test(path+': no financing leaves price links without an empty panel',()=>{
  const src=fs.readFileSync(path,'utf8'),a=src.indexOf('  function cardFinanceMarkup('),b=src.indexOf('\n  }',a)+4,fn=src.slice(a,b).replace('  function cardFinanceMarkup','function cardFinanceMarkup');
  const result=vm.runInNewContext(fn+';cardFinanceMarkup({brand:"STIHL"},"https://dealer.example/product-options.html")',{financeSummaryKey:()=> 'STIHL|SKU|1',URL,esc:x=>x,DATA:{financeSummaryCache:new Map([['STIHL|SKU|1',{none:true}]])},requestMarketplaceFinanceSummary(){}});

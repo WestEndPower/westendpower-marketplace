@@ -20,6 +20,12 @@ test('series grouping preserves old full names and shortens only the contextual 
 test('only sell-remaining-stock rows disappear at zero; orderable new batteries remain',()=>{
  assert.equal(K.visible({...battery,SellRemainingStockOnly:'T'},0),false);assert.equal(K.visible({...battery,SellRemainingStockOnly:'T'},1),true);assert.equal(K.visible(battery,0),true);assert.equal(K.visible({...battery,Active:'F'},1),false);
 });
+test('Greenworks series metadata and model prefixes resolve to the same selector families',()=>{
+ assert.equal(K.batteryGroup({BatteryID:'82BD250'},'GREENWORKS'),'82BD Series');
+ assert.equal(K.batteryGroup({BatteryID:'CORE530'},'GREENWORKS'),'CORE Series');
+ assert.equal(K.batteryGroup({BatteryID:'MODEL',BatterySeries:'Core Series'},'GREENWORKS'),'CORE Series');
+ assert.equal(K.batteryGroup({BatteryID:'MODEL',Series:'82BD'},'GREENWORKS'),'82BD Series');
+});
 test('requirements are specific to tool and battery, deduplicated, and absent after switching batteries',()=>{
  const cable={SKU:'CABLE',Description:'AR cable',MSRP:20},rules=[{ToolSKU:'TOOL',BatterySKU:'BAT',RequiredType:'accessory',RequiredSKU:'CABLE',RequiredQty:1},{ToolSKU:'OTHER',BatterySKU:'BAT',RequiredSKU:'MISSING'}],catalog={accessories:[cable]};
  assert.equal(K.required(tool,[{row:battery,qty:2}],rules,catalog)[0].qty,1);assert.deepEqual(K.required(tool,[{row:{SKU:'OTHER'},qty:1}],rules,catalog),[]);assert.throws(()=>K.required(tool,[{row:battery,qty:1}],rules,{accessories:[]}),/confirmation/);
