@@ -131,3 +131,15 @@ for(const path of ['universal/marketplace.js','shop-by-product.html','shop-by-br
  const result=vm.runInNewContext(fn+';cardFinanceMarkup({brand:"STIHL"},"https://dealer.example/product-options.html")',{financeSummaryKey:()=> 'STIHL|SKU|1',URL,esc:x=>x,DATA:{financeSummaryCache:new Map([['STIHL|SKU|1',{none:true}]])},requestMarketplaceFinanceSummary(){}});
  assert.match(result,/View All Promotions/);assert.match(result,/Out-the-Door Price/);assert.doesNotMatch(result,/market-card-finance|market-payment-options-only|Updating financing/);
 });
+
+test('missing component inventory records preserve compatible AP300S kits and defaults; explicit zero removes them',()=>{
+ function setup(quantity){
+  const r=fixture();r.c.DATA.batteries=[{SKU:'BAT',BatteryID:'AP300S',MSRP:60,Active:'T',SellRemainingStockOnly:'T',QtyNewMilford:'1',QtyDanbury:'0'}];
+  r.c.DATA.compatibility=[{ToolSKU:'TOOL',BatteryID1:'AP300S',RecommendedBatteryID1:'AP300S',RecommendedChargerID1:'AL101'}];
+  const inventory=new Map();inventory.loaded=true;if(quantity!==undefined)inventory.set('BAT',{quantity});r.c.DATA.inventoryByBrand=new Map([['STIHL',inventory]]);return r;
+ }
+ const r=setup();const html=r.window.WestEndPackagePricing.render(r.f,r.c);
+ assert.match(html,/>AP300S<\/button>/);assert.match(html,/data-pp-series="AP \/ AR Series" aria-pressed="true"/);assert.equal(r.c.selectedPriceVariant(r.f).sku,'KIT');
+ const empty=setup(0),emptyHtml=empty.window.WestEndPackagePricing.render(empty.f,empty.c);assert.doesNotMatch(emptyHtml,/>AP300S<\/button>/);assert.notEqual(empty.c.selectedPriceVariant(empty.f).sku,'KIT');
+ const available=setup(2);assert.match(available.window.WestEndPackagePricing.render(available.f,available.c),/>AP300S<\/button>/);
+});
