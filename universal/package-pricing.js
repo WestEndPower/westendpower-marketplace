@@ -37,7 +37,7 @@
   if(models.has(f.key))return models.get(f.key);
   const tool=f.variants.find(v=>!v.recommendedPackage&&!/kit|package/i.test(v.type)&&v.price>0);
   if(!tool)return null; // A kit-only SKU cannot be dismantled into an invented bare-tool SKU.
-  const inventory=c.DATA.inventoryByBrand?.get(key(f.brand)),visible=r=>!Kit||Kit.visible(r,inventory?.loaded?(inventory.get(key(r.SKU))?.quantity||0):undefined);
+  const inventory=c.DATA.inventoryByBrand?.get(key(f.brand)),visible=r=>!Kit||Kit.visible(r,inventory?.loaded&&inventory.has(key(r.SKU))?inventory.get(key(r.SKU)).quantity:undefined);
   const batteries=(source.batteries||[]).filter(visible),chargers=(source.chargers||[]).filter(visible),runtime=source.compatibility||[];
   let compat=runtime.filter(r=>(!clean(r.Active)||yes(r.Active))&&!clean(r.AttachmentSKU)&&key(r.ToolSKU)===key(tool.sku));
   if(!compat.length)compat=runtime.filter(r=>(!clean(r.Active)||yes(r.Active))&&!clean(r.AttachmentSKU)&&key(r.Model)&&key(r.Model)===key(tool.model||f.model));
