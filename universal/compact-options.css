@@ -81,3 +81,7 @@
 #app .wep-option-panel .wep-carousel-card>.card-body{background:#e7efe8;border-radius:7px}
 #app .wep-option-panel .wep-carousel-card .wep-option-card-top .card-media{background:#fff;border:1px solid #bdccbf}
 #app .wep-option-panel .wep-inline-implement-tile{border:3px solid #41664b;background:#e7efe8;box-shadow:0 2px 7px rgba(25,55,30,.12)}
+
+/* Build & Buy energy choices remain one horizontal row at every screen width. */
+#wep-panel-energy .grid.wep-options-carousel>.card.wep-energy-card{flex:0 0 320px;max-width:320px;scroll-snap-align:start;box-sizing:border-box}
+@media(max-width:600px){#wep-panel-energy .grid.wep-options-carousel>.card.wep-energy-card{flex-basis:min(320px,calc(100vw - 60px))}}

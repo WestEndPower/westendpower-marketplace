@@ -102,23 +102,27 @@
   if(nav&&!nav.dataset.wepCompact){
    nav.dataset.wepCompact='true';nav.classList.add('wep-floating-options');
    // Keep one tab selected; intercept the original collapse/scroll handler.
-   nav.addEventListener('click',event=>{const button=event.target.closest('[data-wep-panel]');if(!button||!nav.contains(button))return;event.preventDefault();event.stopImmediatePropagation();setPanel(button,true);},true);
-   const first=nav.querySelector('[data-wep-panel="implement"]')||nav.querySelector('[data-wep-panel="attachment"]')||nav.querySelector('[aria-expanded="true"]')||nav.querySelector('[data-wep-panel]');if(first)setPanel(first,false);
+   nav.addEventListener('click',event=>{const button=event.target.closest('[data-wep-panel]');if(!button||!nav.contains(button))return;event.preventDefault();event.stopImmediatePropagation();
+    if(button.dataset.wepPanel==='energy'&&button.getAttribute('aria-expanded')==='true'){
+     button.setAttribute('aria-expanded','false');document.getElementById('wep-panel-energy').hidden=true;resetDock();
+    }else setPanel(button,true);
+   },true);
+   const first=nav.querySelector('[data-wep-panel="implement"]')||nav.querySelector('[data-wep-panel="attachment"]')||nav.querySelector('[aria-expanded="true"]:not([data-wep-panel="energy"])')||nav.querySelector('[data-wep-panel]:not([data-wep-panel="energy"])');if(first)setPanel(first,false);
   }
-  for(const type of ['attachment','implement','accessory','part']){
+  for(const type of ['energy','attachment','implement','accessory','part']){
    const panel=document.getElementById('wep-panel-'+type);if(!panel)continue;
    const implementHeading=panel.querySelector('.wep-implements-main-heading');if(implementHeading){addViewAll(panel,implementHeading);enhanceImplementTypes(panel,implementHeading);}
    for(const row of panel.querySelectorAll('.grid')){
     if(row.dataset.wepCarousel)continue;row.dataset.wepCarousel='true';row.classList.add('wep-options-carousel');
     const section=row.closest('section'),title=section?.querySelector('h2');if(!section||!title)continue;
     section.classList.add('wep-carousel-section');
-    for(const card of row.querySelectorAll(':scope>.card'))compactCard(card);
+    if(type!=='energy')for(const card of row.querySelectorAll(':scope>.card'))compactCard(card);
     const id='wep-options-carousel-'+(++nextId);row.id=id;row.tabIndex=0;row.setAttribute('role','region');row.setAttribute('aria-label',title.textContent);
     const heading=document.createElement('div');heading.className='wep-carousel-heading';title.before(heading);heading.append(title);
     const controls=document.createElement('div');controls.className='wep-carousel-controls';controls.hidden=true;
     function advance(direction){const width=row.querySelector('.card')?.getBoundingClientRect().width||320;row.scrollBy({left:direction*Math.max(width+12,row.clientWidth-width-12),behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}
     for(const [direction,text,label] of [[-1,'‹','Previous'],[1,'›','Next']]){const b=document.createElement('button');b.type='button';b.textContent=text;b.setAttribute('aria-label',label+' '+title.textContent.toLowerCase());b.setAttribute('aria-controls',id);b.addEventListener('click',()=>advance(direction));controls.append(b);}
-    if(!implementHeading)addViewAll(panel,heading);
+    if(type!=='energy'&&!implementHeading)addViewAll(panel,heading);
     heading.append(controls);carousels.set(row,controls);row.addEventListener('scroll',updateArrows,{passive:true});
     row.addEventListener('keydown',event=>{if(event.target!==row||!['ArrowLeft','ArrowRight'].includes(event.key))return;event.preventDefault();advance(event.key==='ArrowLeft'?-1:1);});
     if(window.ResizeObserver)new ResizeObserver(updateArrows).observe(row);
