@@ -83,7 +83,7 @@ test('attachment and accessory buttons show available counts and disable empty g
  let html=r.api.render(r.f,r.c);assert.equal((html.match(/pp-picker-row/g)||[]).length,2);assert.match(html,/Accessories \(6 Available\)/);assert.match(html,/target="_blank" rel="noopener"/);
  assert.doesNotMatch(html,/data-eqp-option=/);
  r.source.attachments=[];r.source.accessories=[];r.source.parts=[];html=r.api.render(r.f,r.c);
- assert.match(html,/disabled>Attachments \(0 Available\)/);assert.match(html,/disabled>Accessories \(0 Available\)/);assert.match(html,/Package MSRP:/);
+ assert.match(html,/disabled aria-label="View Attachments \(0 Available\)">View \(0 Available\)/);assert.match(html,/disabled aria-label="View Accessories \(0 Available\)">View \(0 Available\)/);assert.match(html,/Package MSRP:/);
 });
 
 function sawFixture(){
@@ -134,7 +134,7 @@ test('all published active SKUs follow battery, Yanmar compact, chainsaw or stan
    if(battery||compact){assert.equal(html,null,row.SKU);counts[battery?'battery':'compact']++;continue;}
    assert.ok(html,row.SKU);assert.match(html,/Package MSRP:/);assert.doesNotMatch(html,/data-eqp-option=/);
    if(saw){assert.match(html,/>Std\. Bar</);assert.match(html,/>Light Bar</);counts.saw++;}
-   else{assert.match(html,/>Attachments \(/);assert.match(html,/>Accessories \(/);counts.standard++;}
+   else{assert.match(html,/>View \(/);assert.match(html,/>Access:</);counts.standard++;}
    assert.equal(r.api.tool(r.f).sku,row.SKU);
   }
  }

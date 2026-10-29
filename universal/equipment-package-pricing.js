@@ -108,7 +108,7 @@
    const label=m.emptyBattery?(type==='attachment'?'Batteries':'Chargers'):(type==='attachment'?'Attachments':'Accessories');
    if(m.emptyBattery)return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+label+'"></div></div>';
    const count=m.options.filter(item=>item.type===type).length;
-   return '<div class="pp-component-row pp-picker-row">'+(count?'<a class="pp-option-picker" href="'+esc(pickerUrl(f,c,type))+'" target="_blank" rel="noopener">'+label+' ('+count+' Available)</a>':'<button class="pp-option-picker" type="button" disabled>'+label+' (0 Available)</button>')+'</div>';
+   return '<div class="pp-component-row pp-picker-row"><span class="pp-component-label">'+(type==='attachment'?'Attach:':'Access:')+'</span>'+(count?'<a class="pp-option-picker" href="'+esc(pickerUrl(f,c,type))+'" target="_blank" rel="noopener" aria-label="View '+label+' ('+count+' Available)">View ('+count+' Available)</a>':'<button class="pp-option-picker" type="button" disabled aria-label="View '+label+' (0 Available)">View (0 Available)</button>')+'</div>';
   }).join('');
   const offer=c.promoInfo(m.tool),sale=offer?.type==='sale',basePrice=sale?offer.price:m.tool.msrp||m.tool.price;
   return '<div class="pp-box pp-equipment-base'+(!selected?' pp-selected':'')+'" data-pp-box="tool"><button class="pp-price-select" type="button" data-eqp-select="tool" aria-pressed="'+!selected+'"><span>'+esc(f.brand)+' Base Price:</span><span class="pp-prices">'+(sale?'<del>'+c.money(offer.regular)+'</del>':'')+'<strong>'+c.money(basePrice)+'</strong></span></button></div>'+
