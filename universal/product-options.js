@@ -120,7 +120,9 @@ function wireBuildPage(){
  const groupButtons=[...document.querySelectorAll('[data-wep-panel]')];
  const batteryProduct=/battery/i.test(clean(selectedProduct.PowerType));
  // Batteries and chargers are optional additions; keep their panel closed initially.
- const first=batteryProduct?null:groupButtons.find(b=>b.dataset.wepPanel!=='energy');
+ const requested=['attachment','accessory'].includes(qs.get('group'))?qs.get('group'):null;
+ const first=requested?groupButtons.find(b=>b.dataset.wepPanel===requested):(batteryProduct?null:groupButtons.find(b=>b.dataset.wepPanel!=='energy'));
+ if(requested&&first)requestAnimationFrame(()=>requestAnimationFrame(()=>{first.focus({preventScroll:true});first.scrollIntoView({block:'start'});}));
  if(first){first.setAttribute('aria-expanded','true');$('wep-panel-'+first.dataset.wepPanel).hidden=false;}
  $('wep-runtime')?.addEventListener('click',()=>WEPBuildBuy.openChart(buildContext));
  if(qs.get('view')==='runtime'&&WEPBuildBuy.hasChart(buildContext))WEPBuildBuy.openChart(buildContext);

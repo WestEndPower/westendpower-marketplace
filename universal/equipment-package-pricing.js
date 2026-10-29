@@ -118,8 +118,8 @@
  function buildUrl(f,c){const e=entry(f);if(!e||e.m.stock||e.m.standard)return null;const config=configuration(e.m,e.s,c),url=new URL(c.paymentSelectionUrl(f));url.pathname=url.pathname.replace(/payment-options(?:\.html)?\/?$/,'product-options.html');url.hash='';url.searchParams.set('sku',e.m.tool.sku);url.searchParams.delete('package');url.searchParams.set('cardOptions',JSON.stringify(config.parts.filter(p=>!p.required).map(p=>({type:p.type,sku:clean(p.row.SKU),quantity:p.quantity}))));return url.href;}
  function pickerUrl(f,c,type){
   const e=entry(f);if(!e||e.m.stock)return '';
-  const url=new URL(c.paymentSelectionUrl(f));url.pathname=url.pathname.replace(/(?:payment-options|product-options)(?:\.html)?\/?$/,'package-options.html');
-  url.hash='';url.searchParams.set('sku',e.m.tool.sku);url.searchParams.set('brand',f.brand);url.searchParams.set('group',type);url.searchParams.delete('package');
+  const url=new URL(c.paymentSelectionUrl(f));url.pathname=url.pathname.replace(/(?:payment-options|product-options)(?:\.html)?\/?$/,'product-options.html');
+  url.hash='';url.searchParams.set('sku',e.m.tool.sku);url.searchParams.set('brand',f.brand);url.searchParams.set('group',type);url.hash='wep-panel-'+type;url.searchParams.set('configuration',window.crypto.randomUUID());url.searchParams.delete('package');
   const config=configuration(e.m,e.s,c);url.searchParams.set('cardOptions',JSON.stringify(config.parts.filter(item=>!item.required).map(item=>({type:item.type,sku:clean(item.row.SKU),quantity:item.quantity}))));return url.href;
  }
  function publishedPrice(f,allowsRebate){
