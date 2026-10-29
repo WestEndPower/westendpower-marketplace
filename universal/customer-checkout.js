@@ -6,7 +6,7 @@ const api=local&&new URLSearchParams(location.search).get('api')==='local'?'http
 // WEP_QUOTE_STOCK_REQUEST_V1
 const stockPending=()=>!!window.WEPQuoteStock&&!window.WEPQuoteStock.ready();
 let quote=null,busy=false,requestNumber=0,customerDetailsOpen=true,activeQuoteController=null;
-function cartText(){return localStorage.getItem('wepCart')||'[]';}
+function cartText(){return (window.WEPBuildStorage||localStorage).getItem('wepCart')||'[]';}
 // WEP_ALL_BRAND_QUOTE_EVENTS_V1
 function readCart(){
  const rows=JSON.parse(cartText());if(!Array.isArray(rows)||!rows.length)throw Error('Your cart is empty. Choose equipment from Marketplace first.');

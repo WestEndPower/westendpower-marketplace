@@ -10,7 +10,7 @@
  $('choices').querySelectorAll('.panel')[1].before(panel);
  const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Refresh Availability';refresh.onclick=()=>void load();panel.querySelector('details').appendChild(refresh);
  let ready=false,generation=0,signature='';
- const rawCart=()=>JSON.parse(localStorage.getItem('wepCart')||'[]');
+ const rawCart=()=>JSON.parse((window.WEPBuildStorage||localStorage).getItem('wepCart')||'[]');
  const cartSignature=rows=>JSON.stringify(rows.map(x=>[x.brandId,x.type||'tool',x.sku,x.quantity]));
  window.WEPQuoteStock={ready:()=>{try{return ready&&signature===cartSignature(rawCart());}catch(_error){return false;}}};
  function changed(){
@@ -58,7 +58,7 @@
     for(const {select,index} of controls){if(select.value==='__unavailable__'){ready=false;$('stock-editor').open=true;window.dispatchEvent(new Event('wep:quote-stock-error'));changed();$('update').disabled=true;$('quote-stock-status').textContent='A previous stock selection is unavailable. Choose the pricing source again.';return;}
      now[index].inventoryId=select.value===ORDERABLE?'':select.value;now[index].quoteStockChoice=select.value===ORDERABLE?'orderable':'stock';
     }
-    localStorage.setItem('wepCart',JSON.stringify(now));signature=cartSignature(now);ready=true;$('stock-choice-summary').textContent=now.every(x=>x.quoteStockChoice==='orderable')?'Available to order':now.every(x=>x.quoteStockChoice==='stock')?'In-stock pricing':'Mixed stock / orderable pricing';$('stock-editor').open=false;changed();
+    (window.WEPBuildStorage||localStorage).setItem('wepCart',JSON.stringify(now));signature=cartSignature(now);ready=true;$('stock-choice-summary').textContent=now.every(x=>x.quoteStockChoice==='orderable')?'Available to order':now.every(x=>x.quoteStockChoice==='stock')?'In-stock pricing':'Mixed stock / orderable pricing';$('stock-editor').open=false;changed();
     $('quote-stock-status').textContent='Availability checked for pricing. Final availability is checked again when you review prices.';
    }
    for(const {select} of controls)select.addEventListener('change',persist);

@@ -315,3 +315,10 @@
 #market-app .wep-restored-card .market-factory-options [role=group],#market-app .wep-restored-card .market-compact-tires [role=group]{flex-wrap:nowrap;overflow-x:auto}
 #market-app .wep-restored-card .market-finance-pending{text-align:center;font:11px/1.3 Arial,sans-serif;padding:3px}
 #market-app .wep-restored-card .market-buy>.market-card-price-links{margin-top:0}
+
+/* Standard equipment options open their own build tab; browse layout is unchanged. */
+.pp-equipment-package .pp-picker-row{display:block;margin:5px 0}
+.pp-equipment-package .pp-option-picker{display:block;width:100%;padding:8px 10px;border:1px solid #91a696;border-radius:6px;background:#fff;color:#176a14;text-align:center;font:700 13px/1.3 Arial,sans-serif;text-decoration:none;white-space:nowrap;box-sizing:border-box}
+.pp-equipment-package .pp-option-picker:hover{background:#edf4ee}
+.pp-equipment-package .pp-option-picker:focus-visible{outline:3px solid #287a32;outline-offset:2px}
+.pp-equipment-package .pp-option-picker:disabled{color:#69766d;background:#f2f5f2;cursor:default}

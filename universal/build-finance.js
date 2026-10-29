@@ -1,7 +1,7 @@
 /* WEP_BUILD_FINANCE_V1 - all money and finance rules come from the existing quote service. */
 (function(){
  'use strict';
- const buildStorage=window.WEPDealerOrderEdit?.storage||window.localStorage;
+ const buildStorage=window.WEPDealerOrderEdit?.storage||window.WEPBuildStorage||window.localStorage;
  const app=document.getElementById('app');if(!app)return;
  const query=new URLSearchParams(location.search),local=['localhost','127.0.0.1','[::1]'].includes(location.hostname);
  const api=local&&query.get('api')==='local'?'http://127.0.0.1:8787':'https://westendpower-configurator-api.westendpower-nm.workers.dev';
@@ -618,7 +618,7 @@
    saveCurrentBuild();paymentSelect.value='credit';paymentConfirmed=true;preferred='';remember();
    if(window.WEPInlineCheckout){window.WEPInlineCheckout.open();return;}
    sessionStorage.setItem('wepBuildCheckoutChoices',JSON.stringify({paymentConfirmed:true,paymentMethod:'credit',fulfillment:'SHIP',zip:'',brandId:snapshot.brandId,sku:snapshot.sku,items:snapshot.items,financeProgramIds:{},...checkoutCarry(),updated:Date.now()}));
-   departing=true;location.assign('checkout.html'+(query.get('api')==='local'?'?api=local':''));
+   departing=true;location.assign(window.WEPBuildSession?.url('checkout.html'+(query.get('api')==='local'?'?api=local':''))||('checkout.html'+(query.get('api')==='local'?'?api=local':'')));
   }catch(error){const message=document.getElementById('options-message');if(message)message.textContent=error.message;}
  }
  // WEP_FINANCE_CHART_V1: each open group keeps its own results, pagination and cancellation.
@@ -1148,7 +1148,3 @@
  window.addEventListener('resize',()=>syncPaymentCards());
  new MutationObserver(()=>{mount();syncOptionButtons();syncPaymentCards();}).observe(app,{childList:true,subtree:true});mount();syncOptionButtons();syncPaymentCards();
 })();
-
-
-
-

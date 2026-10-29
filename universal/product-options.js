@@ -1,6 +1,6 @@
 (function(){
 'use strict';
- const buildStorage=window.WEPDealerOrderEdit?.storage||window.localStorage;
+ const buildStorage=window.WEPDealerOrderEdit?.storage||window.WEPBuildStorage||window.localStorage;
 const qs=new URLSearchParams(location.search);
 const implementBrowser=/\/choose-implements\.html$/i.test(location.pathname);
 window.addEventListener('pageshow',event=>{if(event.persisted&&!implementBrowser)location.reload();});
@@ -306,13 +306,26 @@ function optionRequirementPlan(selected){
   if(!Number.isInteger(quantity)||quantity<1||quantity>20)throw Error('Choose whole option quantities from 1 to 20.');
   const id=key(item);if(path.includes(id))throw Error('The required options contain a circular rule. Please contact the store.');
   const row=item.row;let listed=false,matched=false;
+  const modelRules=window.WestEndEquipmentPackages;
+  if(modelRules?.hasModelRequirements(row,selectedProduct)){
+   for(const rule of modelRules.requirementSlots(row,selectedProduct)){
+    const target=available(rule.sku),multiplier=rule.quantity;
+    if(!target||!Number.isInteger(multiplier)||multiplier<1)throw Error('A required option needs store confirmation.');
+    if(installed(target.row))continue;
+    const count=quantity*multiplier;if(count>20)throw Error('A required option quantity exceeds 20. Please contact the store.');
+    const childKey=key(target),previous=desired.get(childKey);
+    if(!previous||count>previous.quantity)desired.set(childKey,{...target,sku:clean(target.row.SKU),quantity:count,parent});
+    visit(target,count,parent,[...path,id]);
+   }
+   return;
+  }
   for(let i=1;i<=4;i++){
    const required=clean(row['RequiredSKU'+i]);if(!required)continue;listed=true;
    const target=available(required);if(!target)continue;
    const children=[];let eligible=true;
    for(let j=1;j<=2;j++){const childId=clean(row['SKU'+i+'Requires'+j]);if(!childId)continue;const child=available(childId);if(!child){eligible=false;break;}children.push({item:child,multiplier:Number(clean(row['SKU'+i+'Requires'+j+'Qty'])||1)});}
    if(!eligible)continue;matched=true;
-   const multiplier=Number(clean(row['RequiredSKU'+i+'Qty'])||1);
+   const multiplier=Number(clean(row['RequiredQty'+i]||row['RequiredSKU'+i+'Qty'])||1);
    for(const entry of [{item:target,multiplier},...children]){
     if(!Number.isInteger(entry.multiplier)||entry.multiplier<1)throw Error('A required option quantity needs store confirmation.');
     if(installed(entry.item.row))continue;
@@ -398,7 +411,7 @@ function packageSpec(){
 function reviewPackage(){
  addPackageToCart();
  // WEP_RETURN_TO_QUOTE_V1
- location.assign("checkout.html"+(qs.get('api')==='local'?'?api=local':''));
+ location.assign(window.WEPBuildSession?.url("checkout.html"+(qs.get('api')==='local'?'?api=local':''))||("checkout.html"+(qs.get('api')==='local'?'?api=local':'')));
 }
 function addPackageToCart(){
  if(currentPrice(selectedProduct)<=0)throw new Error('Contact the store for equipment pricing.');
