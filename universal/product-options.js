@@ -119,8 +119,8 @@ function wireBuildPage(){
  document.querySelectorAll('.wep-card-chart').forEach(button=>button.addEventListener('click',()=>WEPBuildBuy.openChart(buildContext,button.dataset.wepCardKind,button.dataset.wepCardSku)));
  const groupButtons=[...document.querySelectorAll('[data-wep-panel]')];
  const batteryProduct=/battery/i.test(clean(selectedProduct.PowerType));
- const preferred=batteryProduct?groupButtons.find(b=>b.dataset.wepPanel==='energy'):groupButtons.find(b=>b.dataset.wepPanel!=='energy');
- const first=preferred||groupButtons[0];
+ // Batteries and chargers are optional additions; keep their panel closed initially.
+ const first=batteryProduct?null:groupButtons.find(b=>b.dataset.wepPanel!=='energy');
  if(first){first.setAttribute('aria-expanded','true');$('wep-panel-'+first.dataset.wepPanel).hidden=false;}
  $('wep-runtime')?.addEventListener('click',()=>WEPBuildBuy.openChart(buildContext));
  if(qs.get('view')==='runtime'&&WEPBuildBuy.hasChart(buildContext))WEPBuildBuy.openChart(buildContext);
@@ -723,10 +723,8 @@ async function init(){
   optionRequirementCatalog=[...batteries.map(row=>({type:'battery',row})),...chargers.map(row=>({type:'charger',row})),...attachments.map(row=>({type:'attachment',row})),...accessories.map(row=>({type:'accessory',row})),...parts.map(row=>({type:'part',row}))];
   const name=clean(product.Model)||clean(product.Description)||sku;
   const base=currentPrice(product);
-  const kit=['kit','package'].includes(clean(product.ProductType).toLowerCase());
-  const included=kit?clean(product.Description):'';
   $('app').innerHTML=
-   '<section class="hero"><div class="media">'+img(product,name)+'</div><div><div class="eyebrow wep-build-name">Build &amp; Buy</div><h1 class="wep-build-description">'+esc(clean(product.Description)||name)+'</h1><small class="wep-build-sku">SKU '+esc(sku)+'</small><small id="wep-package-includes"'+(packageInclusions().length?'':' hidden')+'>'+esc(packageInclusions().length?'Includes: '+packageInclusions().join(' · '):'')+'</small><p class="price" data-wep-msrp="'+esc(product.MSRP)+'" data-wep-assembly="'+esc(assemblyCode(product))+'" data-wep-base-price="'+esc(base)+'" data-wep-setup-fee="'+esc(assemblyAmount(product))+'">'+(money(product.MSRP)>0?fmt(money(product.MSRP)):'Contact Us')+'</p>'+(/battery/i.test(clean(product.PowerType))?WEPBuildBuy.costMarkup(product):'')+setupMarkup(product,'tool')+stockMarkup(product)+(quoteEnabled()?'<label>Equipment quantity <input id="equipment-qty" class="qty" type="number" min="1" max="20" value="1"></label>':'')+(included?'<div class="included"><strong>Included in this kit:</strong> '+esc(included)+'<small> Batteries and chargers added below are additional to the included kit.</small></div>':'')+'<a class="wep-spec-link" href="product.html?'+new URLSearchParams({brand:selectedBrand,sku,view:'specs'})+'">View Specifications</a>'+(WEPBuildBuy.hasChart(buildContext)?'<button id="wep-runtime" class="wep-runtime-button" type="button">Run &amp; Charge Times</button>':'')+'</div></section>'+
+   '<section class="hero"><div class="media">'+img(product,name)+'</div><div><div class="eyebrow wep-build-name">Build &amp; Buy</div><h1 class="wep-build-description">'+esc(clean(product.Description)||name)+'</h1><small class="wep-build-sku">SKU '+esc(sku)+'</small><small id="wep-package-includes"'+(packageInclusions().length?'':' hidden')+'>'+esc(packageInclusions().length?'Includes: '+packageInclusions().join(' · '):'')+'</small><p class="price" data-wep-msrp="'+esc(product.MSRP)+'" data-wep-assembly="'+esc(assemblyCode(product))+'" data-wep-base-price="'+esc(base)+'" data-wep-setup-fee="'+esc(assemblyAmount(product))+'">'+(money(product.MSRP)>0?fmt(money(product.MSRP)):'Contact Us')+'</p>'+(/battery/i.test(clean(product.PowerType))?WEPBuildBuy.costMarkup(product):'')+setupMarkup(product,'tool')+stockMarkup(product)+(quoteEnabled()?'<label>Equipment quantity <input id="equipment-qty" class="qty" type="number" min="1" max="20" value="1"></label>':'')+'<a class="wep-spec-link" href="product.html?'+new URLSearchParams({brand:selectedBrand,sku,view:'specs'})+'">View Specifications</a>'+(WEPBuildBuy.hasChart(buildContext)?'<button id="wep-runtime" class="wep-runtime-button" type="button">Run &amp; Charge Times</button>':'')+'</div></section>'+
    buildPanels(bats,chgs,atts,accs,prts,impls)+
    '<section id="wep-itemized-quote" class="section wep-package-review" tabindex="-1" aria-labelledby="wep-itemized-title"><div class="wep-itemized-heading"><div><div class="eyebrow">Your selected equipment &amp; options</div><h2 id="wep-itemized-title">Your Itemized Quote</h2></div><span class="wep-itemized-badge">Updates with your selections</span></div><div id="wep-package-lines" aria-live="polite"></div></section><div class="summary wep-compact-actions" aria-label="Package subtotal and actions"><div class="wep-summary-hidden"><span id="selected-count"></span><span id="selected-merchandise"></span><span id="selected-setup"></span></div><div class="wep-subtotal">Cart subtotal: <strong id="wep-cart-subtotal">$0.00</strong><small>Saved items</small></div><div class="summary-actions"><button id="save-options" type="button">Save Options</button>'+(quoteEnabled()?'<button id="review-package" type="button">Review Quote</button><a class="back" href="cart.html">View Cart</a>':'')+'<button id="wep-print-build" type="button">Print</button></div></div><p id="options-message" role="status"></p><p class="note">Prices and availability are subject to change. Totals reflect your selected equipment, options, payment method and delivery choice. Financing is subject to credit approval. Availability is confirmed before order acceptance. Pricing errors are subject to correction.</p>';
   wireSummary(base);
@@ -760,6 +758,3 @@ async function init(){
 }
 init();
 })();
-
-
-
