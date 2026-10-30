@@ -8,7 +8,7 @@
  const methods=['cash','credit','finance','finance-inlieu'],labels={cash:'Cash / Bank Check',credit:'Credit Card',finance:'Financing + Rebates','finance-inlieu':'Financing in Lieu of Rebates'};
  const boxes=new Map();let activeKey='',requestKey='',controller=null,selectionGeneration=0,currentQuote=null,currentSlot='',carried=false,carryCandidate=null;
  const itemKey=items=>JSON.stringify(items.map(x=>[clean(x.brandId).toUpperCase(),x.type||'tool',clean(x.sku).toUpperCase(),Number(x.quantity),x.setupSelected===true,clean(x.inventoryId)]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))));
- const key=ctx=>JSON.stringify([itemKey(ctx.items||[]),ctx.fulfillment,ctx.zip||'',ctx.shippingAddress||null]);
+ const key=ctx=>JSON.stringify([itemKey(ctx.items||[]),ctx.fulfillment,ctx.zip||'',ctx.shippingAddress||null,ctx.dealerPrograms||{},ctx.toroFreightMethod||'']);
  const context=()=>WEPCheckout.context();
  const fresh=q=>q?.ok===true&&Array.isArray(q.lines)&&q.lines.length&&Array.isArray(q.issues)&&Number.isFinite(Date.parse(q.createdAt))&&Date.now()-Date.parse(q.createdAt)<300000;
  const slot=q=>q.paymentMethod==='finance'?(q.financePlans||[]).some(p=>!compatible(p.program))?'finance-inlieu':'finance':q.paymentMethod;
@@ -95,7 +95,7 @@
     const groups=new Map();for(const l of ctx.items){if(!groups.has(l.brandId))groups.set(l.brandId,[]);groups.get(l.brandId).push(l);}
     const eligible=await Promise.all([...groups].map(async([brand,lines])=>{
      const tools=lines.filter(l=>l.type==='tool');if(!tools.length)return [brand,[]];
-     const lists=await Promise.all(tools.map(l=>post('/customer-finance-programs',{brandId:brand,sku:l.sku,quantity:l.quantity,inventoryId:l.inventoryId,...(l.inventoryId?{inventorySelectionRequired:true}:{}),selectionItems:lines.filter(x=>x!==l).map(x=>({sku:x.sku,quantity:x.quantity}))},signal)));
+     const lists=await Promise.all(tools.map(l=>post('/customer-finance-programs',{brandId:brand,sku:l.sku,...(ctx.dealerPrograms?{programSelection:{items:ctx.items,dealerPrograms:ctx.dealerPrograms,toroFreightMethod:ctx.toroFreightMethod}}:{}),...(ctx.toroFreightMethod?{toroFreightMethod:ctx.toroFreightMethod,cart:{items:ctx.items,toroFreightMethod:ctx.toroFreightMethod}}:{}),quantity:l.quantity,inventoryId:l.inventoryId,...(l.inventoryId?{inventorySelectionRequired:true}:{}),selectionItems:lines.filter(x=>x!==l).map(x=>({sku:x.sku,quantity:x.quantity}))},signal)));
      const rows=(lists[0].programs||[]).filter(p=>lists.every(v=>(v.programs||[]).some(x=>x.ProgramID===p.ProgramID))).sort((a,b)=>Number(a.APR)-Number(b.APR)||Number(b.TermMonths)-Number(a.TermMonths));return [brand,rows];
     }));
     for(const name of ['finance','finance-inlieu']){

@@ -13,6 +13,7 @@
  let customerDownPayment=0,downPaymentInput,downRow,downFields,downHeading,downEdited=false;
  const selectedDownMinimums=new Map();
  const downPayments=s=>s.financeDownPayments||{};
+ const toroChoices=s=>({... (s.dealerPrograms?{dealerPrograms:s.dealerPrograms}:{}),...(s.toroFreightMethod?{toroFreightMethod:s.toroFreightMethod}:{})});
  let panel,output,generation=0,timer,controller,lastStarted=-Infinity,lastQuote=-Infinity,activeSignature='',lastApplied='';
  // WEP_BUILD_UPDATE_FEEDBACK_V1: token ownership prevents stale requests finishing a newer build.
  const updateJobs=new Map();let updateBox,updateTitle,updateBar,updateHideTimer,updateFailed=false,updateProblem='';
@@ -98,7 +99,7 @@
    if(!id||!['attachment','accessory','part','battery','charger'].includes(type)||!Number.isInteger(quantity)||quantity<1||quantity>20)throw Error('Choose whole option quantities from 1 to 20.');
    items.push({brandId,type,sku:id,quantity,setupSelected:installation(type,id),inventoryId:inventory(type,id,quantity)});
   }
-  return {brandId,sku,items:window.WEPBuildOrderItems?window.WEPBuildOrderItems(items):items};
+  return {...window.WEPToroCustomerOptions?.choices(),brandId,sku,items:window.WEPBuildOrderItems?window.WEPBuildOrderItems(items):items};
  }
  function pause(ms,signal){return new Promise((resolve,reject)=>{if(signal.aborted){reject(new DOMException('Changed','AbortError'));return;}const abort=()=>{clearTimeout(id);reject(new DOMException('Changed','AbortError'));};const id=setTimeout(()=>{signal.removeEventListener('abort',abort);resolve();},ms);signal.addEventListener('abort',abort,{once:true});});}
  async function post(path,body,signal){
@@ -177,7 +178,7 @@
  function rebateCompatible(p){return !/^(F|FALSE|NO|N|0)$/i.test(clean(p?.RebateCompatible));}
  function financeGroup(p){return rebateCompatible(p)?'compatible':'inlieu';}
  function financeMethod(method){return method==='finance'||method==='finance-inlieu';}
- function previewBuild(s){return {brandId:clean(s.brandId||s.items?.[0]?.brandId).toUpperCase(),sku:clean(s.sku||s.items?.find(x=>x.type==='tool')?.sku),items:(s.items||[]).map(x=>({brandId:clean(x.brandId).toUpperCase(),type:clean(x.type),sku:clean(x.sku),quantity:Number(x.quantity),setupSelected:x.setupSelected===true,inventoryId:clean(x.inventoryId)})),financeDownPayments:s.financeDownPayments||{},fulfillment:clean(s.fulfillment),zip:clean(s.zip)};}
+ function previewBuild(s){return {...toroChoices(s),brandId:clean(s.brandId||s.items?.[0]?.brandId).toUpperCase(),sku:clean(s.sku||s.items?.find(x=>x.type==='tool')?.sku),items:(s.items||[]).map(x=>({brandId:clean(x.brandId).toUpperCase(),type:clean(x.type),sku:clean(x.sku),quantity:Number(x.quantity),setupSelected:x.setupSelected===true,inventoryId:clean(x.inventoryId)})),financeDownPayments:s.financeDownPayments||{},fulfillment:clean(s.fulfillment),zip:clean(s.zip)};}
  function setFinanceLayout(snapshot,layout,persist=false){
   financeLayout={primary:layout.primary||'any',dual:layout.dual===true,hasRebate:layout.hasRebate===true};
   if(persist){financeLayouts.set(JSON.stringify(previewBuild(snapshot)),financeLayout);if(financeLayouts.size>20)financeLayouts.delete(financeLayouts.keys().next().value);try{sessionStorage.setItem(layoutSessionKey,JSON.stringify([...financeLayouts]));}catch(_){}}
@@ -220,7 +221,7 @@
  // Carry customer quote snapshots, never dealer costs or payment credentials.
  function checkoutCarry(){
   const build=lastSnapshot?JSON.stringify(previewBuild(lastSnapshot)):'';
-  return {quote:lastResponse,selectedPaymentBox:selectedPaymentCard(),financeLayout:{...financeLayout},paymentBoxes:[...paymentPreviews.values()].filter(col=>JSON.stringify(col.build)===build).map(col=>({method:col.method,quote:col.quote,program:col.program,build:col.build}))};
+  return {...toroChoices(lastSnapshot||{}),quote:lastResponse,selectedPaymentBox:selectedPaymentCard(),financeLayout:{...financeLayout},paymentBoxes:[...paymentPreviews.values()].filter(col=>JSON.stringify(col.build)===build).map(col=>({method:col.method,quote:col.quote,program:col.program,build:col.build}))};
  }
  function selectedPaymentCard(){
   if(!paymentConfirmed)return '';if(!paymentSelect.value.startsWith('finance:'))return paymentSelect.value;
@@ -362,7 +363,7 @@
  }
  function eligiblePrograms(snapshot,signal){
   const main=snapshot.items[0],selectionItems=snapshot.items.slice(1).map(x=>({sku:x.sku,quantity:x.quantity})).sort((a,b)=>a.sku.localeCompare(b.sku));
-  const body={brandId:snapshot.brandId,sku:snapshot.sku,quantity:main.quantity,inventoryId:main.inventoryId,...(main.inventoryId?{inventorySelectionRequired:true}:{}),...(selectionItems.length?{selectionItems}:{})};
+  const body={brandId:snapshot.brandId,sku:snapshot.sku,...(snapshot.dealerPrograms?{programSelection:{items:snapshot.items,...toroChoices(snapshot)}}:{}),...(snapshot.toroFreightMethod?{toroFreightMethod:snapshot.toroFreightMethod,cart:{items:snapshot.items,toroFreightMethod:snapshot.toroFreightMethod}}:{}),quantity:main.quantity,inventoryId:main.inventoryId,...(main.inventoryId?{inventorySelectionRequired:true}:{}),...(selectionItems.length?{selectionItems}:{})};
   const key=JSON.stringify(body),cached=eligibilityCache.get(key);
   if(cached&&Date.now()-cached.time<60000)return signal.aborted?Promise.reject(new DOMException('Changed','AbortError')):Promise.resolve(cached.value);
   let job=eligibilityRequests.get(key);
@@ -442,7 +443,7 @@
   panel?.querySelectorAll('.wep-payment-rebate-footer,.wep-finance-expiry-footer').forEach(el=>el.remove());
   stopOffers();offersBuildKey=buildKey;offerPlan=null;offerRebate=0;syncOfferJoin();disclaimer(null);offersController=new AbortController();const signal=offersController.signal,id=offersVersion;
   const fresh=()=>id===offersVersion&&!signal.aborted&&buildKey===JSON.stringify(previewBuild(compareState()));
-  const body=method=>({items:snapshot.items,financeDownPayments:downPayments(snapshot),paymentMethod:method,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:{}});
+  const body=method=>({items:snapshot.items,...toroChoices(snapshot),financeDownPayments:downPayments(snapshot),paymentMethod:method,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:{}});
   highlightPayment(snapshot);promoOutput.replaceChildren(note('Calculating your total…'));creditOutput.replaceChildren(note('Calculating your total…'));
   panel.hidden=false;if(!restoreFinance(snapshot)){output.replaceChildren(note('Calculating financing for your package…'));output.setAttribute('aria-busy','true');}
   const offersUpdate=beginUpdate('offers');let offersFailed=false;const deadline=setTimeout(()=>{if(id===offersVersion)offersController.abort();},Math.max(1,(buildDeadline||Date.now()+90000)-Date.now()));
@@ -534,7 +535,7 @@
    const pendingFreight=quote.excludedFactoryFreight?.length>0;
    const label=pendingFreight&&name==='Total'?'Estimated total *':name;
    const display=pendingFreight&&name==='Freight'?(Number(value)>0?money(value)+' + pending *':'To be confirmed *'):validMoney(value)?money(value):'Needs confirmation';
-   dl.append(field(label,display));
+   const totalRow=field(name==='Freight'?'Special order / factory freight':label,display);if(name==='Freight')window.WEPToroCustomerOptions?.freightControl(totalRow.querySelector('dt'));dl.append(totalRow);
   }totals.append(dl);
   if(quote.excludedFactoryFreight?.length){const footnote=note('* Additional freight applies to marked items. We’ll confirm the charge before finalizing your order.');footnote.setAttribute('role','note');footnote.style.color='inherit';totals.append(footnote);}
   const subtotal=document.getElementById('wep-cart-subtotal');if(subtotal)subtotal.textContent=validMoney(quote.subtotal)?money(quote.subtotal):'Needs confirmation';
@@ -545,9 +546,10 @@
   const progress=pricingUpdate;let failed=false,deadline;
   try{
    let snapshot=state();activeSignature=JSON.stringify(snapshot);lastStarted=Date.now();controller=new AbortController();const signal=controller.signal;deadline=setTimeout(()=>controller?.signal===signal&&controller.abort(),Math.max(1,(buildDeadline||Date.now()+90000)-Date.now()));
+   await window.WEPToroCustomerOptions?.load(snapshot,post,signal);if(id!==generation)return;snapshot=state();activeSignature=JSON.stringify(snapshot);
    if(snapshot.paymentMethod!=='finance'){
     eligiblePrograms(snapshot,signal).catch(()=>{});
-    const quote=await packageQuote({items:snapshot.items,financeDownPayments:downPayments(snapshot),paymentMethod:snapshot.paymentMethod,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:{}},signal);
+    const quote=await packageQuote({items:snapshot.items,...toroChoices(snapshot),financeDownPayments:downPayments(snapshot),paymentMethod:snapshot.paymentMethod,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:{}},signal);
     if(id!==generation||activeSignature!==JSON.stringify(state()))return;
     if(snapshot.items.some(x=>x.inventoryId)&&quote.stockPricingVersion!==1)throw Error('Selected stock pricing could not be verified.');
     failed=pricingIssues(quote).length>0;render(quote,null,snapshot);lastApplied=activeSignature;return;
@@ -562,7 +564,7 @@
    for(const candidate of candidates){
    if(candidate){paymentSelect.value='finance:'+clean(candidate.ProgramID);snapshot=state();activeSignature=JSON.stringify(snapshot);}
    if(id!==generation)return;
-   let quote;try{quote=await packageQuote({items:snapshot.items,financeDownPayments:downPayments(snapshot),paymentMethod:snapshot.paymentMethod,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:snapshot.paymentMethod==='finance'?{[snapshot.brandId]:snapshot.programId}:{}},signal,candidate);}catch(error){if(automatic&&error.httpStatus===400&&/not eligible|financed amount.*limits|requires full payment upfront/i.test(error.message))continue;throw error;}
+   let quote;try{quote=await packageQuote({items:snapshot.items,...toroChoices(snapshot),financeDownPayments:downPayments(snapshot),paymentMethod:snapshot.paymentMethod,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:snapshot.paymentMethod==='finance'?{[snapshot.brandId]:snapshot.programId}:{}},signal,candidate);}catch(error){if(automatic&&error.httpStatus===400&&/not eligible|financed amount.*limits|requires full payment upfront/i.test(error.message))continue;throw error;}
    if(id!==generation||activeSignature!==JSON.stringify(state()))return;
    if(snapshot.items.some(x=>x.inventoryId)&&quote.stockPricingVersion!==1)throw Error('The quote service must confirm in-stock pricing before displaying this build.');
    const plan=quote.financePlans?.find(p=>clean(p.brandId).toUpperCase()===snapshot.brandId);
@@ -751,7 +753,7 @@
    const rankingStatus=()=>{if(comparisonSortBy==='payment')comparisonStatus.textContent='Comparing all eligible payments: '+comparisonColumns.filter(c=>c.quote||c.error||c.ineligible).length+' of '+comparisonColumns.length+'. This may take a moment.';};rankingStatus();
    async function next(){for(;;){const col=comparisonColumns[cursor++];if(!col||id!==comparisonGeneration||signal.aborted||!comparisonFresh())return;if(col.quote)continue;
     try{
-     const q=await packageQuote({items:snapshot.items,financeDownPayments:downPayments(snapshot),paymentMethod:col.method,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:col.program?{[snapshot.brandId]:clean(col.program.ProgramID)}:{}},signal,col.program);
+     const q=await packageQuote({items:snapshot.items,...toroChoices(snapshot),financeDownPayments:downPayments(snapshot),paymentMethod:col.method,fulfillment:snapshot.fulfillment,zip:snapshot.zip,financeProgramIds:col.program?{[snapshot.brandId]:clean(col.program.ProgramID)}:{}},signal,col.program);
      if(id!==comparisonGeneration||signal.aborted||!comparisonFresh())return;
      if(!Array.isArray(q.lines)||!q.lines.length||!Array.isArray(q.issues)||!Number.isFinite(Date.parse(q.createdAt)))throw Error('Current pricing could not be confirmed.');
      if(snapshot.items.some(x=>x.inventoryId)&&q.stockPricingVersion!==1)throw Error('In-stock pricing needs confirmation.');
@@ -956,7 +958,7 @@
   catalogPrice=price.textContent;
   const choose=document.createElement('div');choose.className='wep-build-payment-choices';
   const open=document.createElement('button');open.type='button';open.id='wep-open-payment-options';open.className='wep-build-payment-open';open.textContent='Select Payment Option';open.addEventListener('click',openComparison);
-  paymentSelect=document.createElement('select');paymentSelect.id='wep-build-payment';paymentSelect.hidden=true;paymentSelect.setAttribute('aria-label','Selected payment option');paymentSelect.append(new Option('Choose a payment option',''),new Option('Cash / Bank Check','cash'),new Option('Credit Card','credit'));paymentSelectionNote=note('Payment: Not selected','wep-payment-selection-note');paymentSelectionNote.setAttribute('role','status');paymentSelectionNote.setAttribute('aria-live','polite');choose.append(open,paymentSelect,paymentSelectionNote);panel.append(choose);
+  paymentSelect=document.createElement('select');paymentSelect.id='wep-build-payment';paymentSelect.hidden=true;paymentSelect.setAttribute('aria-label','Selected payment option');paymentSelect.append(new Option('Choose a payment option',''),new Option('Cash / Bank Check','cash'),new Option('Credit Card','credit'));paymentSelectionNote=note('Payment: Not selected','wep-payment-selection-note');paymentSelectionNote.setAttribute('role','status');paymentSelectionNote.setAttribute('aria-live','polite');choose.append(open,paymentSelect,paymentSelectionNote);panel.append(choose);window.WEPToroCustomerOptions?.mount(panel);const toroPanel=panel.querySelector('.wep-toro-programs');if(toroPanel)panel.prepend(toroPanel);
   priceExtra=document.createElement('div');priceExtra.className='wep-build-price-extra';price.after(priceExtra);
   const summary=app.querySelector('.wep-compact-actions');if(summary)summary.before(panel);totals=document.createElement('div');totals.className='wep-build-totals';totals.setAttribute('aria-live','polite');summary?.prepend(totals);
   const oldSubtotal=app.querySelector('.wep-subtotal');if(oldSubtotal)oldSubtotal.hidden=true;
@@ -964,7 +966,7 @@
   const review=app.querySelector('#review-package');if(review){const checkout=document.createElement('button');checkout.type='button';checkout.id='wep-build-checkout';checkout.textContent='Proceed to Checkout';checkout.onclick=()=>{checkoutPending=true;review.click();};review.before(checkout);}
   const save=app.querySelector('#save-options');if(save)save.hidden=true;app.querySelector('#wep-print-build')?.remove();for(const link of app.querySelectorAll('.summary-actions a[href="cart.html"]'))link.remove();
   inventoryNotice=note('Checking stock…','wep-build-inventory-status');app.querySelector('.wep-build-stock')?.append(inventoryNotice);
-  const draft=readDraft();if(draft&&Date.now()-draft.updated<86400000){
+  const draft=readDraft();if(draft&&Date.now()-draft.updated<86400000){window.WEPToroCustomerOptions?.restore(draft);
    if(['NEW_MILFORD','DANBURY','DELIVERY'].includes(draft.fulfillment))deliverySelect.value=draft.fulfillment;
    zipInput.value=/^\d{5}$/.test(draft.zip)?draft.zip:'';
    const restored=draft.financeDownPayments?.[draft.brandId];if(validMoney(restored)&&Math.abs(restored*100-Math.round(restored*100))<.00001)customerDownPayment=restored;
@@ -1121,6 +1123,7 @@
  setInterval(()=>{if(!document.hidden)loadInventory(true);},300000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastInventoryCheck>300000)loadInventory(true);});
  // Public builder state shared with its own customer form; no separate review page.
+ window.addEventListener('wep:toro-choice',event=>{if(event.detail?.kind==='program'){preferred='';paymentConfirmed=false;paymentSelect.value='';}schedule(true);});
  window.WEPBuilderCheckout={
   printPreviews:()=>{const build=JSON.stringify(previewBuild(state()));return JSON.parse(JSON.stringify([...paymentPreviews.values()].filter(col=>JSON.stringify(col.build)===build)));},
   refresh:()=>schedule(true),
@@ -1140,7 +1143,7 @@
   shippingQuote:async(address,signal)=>{
    paymentSelect.value='credit';paymentConfirmed=true;preferred='';remember();
    const snapshot=state();if(snapshot.fulfillment!=='SHIP'||!shippingEligible||shippingKey!==shippingSignature(snapshot))throw Error('Choose an eligible shipping option.');
-   const q=await packageQuote({items:snapshot.items,financeDownPayments:downPayments(snapshot),paymentMethod:'credit',fulfillment:'SHIP',zip:'',financeProgramIds:{},shippingAddress:address},signal);
+   const q=await packageQuote({items:snapshot.items,...toroChoices(snapshot),financeDownPayments:downPayments(snapshot),paymentMethod:'credit',fulfillment:'SHIP',zip:'',financeProgramIds:{},shippingAddress:address},signal);
    if(signal.aborted||JSON.stringify(snapshot)!==JSON.stringify(state()))throw new DOMException('Changed','AbortError');
    render(q,null,snapshot);return q;
   }
