@@ -38,9 +38,9 @@
   row.setAttribute('role','group');row.setAttribute('aria-label','Factory freight option');
   for(const [value,label] of [['DEALER_SHIP_DAY','Standard Freight'],['SHIP_NOW','Expedited']]){
    if(row.children.length){const separator=make('span',' / ');separator.setAttribute('aria-hidden','true');row.append(separator);}
-   const button=make('button',label);button.type='button';button.setAttribute('aria-pressed',String(method===value));button.onclick=()=>{if(method===value)return;method=value;change('freight');};row.append(button);
+   const button=make('button',label);button.type='button';button.setAttribute('aria-pressed',String(method===value));button.onclick=()=>{const next=value==='SHIP_NOW'&&method==='SHIP_NOW'?'DEALER_SHIP_DAY':value;if(method===next)return;method=next;change('freight');};row.append(button);
   }
-  container.append(row);
+  container.replaceChildren(row);
  }
  window.WEPToroCustomerOptions={choices,restore,load,mount,freightControl};
 })();
