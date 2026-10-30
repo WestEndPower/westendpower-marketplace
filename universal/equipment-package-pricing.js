@@ -12,13 +12,26 @@
   for(const candidate of [...direct,...groups,'Group_ALL_'+product.BrandID,'AllProducts'].map(key).filter(Boolean))if(fields.has(candidate)&&fields.get(candidate)!=='')return yes(fields.get(candidate));
   return false;
  }
+ function hasModelRequirements(row,product){
+  const pattern=new RegExp('^'+key(product.SKU)+'REQ[1-9]\\d*$');
+  return !!key(product.SKU)&&Object.keys(row).some(field=>pattern.test(key(field)));
+ }
  function requirementSlots(row,product){
-  const result=[];
-  for(let i=1;i<=4;i++){
-   const sku=clean(row['RequiredSKU'+i]);if(!sku)continue;
+  const result=[],fields=new Map(Object.entries(row).map(([field,value])=>[key(field),clean(value)]));
+  if(hasModelRequirements(row,product)){
+   const pattern=new RegExp('^'+key(product.SKU)+'REQ([1-9]\\d*)$');
+   for(const [field,sku] of [...fields].sort((a,b)=>Number(a[0].match(pattern)?.[1]||0)-Number(b[0].match(pattern)?.[1]||0))){
+    const slot=field.match(pattern);if(slot&&sku)result.push({sku,quantity:Number(fields.get(key(product.SKU)+'QTY'+slot[1])||1)});
+   }
+   return result;
+  }
+  for(const field of Object.keys(row).filter(field=>/^RequiredSKU[1-9]\d*$/i.test(field))){
+   const i=field.match(/\d+$/)[0],sku=clean(row[field]);if(!sku)continue;
    const model=clean(row['RequiredModel'+i]);if(model&&!model.split(/[;,|]/).some(v=>[product.SKU,product.Model].some(p=>key(v)===key(p))))continue;
    result.push({sku,quantity:Number(clean(row['RequiredQty'+i]||row['RequiredSKU'+i+'Qty'])||1)});
-   for(let j=1;j<=2;j++){const child=clean(row['SKU'+i+'Requires'+j]);if(child)result.push({sku:child,quantity:Number(clean(row['SKU'+i+'Requires'+j+'Qty'])||1)});}
+   for(const childField of Object.keys(row).filter(field=>new RegExp('^SKU'+i+'Requires[1-9]\\d*$','i').test(field))){
+    const child=clean(row[childField]);if(child)result.push({sku:child,quantity:Number(clean(row[childField+'Qty'])||1)});
+   }
   }
   return result;
  }
@@ -92,8 +105,10 @@
    const label=light?'Light Bar':'Std. Bar';
    return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+label+'">'+m.bars.filter(b=>b.light===light).sort((a,b)=>a.size-b.size).map(b=>'<button type="button" data-eqp-bar="'+esc(b.variant.sku)+'" '+(m.stock?'disabled ':'')+'aria-pressed="'+(b.variant.sku===m.tool.sku)+'">'+b.size+'&quot;</button>').join('')+'</div></div>';
   }).join(''):['attachment','accessory'].map(type=>{
-   const label=m.emptyBattery?(type==='attachment'?'Batteries':'Chargers'):(type==='attachment'?'Attach':'Access');
-   return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+(m.emptyBattery?label:(type==='attachment'?'Attachments':'Accessories'))+'"></div></div>';
+   const label=m.emptyBattery?(type==='attachment'?'Batteries':'Chargers'):(type==='attachment'?'Attachments':'Accessories');
+   if(m.emptyBattery)return '<div class="pp-component-row"><span class="pp-component-label">'+label+'</span><div role="group" aria-label="'+label+'"></div></div>';
+   const count=m.options.filter(item=>item.type===type).length;
+   return '<div class="pp-component-row pp-picker-row"><span class="pp-component-label">'+(type==='attachment'?'Attach:':'Access:')+'</span>'+(count?'<a class="pp-option-picker" href="'+esc(pickerUrl(f,c,type))+'" target="_blank" rel="noopener" aria-label="View '+label+' ('+count+' Available)">View ('+count+' Available)</a>':'<button class="pp-option-picker" type="button" disabled aria-label="View '+label+' (0 Available)">View (0 Available)</button>')+'</div>';
   }).join('');
   const offer=c.promoInfo(m.tool),sale=offer?.type==='sale',basePrice=sale?offer.price:m.tool.msrp||m.tool.price;
   return '<div class="pp-box pp-equipment-base'+(!selected?' pp-selected':'')+'" data-pp-box="tool"><button class="pp-price-select" type="button" data-eqp-select="tool" aria-pressed="'+!selected+'"><span>'+esc(f.brand)+' Base Price:</span><span class="pp-prices">'+(sale?'<del>'+c.money(offer.regular)+'</del>':'')+'<strong>'+c.money(basePrice)+'</strong></span></button></div>'+
@@ -101,6 +116,12 @@
  }
  function tool(f){return entry(f)?.m.tool;}
  function buildUrl(f,c){const e=entry(f);if(!e||e.m.stock||e.m.standard)return null;const config=configuration(e.m,e.s,c),url=new URL(c.paymentSelectionUrl(f));url.pathname=url.pathname.replace(/payment-options(?:\.html)?\/?$/,'product-options.html');url.hash='';url.searchParams.set('sku',e.m.tool.sku);url.searchParams.delete('package');url.searchParams.set('cardOptions',JSON.stringify(config.parts.filter(p=>!p.required).map(p=>({type:p.type,sku:clean(p.row.SKU),quantity:p.quantity}))));return url.href;}
+ function pickerUrl(f,c,type){
+  const e=entry(f);if(!e||e.m.stock)return '';
+  const url=new URL(c.paymentSelectionUrl(f));url.pathname=url.pathname.replace(/(?:payment-options|product-options)(?:\.html)?\/?$/,'product-options.html');
+  url.hash='';url.searchParams.set('sku',e.m.tool.sku);url.searchParams.set('brand',f.brand);url.searchParams.set('group',type);url.hash='wep-panel-'+type;url.searchParams.set('configuration',window.crypto.randomUUID());url.searchParams.delete('package');
+  const config=configuration(e.m,e.s,c);url.searchParams.set('cardOptions',JSON.stringify(config.parts.filter(item=>!item.required).map(item=>({type:item.type,sku:clean(item.row.SKU),quantity:item.quantity}))));return url.href;
+ }
  function publishedPrice(f,allowsRebate){
   const e=entry(f);if(!e||e.m.stock||e.m.standard)return undefined;const config=configuration(e.m,e.s,e.c);if(config.error)return 0;
   const rows=[{row:e.m.tool.marketplaceRow,quantity:1},...config.parts];
@@ -140,5 +161,5 @@
   }
   return false;
  }
- window.WestEndEquipmentPackages={render,tool,buildUrl,actions,handle,publishedPrice,compatibility,requirements,shortName};
+ window.WestEndEquipmentPackages={render,tool,buildUrl,actions,handle,publishedPrice,compatibility,requirements,requirementSlots,hasModelRequirements,pickerUrl,shortName};
 })();
