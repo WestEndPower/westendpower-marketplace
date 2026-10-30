@@ -22,6 +22,7 @@ let financeLoad=0,financeSnapshot='',financeReady=false;
 function selectedFulfillment(){return new FormData($('choices')).get('fulfillment');}
 function shippingAddress(){const f=new FormData($('choices'));return {address1:String(f.get('shipAddress1')||'').trim(),address2:String(f.get('shipAddress2')||'').trim(),city:String(f.get('shipCity')||'').trim(),state:String(f.get('shipState')||'').trim().toUpperCase(),zip:String(f.get('shipZip')||'').trim()};}
 function toroChoices(){const s=window.WEPCheckoutSelection||{};return {...(s.dealerPrograms?{dealerPrograms:s.dealerPrograms}:{}),...(s.toroFreightMethod?{toroFreightMethod:s.toroFreightMethod}:{})};}
+function financeKey(){return JSON.stringify([cartText(),toroChoices()]);}
 function financeDownPayments(){return window.WEPCheckoutSelection?.financeDownPayments||{};}
 function financeProgramIds(){const ids={};document.querySelectorAll('[data-finance-brand]').forEach(select=>{ids[select.dataset.financeBrand]=select.value;});return ids;}
 function changes(){
@@ -32,13 +33,13 @@ function changes(){
  if(ship)$('choices').querySelector('[name="paymentMethod"][value="credit"]').checked=true;
  const finance=new FormData($('choices')).get('paymentMethod')==='finance';$('finance-options').hidden=!finance;for(const select of $('finance-options').querySelectorAll('select'))select.disabled=!finance;
  $('status').textContent=document.body.classList.contains('checkout-preloaded')?'Loading your selected package and checking current pricing…':'Select Review Current Pricing to update your quote.';
- if(finance&&financeSnapshot!==cartText())loadFinanceOptions();
+ if(finance&&financeSnapshot!==financeKey())loadFinanceOptions();
  updateChoiceSummaries();
  $('update').disabled=busy||(finance&&!financeReady)||stockPending();
  if(ship){$('proceed-checkout').disabled=false;syncShippingCustomer();}
 }
 async function loadFinanceOptions(){
- const number=++financeLoad;financeSnapshot=cartText();financeReady=false;$('update').disabled=true;$('finance-options').textContent='Loading eligible financing programs…';
+ const number=++financeLoad;financeSnapshot=financeKey();financeReady=false;$('update').disabled=true;$('finance-options').textContent='Loading eligible financing programs…';
  try{
   const groups=new Map();for(const line of readCart()){if(!groups.has(line.brandId))groups.set(line.brandId,[]);groups.get(line.brandId).push(line);}
   const choices=await Promise.all([...groups].map(async([brand,lines])=>{
@@ -49,7 +50,7 @@ async function loadFinanceOptions(){
    programs.sort((a,b)=>Number(a.APR)-Number(b.APR)||Number(b.TermMonths)-Number(a.TermMonths));
    return '<label class="finance-selector">'+esc(brand)+' financing program<select data-finance-brand="'+esc(brand)+'" required><option value="">Choose a program</option>'+programs.map(p=>'<option value="'+esc(p.ProgramID)+'">'+esc(p.ProgramName||p.ProgramID)+' · '+esc(p.APR)+'% APR · '+esc(p.TermMonths)+' months</option>').join('')+'</select></label>';
   }));
-  if(number!==financeLoad||financeSnapshot!==cartText())return;
+  if(number!==financeLoad||financeSnapshot!==financeKey())return;
   $('finance-options').innerHTML=choices.join('');for(const select of $('finance-options').querySelectorAll('select'))select.disabled=new FormData($('choices')).get('paymentMethod')!=='finance';financeReady=true;queueMicrotask(scheduleAutoQuote);
  }catch(error){if(number===financeLoad){financeSnapshot='';$('finance-options').textContent=error.message;window.dispatchEvent(new Event('wep:quote-error'));}}
  finally{if(number===financeLoad)$('update').disabled=busy||(new FormData($('choices')).get('paymentMethod')==='finance'&&!financeReady)||stockPending();}
