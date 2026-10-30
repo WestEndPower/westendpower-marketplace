@@ -3,7 +3,6 @@
  'use strict';
  const allowed=['FirstResponders','NALP','FleetTier1','FleetTier2','FleetTier3'];
  let selected=null,method='DEALER_SHIP_DAY',options={programs:[],freight:{available:false}},host,dialog,lastItems='',cache=new Map();
- const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
  const make=(tag,text)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;return el;};
  function change(kind='program'){window.dispatchEvent(new CustomEvent('wep:toro-choice',{detail:{kind}}));}
  function choices(){return {...(selected?{dealerPrograms:{TORO:{...selected}}}:{}),...(lastItems?{toroFreightMethod:method}:{})};}
@@ -11,10 +10,9 @@
  function confirmProgram(program){
   dialog?.remove();dialog=make('dialog');dialog.className='wep-toro-confirm';
   const heading=make('h2',program.label),message=make('p',program.message),form=make('form');form.method='dialog';
-  let id;if(program.key==='NALP'){const label=make('label','NALP ID ');id=make('input');id.required=true;id.maxLength=160;id.autocomplete='off';id.value=selected?.key==='NALP'?selected.reference:'';label.append(id);form.append(label);}
   const buttons=make('div'),cancel=make('button','Cancel'),confirm=make('button','Confirm eligibility');cancel.type='button';confirm.type='submit';cancel.onclick=()=>dialog.close();buttons.append(cancel,confirm);form.append(buttons);
-  form.addEventListener('submit',event=>{event.preventDefault();if(id&&!id.value.trim()){id.setCustomValidity('NALP ID Required.');id.reportValidity();return;}selected={key:program.key,verified:true,reference:id?.value.trim()||''};dialog.close();render();change();});
-  id?.addEventListener('input',()=>id.setCustomValidity(''));dialog.append(heading,message,form);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();
+  form.addEventListener('submit',event=>{event.preventDefault();selected={key:program.key,verified:true,reference:''};dialog.close();render();change();});
+  dialog.append(heading,message,form);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();
  }
  function render(){
   if(!host)return;host.replaceChildren();host.hidden=!options.programs.length;
@@ -37,8 +35,12 @@
  function freightControl(container){
   if(!options.freight.available)return;
   const row=make('span');row.className='wep-toro-choice-row wep-toro-freight';
-  for(const [value,label] of [['DEALER_SHIP_DAY','Factory Frt'],['SHIP_NOW','Expedited Frt']]){const button=make('button',label);button.type='button';button.setAttribute('aria-pressed',String(method===value));button.onclick=()=>{if(method===value)return;method=value;change('freight');};row.append(button);}
-  const help=make('small',method==='SHIP_NOW'?'Expedited factory freight selected.':'Factory freight uses Dealer Ship Day.');row.append(help);row.append(make('small','Expedited freight adds '+money(options.freight.additionalCharge)+'.'));container.append(row);
+  row.setAttribute('role','group');row.setAttribute('aria-label','Factory freight option');
+  for(const [value,label] of [['DEALER_SHIP_DAY','Standard Freight'],['SHIP_NOW','Expedited']]){
+   if(row.children.length){const separator=make('span',' / ');separator.setAttribute('aria-hidden','true');row.append(separator);}
+   const button=make('button',label);button.type='button';button.setAttribute('aria-pressed',String(method===value));button.onclick=()=>{if(method===value)return;method=value;change('freight');};row.append(button);
+  }
+  container.append(row);
  }
  window.WEPToroCustomerOptions={choices,restore,load,mount,freightControl};
 })();

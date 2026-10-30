@@ -535,7 +535,7 @@
    const pendingFreight=quote.excludedFactoryFreight?.length>0;
    const label=pendingFreight&&name==='Total'?'Estimated total *':name;
    const display=pendingFreight&&name==='Freight'?(Number(value)>0?money(value)+' + pending *':'To be confirmed *'):validMoney(value)?money(value):'Needs confirmation';
-   const totalRow=field(name==='Freight'?'Special order / factory freight':label,display);if(name==='Freight')window.WEPToroCustomerOptions?.freightControl(totalRow.querySelector('dt'));dl.append(totalRow);
+   const totalRow=field(name==='Freight'?'Special order / factory freight':label,display);dl.append(totalRow);
   }totals.append(dl);
   if(quote.excludedFactoryFreight?.length){const footnote=note('* Additional freight applies to marked items. We’ll confirm the charge before finalizing your order.');footnote.setAttribute('role','note');footnote.style.color='inherit';totals.append(footnote);}
   const subtotal=document.getElementById('wep-cart-subtotal');if(subtotal)subtotal.textContent=validMoney(quote.subtotal)?money(quote.subtotal):'Needs confirmation';
