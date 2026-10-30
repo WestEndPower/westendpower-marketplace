@@ -27,10 +27,10 @@ const snapshot={brandId:'YANMAR',sku:'BASE',fulfillment:'DELIVERY',zip:'06776',p
 const cart=[{packageId:'OTHER:KEEP',type:'tool',sku:'KEEP'},...snapshot.items.map(item=>({...item,packageId:'YANMAR:BASE',productName:item.sku}))];
 const allowed=[{type:'attachment',row:{SKU:'FORKS',Description:'Pallet Forks',MSRP:800,AssemblyOption:'T',AssemblyAmount:40}},{type:'attachment',row:{SKU:'LOOSE-LOADER'},included:true}];
 const plan=()=>factory.transfer({snapshot,current:base,next:loader,brand:'yanmar',cart,allowed});
-test('changing factory SKU preserves compatible extras, quantity, delivery and other packages; resets payment and main stock',()=>{
+test('changing factory SKU preserves compatible extras, quantity, delivery, payment and other packages; clears main stock',()=>{
  const result=plan();
  assert.equal(result.draft.sku,'LOADER');assert.equal(result.draft.fulfillment,'DELIVERY');assert.equal(result.draft.zip,'06776');
- assert.equal(result.draft.paymentConfirmed,false);assert.equal(result.draft.paymentMethod,'standard');assert.equal(result.draft.programId,'');
+ assert.equal(result.draft.paymentConfirmed,true);assert.equal(result.draft.paymentMethod,'finance');assert.equal(result.draft.programId,'OLD');
  assert.deepEqual(result.draft.items.map(item=>item.sku),['LOADER','FORKS']);
  assert.equal(result.draft.items[0].quantity,2);assert.equal(result.draft.items[0].inventoryId,'');
  assert.equal(result.draft.items[1].inventoryId,'fork-unit');assert.equal(result.draft.items[1].setupSelected,true);
@@ -40,8 +40,21 @@ test('changing factory SKU preserves compatible extras, quantity, delivery and o
  assert(result.draft.configurationNotice.includes('OLD-PART (not compatible)'));
 });
 test('an in-stock tractor cannot be changed, and an existing target package cannot be overwritten',()=>{
- assert.throws(()=>factory.transfer({snapshot:{...snapshot,items:[{...snapshot.items[0],inventoryId:'stock-unit'}]},current:base,next:loader,brand:'YANMAR',cart,allowed}),/Order Unit/);
+ assert.throws(()=>factory.transfer({snapshot:{...snapshot,items:[{...snapshot.items[0],inventoryId:'stock-unit'}]},current:base,next:loader,brand:'YANMAR',cart,allowed}),/Select Build to Order/);
  assert.throws(()=>factory.transfer({snapshot,current:base,next:loader,brand:'YANMAR',cart:[...cart,{packageId:'YANMAR:LOADER'}],allowed}),/already saved/);
+});
+test('configuration changes retain payment preferences and down payment without carrying a priced quote',()=>{
+ for(const paymentMethod of ['cash','credit','finance','standard']){
+  const before={...snapshot,paymentMethod,programId:paymentMethod==='finance'?'ZERO84':'',financeDownPayments:{YANMAR:2500},quote:{total:1,fingerprint:'old-price'}};
+  const result=factory.transfer({snapshot:before,current:base,next:loader,brand:'YANMAR',cart,allowed});
+  assert.equal(result.draft.paymentMethod,paymentMethod);
+  assert.equal(result.draft.paymentConfirmed,paymentMethod!=='standard');
+  assert.equal(result.draft.programId,paymentMethod==='finance'?'ZERO84':'');
+  assert.equal(result.draft.financeDownPayments.YANMAR,2500);
+  assert.equal(result.draft.quote,undefined);assert.equal(result.draft.fingerprint,undefined);
+ }
+ const before={...snapshot,programId:'',financeProgramIds:{YANMAR:'ZERO84'}};
+ assert.equal(factory.transfer({snapshot:before,current:base,next:loader,brand:'YANMAR',cart,allowed}).draft.programId,'ZERO84');
 });
 function storage(entries=[],failKey){
  const map=new Map(entries);let failed=false;
