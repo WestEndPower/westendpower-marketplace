@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {parse}=require('../scripts/marketplace-sync.cjs');
 const Kit=require('../universal/package-components.js');
-const expected={72530:15,72531:15,72524:14,72525:14};
+const expected={72530:15,72531:14,72524:14,72525:14};
 const read=name=>parse(fs.readFileSync('brands/toro/data/'+name+'.csv','utf8')).rows;
 const unpack=table=>table.rows.map(values=>{const row={};if(table.encoding==='sparse'){for(let i=0;i<values.length;i+=2)row[table.headers[values[i]]]=values[i+1];}else table.headers.forEach((h,i)=>row[h]=values[i]);return row;});
 function fixture(published){
@@ -26,10 +26,11 @@ for(const published of [false,true])test('MULTI FORCE links use exact unit, work
   assert.match(html,/target="_blank" rel="noopener"/);assert.notEqual(url.searchParams.get('configuration'),new URL(r.api.pickerUrl(f,r.c,'attachment')).searchParams.get('configuration'));
  }
 });
-test('model-specific companion quantities remain exact and missing workbook SKU is not substituted',()=>{
+test('model-specific companion quantities remain exact and corrected 72531 bagger includes the 52-inch blower once',()=>{
  const r=fixture(false),product=sku=>r.products.find(p=>p.SKU===sku),row=sku=>r.source.attachments.find(p=>p.SKU===sku),plain=v=>JSON.parse(JSON.stringify(v));
  assert.deepEqual(plain(r.api.requirementSlots(row('78598'),product('72530'))),[{sku:'78601',quantity:1},{sku:'133-5386',quantity:1},{sku:'140-4311',quantity:2}]);
- assert.deepEqual(plain(r.api.requirementSlots(row('78524'),product('72531'))),[{sku:'79526',quantity:1}]);
- assert.throws(()=>r.api.requirements([{type:'attachment',row:row('78524'),quantity:1}],r.source.attachments.map(row=>({type:'attachment',row})),product('72531')),/confirmation/);
+ assert.deepEqual(plain(r.api.requirementSlots(row('78524'),product('72531'))),[{sku:'78526',quantity:1}]);
+ const required=r.api.requirements([{type:'attachment',row:row('78524'),quantity:1}],r.source.attachments.map(row=>({type:'attachment',row})),product('72531'));
+ assert.deepEqual(plain(required.map(p=>({sku:p.row.SKU,quantity:p.quantity}))),[{sku:'78526',quantity:1}]);
  assert.equal(r.api.compatibility(row('78598'),product('72524')),false);
 });
