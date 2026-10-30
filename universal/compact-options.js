@@ -107,7 +107,7 @@
      button.setAttribute('aria-expanded','false');document.getElementById('wep-panel-energy').hidden=true;resetDock();
     }else setPanel(button,true);
    },true);
-   const first=nav.querySelector('[data-wep-panel="implement"]')||nav.querySelector('[data-wep-panel="attachment"]')||nav.querySelector('[aria-expanded="true"]:not([data-wep-panel="energy"])')||nav.querySelector('[data-wep-panel]:not([data-wep-panel="energy"])');if(first)setPanel(first,false);
+   const first=nav.querySelector('[aria-expanded="true"]:not([data-wep-panel="energy"])')||nav.querySelector('[data-wep-panel="implement"]')||nav.querySelector('[data-wep-panel="attachment"]')||nav.querySelector('[data-wep-panel]:not([data-wep-panel="energy"])');if(first)setPanel(first,false);
   }
   for(const type of ['energy','attachment','implement','accessory','part']){
    const panel=document.getElementById('wep-panel-'+type);if(!panel)continue;
@@ -122,7 +122,7 @@
     const controls=document.createElement('div');controls.className='wep-carousel-controls';controls.hidden=true;
     function advance(direction){const width=row.querySelector('.card')?.getBoundingClientRect().width||320;row.scrollBy({left:direction*Math.max(width+12,row.clientWidth-width-12),behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}
     for(const [direction,text,label] of [[-1,'‹','Previous'],[1,'›','Next']]){const b=document.createElement('button');b.type='button';b.textContent=text;b.setAttribute('aria-label',label+' '+title.textContent.toLowerCase());b.setAttribute('aria-controls',id);b.addEventListener('click',()=>advance(direction));controls.append(b);}
-    if(type!=='energy'&&!implementHeading)addViewAll(panel,heading);
+    if(!['energy','attachment','accessory'].includes(type)&&!implementHeading)addViewAll(panel,heading);
     heading.append(controls);carousels.set(row,controls);row.addEventListener('scroll',updateArrows,{passive:true});
     row.addEventListener('keydown',event=>{if(event.target!==row||!['ArrowLeft','ArrowRight'].includes(event.key))return;event.preventDefault();advance(event.key==='ArrowLeft'?-1:1);});
     if(window.ResizeObserver)new ResizeObserver(updateArrows).observe(row);

@@ -85,3 +85,13 @@
 /* Build & Buy energy choices remain one horizontal row at every screen width. */
 #wep-panel-energy .grid.wep-options-carousel>.card.wep-energy-card{flex:0 0 320px;max-width:320px;scroll-snap-align:start;box-sizing:border-box}
 @media(max-width:600px){#wep-panel-energy .grid.wep-options-carousel>.card.wep-energy-card{flex-basis:min(320px,calc(100vw - 60px))}}
+
+/* All brands browse attachments and accessories in one contained scrolling row. */
+#wep-panel-attachment .grid.wep-options-carousel,
+#wep-panel-accessory .grid.wep-options-carousel{display:flex;flex-wrap:nowrap;max-width:100%;min-width:0;overflow-x:auto;scroll-snap-type:x proximity}
+#wep-panel-attachment .wep-options-carousel>.card.wep-carousel-card,
+#wep-panel-accessory .wep-options-carousel>.card.wep-carousel-card{flex:0 0 320px;width:320px;max-width:320px;min-width:0;box-sizing:border-box}
+@media(max-width:600px){
+ #wep-panel-attachment .wep-options-carousel>.card.wep-carousel-card,
+ #wep-panel-accessory .wep-options-carousel>.card.wep-carousel-card{flex-basis:min(320px,calc(100vw - 60px));width:min(320px,calc(100vw - 60px))}
+}

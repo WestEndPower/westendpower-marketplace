@@ -155,3 +155,8 @@ Change a baseline only when John requests or approves that layout change.
 - Numbered equipment-specific headings use SKU-Req1 / SKU-Qty1, continuing as needed. Compact SKUReq1 / SKUQty1 headings are accepted too. Equipment-specific slots take precedence over legacy RequiredSKU slots for that equipment; an explicit blank slot does not inherit an unrelated requirement.
 - Builds launched through this picker use a tab-local cart and carry their configuration ID through builder, implements and checkout links. They do not replace the original marketplace cart or another unit's configuration. Existing ordinary cart and dealer-edit flows retain their storage behavior.
 - Keep all three shopping entry routes on the same shared equipment module and card styles. The picker does not change browse filters, navigation, card column counts or the generated-page toolbar.
+
+## Build & Buy attachment and accessory rows (October 30, 2026)
+
+- Across every manufacturer, Attachments and Accessories each use one horizontal scrolling row with previous/next arrows, keyboard scrolling and touch scrolling. They do not expand into a multirow View All grid. Implements retain their existing category and View All controls.
+- Opening a price-tag View link preserves the requested Attachments or Accessories panel during compact-layout enhancement.
