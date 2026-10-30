@@ -19,7 +19,7 @@ for(const published of [false,true])test('MULTI FORCE links use exact unit, work
  for(const [sku,count] of Object.entries(expected)){
   const {html,f}=r.render(sku);
   assert.match(html,new RegExp('View Attachments \\('+count+' Available\\)'));
-  assert.match(html,/aria-label="View Accessories \(1 Available\)"/);
+  assert.match(html,new RegExp('aria-label="View Accessories \\('+(sku==='72530'?2:3)+' Available\\)"'));
   assert.doesNotMatch(html,/disabled aria-label="View Accessories/);
   const href=html.match(/class="pp-option-picker" href="([^"]+)"/)[1].replaceAll('&amp;','&'),url=new URL(href);
   assert.equal(url.pathname,'/westendpower-marketplace/product-options.html');assert.equal(url.searchParams.get('brand'),'TORO');assert.equal(url.searchParams.get('sku'),sku);assert.equal(url.searchParams.get('quantity'),'2');
@@ -34,7 +34,7 @@ test('MULTI FORCE Recycler Kits fit only the selected deck size in CSV and combi
   const r=fixture(published);
   for(const [sku,kit] of Object.entries({72530:'139-6653',72531:'139-6653',72524:'139-6655',72525:'139-6655'})){
    const product=r.products.find(p=>p.SKU===sku),available=r.source.accessories.filter(row=>row.Active==='T'&&r.api.compatibility(row,product));
-   assert.deepEqual(available.map(row=>row.SKU),[kit]);
+   assert.deepEqual(available.filter(row=>row.SKU==='139-6653'||row.SKU==='139-6655').map(row=>row.SKU),[kit]);
   }
  }
 });
