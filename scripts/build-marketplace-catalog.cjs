@@ -38,7 +38,8 @@ function buildCatalog({root=path.resolve(__dirname,'..')}={}){
     }
     return source;
   });
-  const bundle={schema:1,brands:BRANDS,componentBrand:'STIHL',productSources,tables,componentSources};
+  const financeSources=BRANDS.map(brand=>({brand,...packTable(readTable(root,'brands/'+brand.toLowerCase()+'/data/finance-programs.csv'))}));
+  const bundle={schema:1,brands:BRANDS,componentBrand:'STIHL',productSources,tables,componentSources,financeSources};
   const json=JSON.stringify(bundle)+'\n';
   const version=crypto.createHash('sha256').update(json).digest('hex').slice(0,16);
   const htmlFile=path.join(root,'marketplace.html');
