@@ -803,7 +803,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
   function refreshSelectedCard(f){
     const host=document.querySelector('.market-card[data-key="'+CSS.escape(f.key)+'"]');
-    if(host)host.outerHTML=card(f);fitPriceDescriptions();
+    if(host){financeCardObserver?.unobserve(host);host.outerHTML=card(f);}fitPriceDescriptions();observeCardFinance();
   }
   function handlePriceSelection(event){
     const control=event.target.closest('[data-price-select]');if(!control)return false;
@@ -831,12 +831,31 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     return clean(f.brand).toUpperCase()+'|'+skuKey(variant.sku)+'|'+cardSelectionFor(f).index+'|'+selectedPriceQuantity(f)+'|'+(selectedInventoryId(f)===undefined?'AUTO':selectedInventoryId(f)||'ORDER')+'|'+JSON.stringify(variant.recommendedPackage?variant.packageItems||[]:[]);
   }
 
+  let financeCardObserver;
+  function observeCardFinance(){
+    if(typeof IntersectionObserver!=='function')return;
+    if(!financeCardObserver)financeCardObserver=new IntersectionObserver(entries=>{
+      for(const entry of entries){
+        if(!entry.isIntersecting||document.hidden)continue;
+        const f=DATA.filtered.find(f=>f.key===entry.target.dataset.key);
+        if(f)requestMarketplaceFinanceSummary(f);
+      }
+    },{rootMargin:'100px'});
+    for(const element of document.querySelectorAll('#market-grid .market-card'))financeCardObserver.observe(element);
+  }
+  function financeCardCurrent(f,key){
+    if(document.hidden||financeSummaryKey(f)!==key)return false;
+    const element=document.querySelector('.market-card[data-key="'+CSS.escape(f.key)+'"]'),bounds=element?.getBoundingClientRect?.();
+    return Boolean(bounds&&bounds.bottom>=-100&&bounds.top<=(window.innerHeight||800)+100);
+  }
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){financeCardObserver?.disconnect();observeCardFinance();}});
+
   function cardFinanceMarkup(f,buildHref){
     const key=financeSummaryKey(f),url=new URL(buildHref||catalogBuildUrl(f));url.hash='';
     const bottom=new URL(url);bottom.hash='wep-itemized-quote';
     const links='<div class="market-card-price-links"><a class="market-payment-options" target="_blank" rel="noopener noreferrer" href="'+esc(url.href)+'">View All Promotions</a><a class="market-payment-options" target="_blank" rel="noopener noreferrer" href="'+esc(bottom.href)+'">Out-the-Door Price</a></div>';
     if(!key || /\|$/.test(key))return links;
-    const summary=DATA.financeSummaryCache.get(key);if(!summary)requestMarketplaceFinanceSummary(f);
+    const summary=DATA.financeSummaryCache.get(key);
     if(!summary||summary.none)return (!summary?'<div class="market-finance-pending" role="status">Updating financing…</div>':'')+links;
     return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+'<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+((summary.expirationLabel||((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false))?'<div class="market-card-finance-note">'+esc(summary.expirationLabel||'')+((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false?' <span class="market-card-finance-rebate">(In lieu of customer rebate)</span>':'')+'</div>':'')+links+'</div>';
   }
@@ -855,7 +874,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
     const request=(async()=>{
       try{
-        const programs=await window.WestEndPayments.programs(brandId,sku,inventoryId,quantity,row.__packageItems);
+        const programs=await window.WestEndPayments.programs(brandId,sku,inventoryId,quantity,row.__packageItems,{shouldRun:()=>financeCardCurrent(f,key),priority:()=>f.financePriority||1});
         const program=bestMarketplaceFinanceProgram(programs);
         if(!program){
           DATA.financeSummaryCache.set(key,{none:true});
@@ -863,7 +882,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
         }
         if(financeSummaryKey(f)!==key)return;
         const summary=await window.WestEndPayments.quote(brandId,sku,row,'finance',program,inventoryId,quantity,{
-          shouldRun:()=>financeSummaryKey(f)===key,
+          shouldRun:()=>financeCardCurrent(f,key),
           priority:()=>{
             if(f.financePriority)return f.financePriority;
             const element=document.querySelector('.market-card[data-key="'+CSS.escape(f.key)+'"]');
@@ -2230,6 +2249,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   let cardRenderVersion=0;
   function renderCards(){
     const version=++cardRenderVersion;
+    financeCardObserver?.disconnect();
     if(!marketplaceHasSelection()){
       $('#market-grid').setAttribute('aria-busy','false');
       $('#market-grid').innerHTML='';
@@ -2245,13 +2265,13 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       return;
     }
     grid.innerHTML=families.slice(0,batchSize).map(card).join('');
-    fitPriceDescriptions();
+    fitPriceDescriptions();observeCardFinance();
     offset=batchSize;
     function appendBatch(){
       // A changed filter invalidates any pending cards from the previous results.
       if(version!==cardRenderVersion) return;
       grid.insertAdjacentHTML('beforeend',families.slice(offset,offset+batchSize).map(card).join(''));
-      fitPriceDescriptions();
+      fitPriceDescriptions();observeCardFinance();
       offset+=batchSize;
       if(offset<families.length) setTimeout(appendBatch,16);
       else grid.setAttribute('aria-busy','false');

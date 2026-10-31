@@ -53,7 +53,7 @@
  let pricingUpdate;
  app.addEventListener('click',event=>{if([...updateJobs.keys()].some(scope=>!scope.startsWith('comparison:'))&&event.target.closest('[data-payment-preview],#wep-open-payment-options,#wep-build-checkout')){event.preventDefault();event.stopImmediatePropagation();}},true);
  const spacing=1200; // Debounce edits; quotes use the shared request budget below.
- const quoteCache=new Map(),quoteSessionKey='wepBuildQuoteCache:kit-components-v1:'+api,quoteBudgetKey='wepBuildQuoteBudget',quoteBudgetWindow=61000,quoteBudgetMax=9; // API route allows 10/minute; retain one request of headroom.
+ const quoteCache=new Map(),quoteSessionKey='wepBuildQuoteCache:kit-components-v1:'+api,quoteBudgetKey='wepBuildQuoteBudget',quoteBudgetWindow=61000,quoteBudgetMax=27; // API route allows 30/minute; retain headroom for final quote actions.
  let quoteCooldown=0,quoteBudgetMemory=[];
  try{const rows=JSON.parse(sessionStorage.getItem(quoteSessionKey)||'[]');if(Array.isArray(rows))for(const entry of rows.slice(-40)){if(!Array.isArray(entry)||entry.length!==2||typeof entry[0]!=='string')continue;const q=entry[1];if(q&&Array.isArray(q.lines)&&q.lines.length&&q.lines.every(l=>validMoney(l.unitPrice))&&Array.isArray(q.issues)&&!pricingIssues(q).length&&validMoney(q.total)&&Date.now()-Date.parse(q.createdAt)<120000)quoteCache.set(entry[0],q);}}catch(_){}
 
@@ -107,7 +107,7 @@
   try{
    let response;for(let attempt=0;attempt<2;attempt++){try{response=await fetch(api+path,{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify(body),signal:requestController.signal});break;}catch(error){if(attempt||error.name!=='TypeError'||signal.aborted||requestController.signal.aborted)throw error;if(path==='/marketplace-quote')await quoteSlot(signal);await pause(500,signal);}}
    const value=await response.json().catch(()=>({}));
-   if(!response.ok||value.ok!==true){const error=Error(value.error||'Current financing is unavailable. Please use Review Quote or try again.');error.httpStatus=response.status;if(response.status===429)quoteCooldown=Date.now()+Math.max(Number(response.headers?.get('Retry-After'))||60,1)*1000;throw error;}
+   if(!response.ok||value.ok!==true){const error=Error(value.error||'Current financing is unavailable. Please use Review Quote or try again.');error.httpStatus=response.status;if(response.status===429&&path==='/marketplace-quote')quoteCooldown=Date.now()+Math.max(Number(response.headers?.get('Retry-After'))||60,1)*1000;throw error;}
    return value;
   }finally{clearTimeout(timeout);signal.removeEventListener('abort',abort);}
  }
