@@ -1,8 +1,10 @@
 # Promotions browsing
 
-`promotions.html` uses the approved Shop by Product category cards. Current, Expiring Soon, Coming Soon, 1st Responder and Fleet Programs filter the category, subcategory and power links. The links retain `promo=current|expiring|coming|responders|fleet` in Marketplace; the same URL state works on both Shop routes.
+`promotions.html` uses the approved Shop by Product category cards. Current, Expiring Soon, Coming Soon, 0.00% Offers, 1st Responder and Fleet Programs filter the category, subcategory and power links. The links retain `promo=current|expiring|coming|zero|responders|fleet` in Marketplace; the same URL state works on both Shop routes.
 
-Current includes customer rebates, dated sale prices and eligible public 0% financing. Expiring Soon includes only active offers ending in the current Eastern calendar month. Coming Soon includes future offers and labels their start/end dates without applying future amounts to today's purchase prices. Undated MAP fallback and dealer-only amounts do not qualify as promotions. A product can match several offer periods.
+Current includes customer rebates and dated sale prices only. Expiring Soon includes only active sales and customer rebates ending in the current Eastern calendar month. Coming Soon includes future sales and customer rebates and labels their start/end dates without applying future amounts to today's purchase prices. Financing remains on price tags and in payment options but never qualifies a category or SKU for these promotion filters. Undated MAP fallback and dealer-only amounts do not qualify as promotions. A product can match several offer periods. Category links retain the selected promotion view, and the manufacturer sidebar continues to narrow those matching results.
+
+0.00% Offers includes only active, public, displayed zero-APR programs for the matching brand and SKU/group. Future, expired, excluded and nonzero-APR programs do not qualify. It is a separate view; sales and rebates alone do not qualify a product for it.
 
 The combined catalog includes public finance tables for all published brands. Existing per-brand CSV files remain the fallback. Normal workbook export and Marketplace sync continue to update this data; no separate promotion entry is needed.
 

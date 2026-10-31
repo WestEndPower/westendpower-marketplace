@@ -24,10 +24,31 @@ test('MAP fallback, dealer-only rebates, zero and invalid dates never invent pro
  assert.equal(p.matches({...base,SaleStartDate:'2026-10-01',SaleEndDate:'2026-10-31'},'current',[],'2026-10-31'),true);
 });
 test('0% finance requires public active matching programs; SKU exclusion wins and nonzero or missing APR is excluded',()=>{
- assert.equal(p.matches(base,'coming',[program],'2026-10-31'),true);assert.equal(p.matches(base,'current',[program],'2026-11-01'),true);
- for(const changes of [{APR:'0.0599'},{APR:''},{Active:'F'},{Public:'F'},{Display:'F'},{BrandID:'STIHL'},{72530:'F'}])assert.equal(p.matches(base,'coming',[{...program,...changes}],'2026-10-31'),false);
- assert.equal(p.matches({...base,FinancingEligible:'F'},'coming',[program],'2026-10-31'),false);
- assert.equal(p.matches(base,'coming',[{...program,Group_ALL_TORO:'F',72530:'T'}],'2026-10-31'),true);
+ assert.equal(p.financeMatches(base,program),true);
+ for(const changes of [{APR:'0.0599'},{APR:''},{Active:'F'},{Public:'F'},{Display:'F'},{BrandID:'STIHL'},{72530:'F'}])assert.equal(p.financeMatches(base,{...program,...changes}),false);
+ assert.equal(p.financeMatches({...base,FinancingEligible:'F'},program),false);
+ assert.equal(p.financeMatches(base,{...program,Group_ALL_TORO:'F',72530:'T'}),true);
+});
+test('financing alone cannot qualify categories or SKUs for any dated promotion view',()=>{
+ for(const [view,day] of [['coming','2026-10-31'],['current','2026-11-01'],['expiring','2027-01-01']])assert.equal(p.matches(base,view,[program],day),false);
+ const row={...base,RebateToCustomer:'1000',RebateStartDate:'2026-10-01',RebateEndDate:'2026-10-31'};
+ assert.equal(p.matches(row,'current',[program],'2026-10-31'),true);
+ assert.equal(p.matches(row,'expiring',[program],'2026-10-31'),true);
+ assert.equal(p.matches(row,'coming',[program],'2026-10-31'),false);
+ assert.equal(p.matches(row,'current',[program],'2026-11-01'),false);
+ assert.ok(p.offers(base,[program],'2026-11-01').some(o=>o.type==='finance'),'financing data remains available independently');
+ const future={...base,SaleStartDate:'2026-11-01',SaleEndDate:'2026-11-30'};
+ assert.equal(p.matches(future,'coming',[program],'2026-10-31'),true);
+ assert.ok(p.offerLabels(future,'coming',[program],'2026-10-31').every(label=>!label.includes('financing')));
+});
+test('0.00% Offers is separate from sales and rebates and includes only active eligible financing',()=>{
+ assert.equal(p.matches(base,'zero',[program],'2026-10-31'),false);
+ assert.equal(p.matches(base,'zero',[program],'2026-11-01'),true);
+ assert.equal(p.matches(base,'zero',[program],'2027-02-01'),false);
+ for(const change of [{APR:'0.0599'},{APR:''},{Public:'F'},{Active:'F'},{Display:'F'},{72530:'F'},{BrandID:'STIHL'}])assert.equal(p.matches(base,'zero',[{...program,...change}],'2026-11-01'),false);
+ assert.equal(p.matches({...base,FinancingEligible:'F'},'zero',[program],'2026-11-01'),false);
+ assert.equal(p.matches({...base,RebateToCustomer:'1000'},'zero',[],'2026-11-01'),false);
+ assert.deepEqual(Object.values(p.views),['Current','Expiring Soon','Coming Soon','0.00% Offers','1st Responder','Fleet Programs']);
 });
 test('special programs require customer discount and equipment eligibility, without NALP or dealer rebate qualification',()=>{
  assert.equal(p.matches({...base,FirstRespondersDiscount:'100'},'responders'),true);
@@ -36,7 +57,7 @@ test('special programs require customer discount and equipment eligibility, with
  assert.equal(p.matches({...base,FleetTier2Discount:'100'},'fleet'),true);
  assert.equal(p.matches({...base,FleetEligible:'F',FleetTier2Discount:'100'},'fleet'),false);
  assert.equal(p.matches({...base,Active:'F',FirstRespondersDiscount:'100'},'responders'),false);
- assert.equal(Object.keys(p.views).length,5);assert.ok(!('nalp' in p.views));
+ assert.equal(Object.keys(p.views).length,6);assert.ok(!('nalp' in p.views));
 });
 test('published Toro data carries November rebates and compatible 0% finance without spreadsheet errors',()=>{
  const root=path.resolve(__dirname,'..'),read=name=>parse(fs.readFileSync(path.join(root,'brands/toro/data/'+name+'.csv'),'utf8'));
