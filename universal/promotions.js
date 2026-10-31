@@ -5,7 +5,7 @@
  const yes=v=>/^(T|TRUE|Y|YES|1)$/i.test(clean(v));
  const number=v=>{const s=clean(v).replace(/[$,% ,]/g,'');return s!==''&&Number.isFinite(Number(s))?Number(s):NaN;};
  const key=v=>clean(v).toUpperCase().replace(/[^A-Z0-9]/g,'');
- const views={current:'Current',expiring:'Expiring Soon',coming:'Coming Soon',responders:'1st Responder',fleet:'Fleet Programs'};
+ const views={current:'Current',expiring:'Expiring Soon',coming:'Coming Soon',zero:'0.00% Offers',responders:'1st Responder',fleet:'Fleet Programs'};
  const messages={responders:'Available to Military, Firefighters, Police Officers and EMT.',fleet:'For-profit landscape contractors only.'};
  const dayFormatter=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}),offerCache=new WeakMap();
  function today(now=new Date()){
@@ -58,7 +58,8 @@
   offerCache.set(row,{programs,day,offers:result});return result;
  }
  function selectedOffers(row,view,programs=[],day=today()){
-  return offers(row,programs,day).filter(o=>view==='coming'?o.status==='coming':o.status==='current'&&(view!=='expiring'||Boolean(o.end&&o.end.slice(0,7)===day.slice(0,7))));
+  if(view==='zero')return offers(row,programs,day).filter(o=>o.type==='finance'&&o.status==='current');
+  return offers(row,programs,day).filter(o=>o.type!=='finance'&&(view==='coming'?o.status==='coming':o.status==='current'&&(view!=='expiring'||Boolean(o.end&&o.end.slice(0,7)===day.slice(0,7)))));
  }
  function matches(row,view='current',programs=[],day=today()){
   if(!row||!yes(row.Active))return false;
@@ -88,7 +89,7 @@
    button.onclick=async()=>{if(value!==view&&await confirmEligibility(value))onChange(value);};buttons.append(button);
   }
   const note=document.createElement('p');note.className='wep-promo-note';
-  note.textContent=view==='coming'?'Preview upcoming offers. Current prices apply until the offer starts.':messages[view]?messages[view]+' See store for details.':view==='expiring'?'Explore offers ending this month.':'Explore sale prices, customer rebates and 0% financing offers.';
+  note.textContent=view==='coming'?'Preview upcoming offers. Current prices apply until the offer starts.':view==='zero'?'Explore current 0.00% financing offers. Subject to credit approval and program terms.':messages[view]?messages[view]+' See store for details.':view==='expiring'?'Explore sales and customer rebates ending this month.':'Explore sale prices and customer rebates.';
   host.append(heading,buttons,note);
  }
  function offerLabels(row,view,programs,day=today()){
