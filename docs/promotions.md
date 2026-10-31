@@ -2,6 +2,8 @@
 
 `promotions.html` uses the approved Shop by Product category cards. Current, Expiring Soon, Coming Soon, 0.00% Offers, 1st Responder and Fleet Programs filter the category, subcategory and power links. The links retain `promo=current|expiring|coming|zero|responders|fleet` in Marketplace; the same URL state works on both Shop routes.
 
+Switching promotion type from any shopping route returns to the selected promotion's category cards, without the previous category, manufacturer, search or specification filters. Switching type on the Promotions page also clears its search box. Choosing a category then opens matching equipment with the manufacturer sidebar available for further narrowing.
+
 Current includes customer rebates and dated sale prices only. Expiring Soon includes only active sales and customer rebates ending in the current Eastern calendar month. Coming Soon includes future sales and customer rebates and labels their start/end dates without applying future amounts to today's purchase prices. Financing remains on price tags and in payment options but never qualifies a category or SKU for these promotion filters. Undated MAP fallback and dealer-only amounts do not qualify as promotions. A product can match several offer periods. Category links retain the selected promotion view, and the manufacturer sidebar continues to narrow those matching results.
 
 0.00% Offers includes only active, public, displayed zero-APR programs for the matching brand and SKU/group. Future, expired, excluded and nonzero-APR programs do not qualify. It is a separate view; sales and rebates alone do not qualify a product for it.

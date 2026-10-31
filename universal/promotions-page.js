@@ -16,7 +16,7 @@
  const unique=values=>[...new Set(values)].filter(Boolean);
  function imageURL(value){if(!clean(value))return '';try{const u=new URL(value,location.href);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch{return '';}}
  function draw(){
-  api.renderControls(controls,view,next=>{view=next;history.pushState({},'',new URL('promotions.html?'+new URLSearchParams({promo:view}),location.href));draw();});
+  api.renderControls(controls,view,next=>{view=next;query='';document.getElementById('market-search').value='';history.pushState({},'',new URL('promotions.html?'+new URLSearchParams({promo:view}),location.href));draw();});
   if(programError&&['responders','fleet'].includes(view)){document.getElementById('promo-category-count').textContent='';host.innerHTML='<div class="promo-empty"><h2>Program availability is temporarily unavailable.</h2><p>Please refresh or see store for details.</p></div>';return;}
   const matching=products.filter(row=>api.matches(row,view,programs)&&(!query||[row.BrandID,row.Description,row.Model,row.Category,row.SubCategory,row.SKU].some(v=>clean(v).toLowerCase().includes(query))));
   const categories=unique(matching.map(row=>clean(row.Category))).filter(c=>!/^batteries|chargers$/i.test(c)).sort((a,b)=>a.localeCompare(b));
