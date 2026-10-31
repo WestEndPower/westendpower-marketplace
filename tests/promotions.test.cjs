@@ -3,6 +3,16 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const p=require('../universal/promotions.js'),{parse,isPrivate}=require('../scripts/marketplace-sync.cjs');
 const base={SKU:'72530',Active:'T',BrandID:'TORO',MSRP:'18000',SalePrice:'16999',FinancingEligible:'T',FleetEligible:'T'};
 const program={Active:'T',Public:'T',Display:'T',BrandID:'TORO',APR:'0',TermMonths:'60',StartDate:'2026-11-01',EndDate:'2027-01-31',Group_ALL_TORO:'T'};
+test('switching promotion type leaves stale category, manufacturer and search filters on every shopping route',()=>{
+ const vm=require('node:vm');
+ for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-brand.html']){
+  const source=fs.readFileSync(path.resolve(__dirname,'..',file),'utf8'),start=source.indexOf('  function renderPromotionControls(){'),end=source.indexOf('  function marketplaceRowMatches(',start);
+  let change;const location={href:'https://westendpower.github.io/westendpower-marketplace/marketplace.html?category=Blowers&brand=STIHL&q=BGA&promo=current'};
+  const host={append(){}};
+  vm.runInNewContext(source.slice(start,end)+';renderPromotionControls();',{location,URL,URLSearchParams,state:{promoOnly:true,promoView:'current'},DATA:{},$:()=>host,document:{createElement:()=>({})},window:{WestEndPromotions:{renderControls:(_host,_view,onChange)=>{change=onChange;}}}});
+  change('coming');assert.equal(location.href,'https://westendpower.github.io/westendpower-marketplace/promotions.html?promo=coming',file);
+ }
+});
 test('rebates roll from coming to current at Eastern midnight and expire after their inclusive end date',()=>{
  const row={...base,RebateToCustomer:'1000',RebateStartDate:'2026-11-01',RebateEndDate:'2027-01-31'};
  assert.equal(p.matches(row,'coming',[],'2026-10-31'),true);assert.equal(p.matches(row,'current',[],'2026-10-31'),false);

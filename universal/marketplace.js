@@ -1145,10 +1145,8 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     if(!host){host=document.createElement('section');host.id='market-promotion-controls';$('.market-shop-nav').before(host);}
     host.hidden=!state.promoOnly;
     if(!state.promoOnly)return;
-    window.WestEndPromotions.renderControls(host,state.promoView,async value=>{
-      if(['responders','fleet'].includes(value))await ensurePromotionPrograms();
-      state.promoView=value;state.promoOnly=true;
-      renderTopFilters();renderSidebar();filterFamilies();
+    window.WestEndPromotions.renderControls(host,state.promoView,value=>{
+      location.href=new URL('promotions.html?'+new URLSearchParams({promo:value}),location.href).href;
     });
     const back=document.createElement('a');back.href='promotions.html?promo='+state.promoView;back.textContent='← Promotion categories';back.className='wep-promo-note';host.append(back);
     if(DATA.promotionProgramsError&&['responders','fleet'].includes(state.promoView)){const note=document.createElement('p');note.textContent='Program availability is temporarily unavailable. Please refresh or see store for details.';note.setAttribute('role','status');host.append(note);}
