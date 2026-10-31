@@ -51,14 +51,22 @@ test('financing alone cannot qualify categories or SKUs for any dated promotion 
  assert.equal(p.matches(future,'coming',[program],'2026-10-31'),true);
  assert.ok(p.offerLabels(future,'coming',[program],'2026-10-31').every(label=>!label.includes('financing')));
 });
-test('0.00% Offers is separate from sales and rebates and includes only active eligible financing',()=>{
- assert.equal(p.matches(base,'zero',[program],'2026-10-31'),false);
- assert.equal(p.matches(base,'zero',[program],'2026-11-01'),true);
- assert.equal(p.matches(base,'zero',[program],'2027-02-01'),false);
- for(const change of [{APR:'0.0599'},{APR:''},{Public:'F'},{Active:'F'},{Display:'F'},{72530:'F'},{BrandID:'STIHL'}])assert.equal(p.matches(base,'zero',[{...program,...change}],'2026-11-01'),false);
- assert.equal(p.matches({...base,FinancingEligible:'F'},'zero',[program],'2026-11-01'),false);
- assert.equal(p.matches({...base,RebateToCustomer:'1000'},'zero',[],'2026-11-01'),false);
+test('0.00% Offers requires protected SKU eligibility rather than public group flags',()=>{
+ assert.equal(p.matches(base,'zero',[program],'2026-11-01'),false);
+ assert.equal(p.matches({...base,PromotionZeroFinance:'F'},'zero',[program],'2026-11-01'),false);
+ assert.equal(p.matches({...base,PromotionZeroFinance:'T'},'zero',[],'2026-11-01'),true);
+ assert.equal(p.matches({...base,PromotionZeroFinance:'T',FinancingEligible:'F'},'zero',[program],'2026-11-01'),false);
+ assert.equal(p.matches({...base,PromotionZeroFinance:'T',Active:'F'},'zero',[program],'2026-11-01'),false);
  assert.deepEqual(Object.values(p.views),['Current','Expiring Soon','Coming Soon','0.00% Offers','1st Responder','Fleet Programs']);
+});
+test('finance projection is applied by brand and SKU and rejects legacy unverified responses',async()=>{
+ const saved=global.fetch,rows=[{...base},{...base,BrandID:'STIHL',SKU:'4313 011 2121 US'}];
+ try{
+  global.fetch=async(_url,options)=>{const {brandId,finance}=JSON.parse(options.body);assert.equal(finance,true);return {ok:true,json:async()=>({ok:true,brandId,financeEligibility:true,items:brandId==='TORO'?[{sku:'72530',zero:true}]:[{sku:'4313 011 2121 US',zero:false}]})};};
+  await p.loadFinanceCatalog(rows);assert.equal(p.matches(rows[0],'zero'),true);assert.equal(p.matches(rows[1],'zero',[{...program,BrandID:'STIHL',Group_ALL_STIHL:'T'}]),false);
+  global.fetch=async()=>({ok:true,json:async()=>({ok:true,brandId:'TORO',items:[]})});
+  await assert.rejects(p.loadFinanceCatalog(rows));assert.equal(p.matches(rows[0],'zero',[program]),false);
+ }finally{global.fetch=saved;}
 });
 test('special programs require customer discount and equipment eligibility, without NALP or dealer rebate qualification',()=>{
  assert.equal(p.matches({...base,FirstRespondersDiscount:'100'},'responders'),true);
