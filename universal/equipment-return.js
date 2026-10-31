@@ -65,6 +65,14 @@
   const fromThisSite=referrer&&referrer!==location.href;
   const source=hasSource?cleanUrl(departure.source):(fromThisSite?referrer:cleanUrl(fallback));
   if(hasSource)write(restoreKey,{source,x:departure.x,y:departure.y,time:Date.now()});
+  // A price-tag link opens Build & Buy in a separate tab. Closing that tab reveals
+  // the original equipment results with their filters, position and selections intact.
+  if(history.length<=1&&fromThisSite){
+   window.close();
+   // Browsers may refuse to close a manually opened tab; retain a normal return path.
+   setTimeout(()=>{if(source)location.assign(source);},150);
+   return;
+  }
   if(history.length>1&&fromThisSite){history.back();return;}
   if(source)location.assign(source);
  });

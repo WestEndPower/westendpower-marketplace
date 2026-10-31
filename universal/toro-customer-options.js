@@ -10,9 +10,12 @@
  function confirmProgram(program){
   dialog?.remove();dialog=make('dialog');dialog.className='wep-toro-confirm';
   const heading=make('h2',program.label),message=make('p',program.message),form=make('form');form.method='dialog';
+  if(program.requirements)dialog.append(heading,message,make('p',program.requirements));
+  const note=make('p','See store for details. Selecting a program does not confirm customer eligibility.');
+  if(program.qualified===false){const close=make('button','Continue Building');close.type='button';close.onclick=()=>dialog.close();dialog.append(note,close);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();return;}
   const buttons=make('div'),cancel=make('button','Cancel'),confirm=make('button','Confirm eligibility');cancel.type='button';confirm.type='submit';cancel.onclick=()=>dialog.close();buttons.append(cancel,confirm);form.append(buttons);
   form.addEventListener('submit',event=>{event.preventDefault();selected={key:program.key,verified:true,reference:''};dialog.close();render();change();});
-  dialog.append(heading,message,form);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();
+  if(!program.requirements)dialog.append(heading,message);dialog.append(note,form);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();
  }
  function render(){
   if(!host)return;host.replaceChildren();host.hidden=!options.programs.length;
@@ -29,7 +32,7 @@
   const key=JSON.stringify(snapshot.items),cached=cache.get(key);let value=cached&&Date.now()-cached.time<60000?cached.value:null;
   if(!value){value=await post('/marketplace-toro-options',{items:snapshot.items},signal);if(signal.aborted)return;cache.set(key,{value,time:Date.now()});if(cache.size>20)cache.delete(cache.keys().next().value);}
   if(signal.aborted)return;lastItems=key;options=value;
-  if(selected&&!options.programs.some(p=>p.key===selected.key))selected=null;
+  if(selected&&!options.programs.some(p=>p.key===selected.key&&p.qualified!==false))selected=null;
   if(!options.freight.available)method='DEALER_SHIP_DAY';render();
  }
  function freightControl(container){
