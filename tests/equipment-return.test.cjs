@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-function fixture(length,referrer='https://westendpower.github.io/westendpower-marketplace/marketplace.html?category=Power+Brooms&promo=fleet'){
+function fixture(length,referrer='https://westendpower.github.io/westendpower-marketplace/marketplace.html?category=Power+Brooms&promo=fleet',returnSource=''){
  const source=fs.readFileSync('universal/equipment-return.js','utf8'),start=source.indexOf(" oldLink.addEventListener('click'"),end=source.indexOf(" const app=",start),actions=[];let handler,timer;
- vm.runInNewContext(source.slice(start,end),{oldLink:{addEventListener:(_name,fn)=>handler=fn},validDeparture:()=>false,referrer,cleanUrl:v=>v,fallback:referrer,write:()=>{},restoreKey:'restore',history:{length,back:()=>actions.push('back')},window:{close:()=>actions.push('close')},setTimeout:fn=>{timer=fn;},location:{href:'https://westendpower.github.io/westendpower-marketplace/product-options.html',assign:url=>actions.push(url)}});
+ vm.runInNewContext(source.slice(start,end),{oldLink:{addEventListener:(_name,fn)=>handler=fn},validDeparture:()=>false,referrer,returnSource,buildReferrer:referrer.includes('/product-options.html'),cleanUrl:v=>v,fallback:referrer,write:()=>{},restoreKey:'restore',history:{length,back:()=>actions.push('back')},window:{close:()=>actions.push('close')},setTimeout:fn=>{timer=fn;},location:{href:'https://westendpower.github.io/westendpower-marketplace/product-options.html',assign:url=>actions.push(url)}});
  return {actions,click:extra=>handler({button:0,preventDefault:()=>actions.push('prevented'),...extra}),fallback:()=>timer?.(),referrer};
 }
 test('Return to Equipment closes a newly opened builder tab to reveal the original filtered results',()=>{
@@ -12,4 +12,10 @@ test('Return to Equipment closes a newly opened builder tab to reveal the origin
 test('same-tab builds return through browser history and modified clicks retain normal link behavior',()=>{
  const f=fixture(2);f.click();assert.deepEqual(f.actions,['prevented','back']);
  const modified=fixture(1);modified.click({ctrlKey:true});assert.deepEqual(modified.actions,[]);
+});
+
+test('a builder redirect uses the explicit equipment return instead of reopening the builder URL',()=>{
+ const equipment='https://westendpower.github.io/westendpower-marketplace/marketplace.html?category=Power+Brooms&promo=fleet';
+ const f=fixture(2,'https://westendpower.github.io/westendpower-marketplace/product-options.html?brand=TORO&sku=38701&quantity=1',equipment);
+ f.click();assert.deepEqual(f.actions,['prevented','close']);f.fallback();assert.equal(f.actions[2],equipment);
 });

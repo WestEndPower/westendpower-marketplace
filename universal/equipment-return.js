@@ -42,6 +42,9 @@
  const style=document.createElement('style');style.textContent='.wrap>.top:has(#return-link){display:none!important}.summary-actions #return-link{order:99;display:flex;justify-content:center;align-items:center;width:100%;margin-top:6px;padding:10px 8px;font-size:13px;line-height:1.35;text-align:center;background:#fff;color:#202020;border:1px solid #aaa;border-radius:8px;text-decoration:none;font-weight:800}@media print{#return-link{display:none!important}}';document.head.append(style);
  let fallback=oldLink.href;
  const referrer=cleanUrl(document.referrer);
+ const requestedReturn=cleanUrl(new URL(location.href).searchParams.get('return')||'');
+ const returnSource=requestedReturn&&!/\/product-options(?:\.html)?\/?$/i.test(new URL(requestedReturn).pathname)?requestedReturn:'';
+ const buildReferrer=referrer&&/\/product-options(?:\.html)?\/?$/i.test(new URL(referrer).pathname);
  const validDeparture=()=>{
   if(!departure||Date.now()-departure.time>1800000||!cleanUrl(departure.source))return false;
   try{
@@ -54,7 +57,7 @@
   // updateReturn runs before the async product render. Keep its safe fallback URL.
   if(oldLink.parentElement!==actions){fallback=oldLink.href;actions.append(oldLink);strip?.remove();}
   if(oldLink.textContent!=='← Return to Equipment')oldLink.textContent='← Return to Equipment';
-  const source=validDeparture()?cleanUrl(departure.source):referrer;
+  const source=validDeparture()?cleanUrl(departure.source):(returnSource||referrer);
   if(source&&source!==location.href)oldLink.href=source;
  }
  oldLink.addEventListener('click',event=>{
@@ -63,11 +66,11 @@
   const hasSource=validDeparture();
   // Use browser history only when there is evidence of a previous page on this site.
   const fromThisSite=referrer&&referrer!==location.href;
-  const source=hasSource?cleanUrl(departure.source):(fromThisSite?referrer:cleanUrl(fallback));
+  const source=hasSource?cleanUrl(departure.source):(returnSource||(fromThisSite?referrer:cleanUrl(fallback)));
   if(hasSource)write(restoreKey,{source,x:departure.x,y:departure.y,time:Date.now()});
   // A price-tag link opens Build & Buy in a separate tab. Closing that tab reveals
   // the original equipment results with their filters, position and selections intact.
-  if(history.length<=1&&fromThisSite){
+  if(fromThisSite&&(history.length<=1||returnSource&&buildReferrer)){
    window.close();
    // Browsers may refuse to close a manually opened tab; retain a normal return path.
    setTimeout(()=>{if(source)location.assign(source);},150);
