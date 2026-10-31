@@ -3,7 +3,7 @@
  const api=window.WestEndPromotions,host=document.getElementById('promo-categories'),controls=document.getElementById('promo-controls');
  const clean=v=>String(v??'').trim(),yes=v=>/^(T|TRUE|Y|YES|1)$/i.test(clean(v));
  const esc=v=>clean(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const params=new URLSearchParams(location.search);let view=Object.hasOwn(api.views,params.get('promo'))?params.get('promo'):'current',products=[],programs=[],query='',programError=false;
+ const params=new URLSearchParams(location.search);let view=Object.hasOwn(api.views,params.get('promo'))?params.get('promo'):'current',products=[],programs=[],query='',programError=false,financeError=false;
  let paused=matchMedia('(prefers-reduced-motion: reduce)').matches;
  const unpack=table=>(table.rows||[]).map(values=>{const row=Object.fromEntries(table.headers.map(h=>[h,'']));if(table.encoding==='dense')table.headers.forEach((h,i)=>row[h]=values[i]);else for(let i=0;i<values.length;i+=2)row[table.headers[values[i]]]=values[i+1];return row;});
  function csv(text){
@@ -21,6 +21,7 @@
   const matching=products.filter(row=>api.matches(row,view,programs)&&(!query||[row.BrandID,row.Description,row.Model,row.Category,row.SubCategory,row.SKU].some(v=>clean(v).toLowerCase().includes(query))));
   const categories=unique(matching.map(row=>clean(row.Category))).filter(c=>!/^batteries|chargers$/i.test(c)).sort((a,b)=>a.localeCompare(b));
   document.getElementById('promo-category-count').textContent=categories.length+' equipment '+(categories.length===1?'category':'categories');
+  if(financeError&&view==='zero'){document.getElementById('promo-category-count').textContent='Some financing availability could not be verified. Please refresh or see store for details.';}
   host.innerHTML=categories.length?categories.map((category,offset)=>{
    const rows=matching.filter(row=>clean(row.Category)===category),subs=unique(rows.map(row=>clean(row.SubCategory))).sort((a,b)=>a.localeCompare(b)),choices=subs.length?subs:[''];
    return '<article class="shop-tile shop-carousel" data-slide="0" data-count="'+choices.length+'" data-offset="'+offset+'" aria-label="'+esc(category)+'"><h2 class="shop-tile-heading"><a class="shop-tile-name" href="'+esc(href(category))+'">'+esc(category)+'</a></h2><div class="shop-carousel-window">'+choices.map((sub,index)=>{
@@ -42,6 +43,7 @@
    try{const response=await fetch('data/marketplace-catalog.json',{cache:'no-cache'});if(!response.ok)throw Error('Catalog unavailable');const bundle=await response.json();if(bundle.schema!==1||!bundle.financeSources?.length)throw Error('Catalog requires finance sources');products=bundle.productSources.flatMap(unpack);programs=bundle.financeSources.flatMap(source=>unpack(source).map(row=>({...row,BrandID:source.brand})));}
    catch{const brands=Object.keys(window.WESTEND_BRANDS||{});const sources=await Promise.all(brands.map(async brand=>({brand,products:await fetchCSV('brands/'+brand.toLowerCase()+'/data/products.csv'),finance:await fetchCSV('brands/'+brand.toLowerCase()+'/data/finance-programs.csv')})));products=sources.flatMap(s=>s.products);programs=sources.flatMap(s=>s.finance.map(row=>({...row,BrandID:s.brand})));}
    window.WESTEND_PUBLISHED_BRANDS=unique(products.filter(row=>yes(row.Active)).map(row=>clean(row.BrandID))).map(id=>({id}));window.dispatchEvent(new Event('westend:catalog-ready'));draw();
+   try{await api.loadFinanceCatalog(products);financeError=false;}catch(error){financeError=true;console.warn(error.message);}draw();
    try{await api.loadProgramCatalog(products);programError=false;}catch(error){programError=true;console.warn(error.message);}draw();
    // Keep rollover correct even when this page is left open overnight.
    let day=api.today();setInterval(()=>{const next=api.today();if(next!==day){day=next;draw();}},60000);

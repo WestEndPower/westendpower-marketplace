@@ -63,6 +63,7 @@
  }
  function matches(row,view='current',programs=[],day=today()){
   if(!row||!yes(row.Active))return false;
+  if(view==='zero')return yes(row.FinancingEligible)&&yes(row.PromotionZeroFinance);
   if(view==='responders')return yes(row.PromotionFirstResponders)||number(row.FirstRespondersDiscount)>0;
   if(view==='fleet')return yes(row.PromotionFleet)||(yes(row.FleetEligible)&&[1,2,3].some(t=>number(row['FleetTier'+t+'Discount'])>0));
   return selectedOffers(row,view,programs,day).length>0;
@@ -98,6 +99,20 @@
   const selected=selectedOffers(row,view,programs,day),finance=selected.filter(o=>o.type==='finance').sort((a,b)=>b.months-a.months)[0];
   return [...new Set(selected.filter(o=>o.type!=='finance'||o===finance).map(o=>(o.type==='sale'?'Sale price '+money(o.amount):o.type==='rebate'?money(o.amount)+' customer rebate':'0% financing up to '+o.months+' months')+(o.status==='coming'?' · Starts '+format(o.start):'')+(o.end?' · Ends '+format(o.end):'')))];
  }
+ async function loadFinanceCatalog(products){
+  const brands=[...new Set(products.filter(row=>yes(row.Active)&&yes(row.FinancingEligible)).map(row=>clean(row.BrandID||row.BrandName).toUpperCase()))];
+  // Public finance tables do not contain all eligibility rules. Only verified flags qualify.
+  for(const row of products)row.PromotionZeroFinance='F';
+  const results=await Promise.allSettled(brands.map(async brandId=>{
+   const response=await fetch(root.WESTEND_PROMOTION_PROGRAMS_URL||'https://westendpower-configurator-api.westendpower-nm.workers.dev/marketplace-promotion-programs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({brandId,finance:true}),cache:'no-store'});
+   if(!response.ok)throw Error('Financing availability is temporarily unavailable.');
+   const data=await response.json();
+   if(data.ok!==true||data.brandId!==brandId||data.financeEligibility!==true||!Array.isArray(data.items)||data.items.some(item=>!clean(item.sku)||typeof item.zero!=='boolean'))throw Error('Invalid financing availability.');
+   const bySKU=new Map(data.items.map(item=>[key(item.sku),item.zero]));
+   for(const row of products)if(key(row.BrandID||row.BrandName)===key(brandId))row.PromotionZeroFinance=bySKU.get(key(row.SKU))?'T':'F';
+  }));
+  if(results.some(result=>result.status==='rejected'))throw Error('Some financing availability is temporarily unavailable.');
+ }
  async function loadProgramCatalog(products){
   const response=await fetch(root.WESTEND_PROMOTION_PROGRAMS_URL||'https://westendpower-configurator-api.westendpower-nm.workers.dev/marketplace-promotion-programs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({brandId:'TORO'}),cache:'no-store'});
   if(!response.ok)throw Error('Program availability is temporarily unavailable.');
@@ -105,7 +120,7 @@
   const bySKU=new Map(data.items.map(item=>[key(item.sku),item]));
   for(const row of products)if(key(row.BrandID||row.BrandName)==='TORO'){const flags=bySKU.get(key(row.SKU));row.PromotionFirstResponders=flags?.responders?'T':'F';row.PromotionFleet=flags?.fleet?'T':'F';}
  }
- const api={views,messages,today,date,period,offers,selectedOffers,matches,financeMatches,confirmEligibility,renderControls,offerLabels,loadProgramCatalog};
+ const api={views,messages,today,date,period,offers,selectedOffers,matches,financeMatches,confirmEligibility,renderControls,offerLabels,loadProgramCatalog,loadFinanceCatalog};
  if(typeof module==='object'&&module.exports)module.exports=api;
  else root.WestEndPromotions=api;
 })(typeof window==='undefined'?globalThis:window);

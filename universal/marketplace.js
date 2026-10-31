@@ -1135,7 +1135,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
   async function ensurePromotionPrograms(){
     if(!DATA.promotionProgramsRequest){
-      DATA.promotionProgramsRequest=window.WestEndPromotions.loadProgramCatalog(DATA.products).then(()=>{DATA.promotionProgramsError=false;}).catch(()=>{DATA.promotionProgramsError=true;});
+      DATA.promotionProgramsRequest=(state.promoView==='zero'?window.WestEndPromotions.loadFinanceCatalog(DATA.products):window.WestEndPromotions.loadProgramCatalog(DATA.products)).then(()=>{DATA.promotionProgramsError=false;}).catch(()=>{DATA.promotionProgramsError=true;});
     }
     await DATA.promotionProgramsRequest;
   }
@@ -1149,7 +1149,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       location.href=new URL('promotions.html?'+new URLSearchParams({promo:value}),location.href).href;
     });
     const back=document.createElement('a');back.href='promotions.html?promo='+state.promoView;back.textContent='← Promotion categories';back.className='wep-promo-note';host.append(back);
-    if(DATA.promotionProgramsError&&['responders','fleet'].includes(state.promoView)){const note=document.createElement('p');note.textContent='Program availability is temporarily unavailable. Please refresh or see store for details.';note.setAttribute('role','status');host.append(note);}
+    if(DATA.promotionProgramsError&&['zero','responders','fleet'].includes(state.promoView)){const note=document.createElement('p');note.textContent='Program availability is temporarily unavailable. Please refresh or see store for details.';note.setAttribute('role','status');host.append(note);}
   }
 
   function marketplaceRowMatches(
@@ -2978,7 +2978,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       ]);
       const [products,batteries,chargers,compatibility,financePrograms,settingsRows]=catalog;
       DATA.products=products;
-      if(['responders','fleet'].includes(new URLSearchParams(location.search).get('promo')))await ensurePromotionPrograms();
+      if(['zero','responders','fleet'].includes(new URLSearchParams(location.search).get('promo')))await ensurePromotionPrograms();
       DATA.batteries=batteries;
       DATA.chargers=chargers;
       DATA.compatibility=compatibility;
