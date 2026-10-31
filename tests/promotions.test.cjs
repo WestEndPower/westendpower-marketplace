@@ -85,3 +85,13 @@ test('published Toro data carries November rebates and compatible 0% finance wit
  assert.equal(p.matches(row,'coming',finance.rows,'2026-11-01'),false);assert.equal(p.matches(row,'current',finance.rows,'2026-11-01'),true);
  const bundle=JSON.parse(fs.readFileSync(path.join(root,'data/marketplace-catalog.json'),'utf8'));assert.equal(bundle.financeSources.length,8);assert.equal(bundle.financeSources.find(s=>s.brand==='TORO').rows.length,finance.rows.length);
 });
+
+test('initial zero URL loads finance flags before URL state is applied on every shopping route',async()=>{
+ const vm=require('node:vm');
+ for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-brand.html']){
+  const source=fs.readFileSync(path.resolve(__dirname,'..',file),'utf8'),start=source.indexOf('  async function ensurePromotionPrograms('),end=source.indexOf('  function renderPromotionControls()',start);
+  let finance=0,special=0;const DATA={products:[]};
+  await vm.runInNewContext(source.slice(start,end)+";ensurePromotionPrograms('zero');",{state:{promoView:'current'},DATA,window:{WestEndPromotions:{loadFinanceCatalog:async()=>{finance++;},loadProgramCatalog:async()=>{special++;}}}});
+  assert.equal(finance,1,file);assert.equal(special,0,file);assert.equal(DATA.promotionProgramsError,false,file);
+ }
+});
