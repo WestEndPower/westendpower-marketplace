@@ -1133,9 +1133,9 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     return window.WestEndPromotions.matches(row,state.promoView,DATA.promotionFinance||[]);
   }
 
-  async function ensurePromotionPrograms(){
+  async function ensurePromotionPrograms(view=state.promoView){
     if(!DATA.promotionProgramsRequest){
-      DATA.promotionProgramsRequest=(state.promoView==='zero'?window.WestEndPromotions.loadFinanceCatalog(DATA.products):window.WestEndPromotions.loadProgramCatalog(DATA.products)).then(()=>{DATA.promotionProgramsError=false;}).catch(()=>{DATA.promotionProgramsError=true;});
+      DATA.promotionProgramsRequest=(view==='zero'?window.WestEndPromotions.loadFinanceCatalog(DATA.products):window.WestEndPromotions.loadProgramCatalog(DATA.products)).then(()=>{DATA.promotionProgramsError=false;}).catch(()=>{DATA.promotionProgramsError=true;});
     }
     await DATA.promotionProgramsRequest;
   }
@@ -2978,7 +2978,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       ]);
       const [products,batteries,chargers,compatibility,financePrograms,settingsRows]=catalog;
       DATA.products=products;
-      if(['zero','responders','fleet'].includes(new URLSearchParams(location.search).get('promo')))await ensurePromotionPrograms();
+      if(['zero','responders','fleet'].includes(new URLSearchParams(location.search).get('promo')))await ensurePromotionPrograms(new URLSearchParams(location.search).get('promo'));
       DATA.batteries=batteries;
       DATA.chargers=chargers;
       DATA.compatibility=compatibility;
