@@ -6,3 +6,15 @@ test('one freight label replaces the heading; expedited toggles on and off witho
 test('Military / First Responders requires confirmation and can be deselected',async()=>{const f=fixture();await f.load();click(button(f.host,'Military / First Responders'));assert.equal(f.api.choices().dealerPrograms,undefined);assert.equal(all(f.body,'p')[0].textContent,f.options.programs[0].message);f.confirm();assert.equal(f.api.choices().dealerPrograms.TORO.verified,true);click(button(f.host,'Military / First Responders'));assert.equal(f.api.choices().dealerPrograms,undefined);});
 test('NALP Members shows an ID requirement notice and confirms without an ID input',async()=>{const f=fixture();await f.load();click(button(f.host,'NALP Members'));assert.equal(all(f.body,'p')[0].textContent,'NALP ID Required.');assert.equal(all(f.body,'input').length,0);f.confirm();assert.equal(f.api.choices().dealerPrograms.TORO.key,'NALP');assert.equal(f.api.choices().dealerPrograms.TORO.reference,'');});
 test('fleet and expedited choices clear when the new cart no longer qualifies',async()=>{const f=fixture();await f.load();click(button(f.host,'Toro Fleet Pro'));f.confirm();const root=new El('dt');f.api.freightControl(root);click(button(root,'Expedited'));f.snapshot.items[0].quantity=2;f.options.programs=[];f.options.freight.available=false;await f.load();assert.equal(f.api.choices().dealerPrograms,undefined);assert.equal(f.api.choices().toroFreightMethod,'DEALER_SHIP_DAY');const next=new El('dt');f.api.freightControl(next);assert.equal(next.children.length,0);});
+
+test('fleet requirements stay visible below the threshold without applying a discount',async()=>{
+ const f=fixture(),fleet=f.options.programs.find(p=>p.key==='FleetTier1');Object.assign(fleet,{qualified:false,requirements:'Requires 7–11 qualifying fleet points. This build has 1 point. Needs 6 more points.'});
+ await f.load();click(button(f.host,'Toro Fleet Pro'));
+ assert.equal(f.api.choices().dealerPrograms,undefined);assert.equal(all(f.body,'form').length,0);assert.equal(button(f.body,'Confirm eligibility'),undefined);
+ assert.ok(all(f.body,'p').some(p=>p.textContent===fleet.requirements));assert.ok(all(f.body,'p').some(p=>p.textContent.includes('See store for details')));
+ click(button(f.body,'Continue Building'));assert.equal(all(f.body,'dialog').length,0);
+});
+test('an applied fleet program clears if equipment remains eligible but points drop below qualification',async()=>{
+ const f=fixture();await f.load();click(button(f.host,'Toro Fleet Pro'));f.confirm();
+ f.snapshot.items[0].quantity=2;f.options.programs.find(p=>p.key==='FleetTier1').qualified=false;await f.load();assert.equal(f.api.choices().dealerPrograms,undefined);assert.ok(button(f.host,'Toro Fleet Pro'));
+});

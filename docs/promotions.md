@@ -15,3 +15,7 @@ First Responder and Fleet availability comes from `POST /marketplace-promotion-p
 Deploy the companion configurator API change before publishing this Marketplace change. If the program lookup fails, the affected views show an availability error; unverified financing SKUs stay excluded; they do not silently claim there are no eligible products. Current, Expiring Soon and Coming Soon remain available.
 
 Validation: `node --test tests/*.test.cjs tests/*.test.mjs`; companion API: `node --test tests/*.test.mjs`. Browser QA uses local workbook-derived availability fixtures until the new endpoint is deployed. No quotes, orders, payments or live eligibility confirmations are created by QA.
+
+Fleet-capable equipment retains its Build & Buy program buttons before the build reaches the minimum points. The requirements dialog shows workbook-derived point thresholds, current points and the remaining requirement, plus See store for details. Unqualified programs provide Continue Building only and cannot be applied. The quote service still enforces qualification; reducing a build below qualification clears the selected program. Inactive, expired and unrelated fleet programs remain hidden.
+
+Return to Equipment closes a separate Build & Buy tab to reveal the original browse tab with its filters, card selections and scroll position. Same-tab builds use browser history. If closing a tab is refused, the normal safe return URL remains the fallback.
