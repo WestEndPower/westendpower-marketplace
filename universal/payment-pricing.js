@@ -88,15 +88,15 @@ async function drainPricingQueue(){
    try{
     if(job.options.shouldRun&&!job.options.shouldRun())throw pricingCancelled();
     lastPricingRequest=Date.now();
-    job.resolve(await sendPaymentRequest('/customer-pricing',job.body));
+    job.resolve(await sendPaymentRequest(job.path,job.body));
    }catch(error){job.reject(error);}
   }
  }finally{pricingRunning=false;}
 }
 async function post(path,body,options={}){
- if(path!=='/customer-pricing')return sendPaymentRequest(path,body);
+ if(!['/customer-pricing','/customer-finance-programs'].includes(path))return sendPaymentRequest(path,body);
  return new Promise((resolve,reject)=>{
-  pricingQueue.push({body,options,resolve,reject});
+  pricingQueue.push({path,body,options,resolve,reject});
   void drainPricingQueue();
  });
 }
@@ -125,12 +125,12 @@ function selectedPackageItems(items,quantity){
     return {sku:clean(item.sku),quantity:count};
   });
 }
-async function programs(brandId,sku,inventoryId,quantity=1,packageItems=[]){
+async function programs(brandId,sku,inventoryId,quantity=1,packageItems=[],requestOptions={}){
   quantity=Number(quantity);
   if(!Number.isInteger(quantity)||quantity<1||quantity>100)throw new Error('Choose a whole-number quantity from 1 to 100.');
   const selected=await selectInventory(brandId,sku,inventoryId);
   const selectionItems=selectedPackageItems(packageItems,quantity);
-  const data=await post('/customer-finance-programs',{brandId,sku,inventoryId:selected,quantity,...(selected?{inventorySelectionRequired:true}:{}),...(selectionItems.length?{selectionItems}:{})});
+  const data=await post('/customer-finance-programs',{brandId,sku,inventoryId:selected,quantity,...(selected?{inventorySelectionRequired:true}:{}),...(selectionItems.length?{selectionItems}:{})},requestOptions);
   return (data.programs||[]).filter(p=>num(p.TermMonths)>0 && clean(p.ProgramID));
 }
 async function quote(brandId,sku,row,paymentMethod,program,inventoryId,quantity=1,requestOptions={}){
