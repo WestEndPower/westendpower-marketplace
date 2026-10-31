@@ -1,0 +1,17 @@
+.wep-promo-controls{background:#fff;border:1px solid #d4ded2;border-radius:12px;padding:16px 18px;margin:10px 0 16px;color:#17251b}
+.wep-promo-controls h1{font-size:24px;margin:0 0 12px}
+.wep-promo-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.wep-promo-buttons button,.wep-promo-dialog button{font:700 14px Arial,sans-serif;padding:10px 15px;border:1px solid #737d76;border-radius:7px;background:#fff;color:#17251b;cursor:pointer}
+.wep-promo-buttons button[aria-pressed=true]{background:#176a14;border-color:#176a14;color:#fff}
+.wep-promo-buttons button:focus-visible,.wep-promo-dialog button:focus-visible{outline:3px solid #be8500;outline-offset:3px}
+.wep-promo-note{font-size:13px;line-height:1.5;margin:12px 0 0}
+.wep-promo-dialog{max-width:480px;width:calc(100% - 48px);border:1px solid #8c9c8b;border-radius:12px;padding:24px;font:16px/1.5 Arial,sans-serif;color:#17251b}
+.wep-promo-dialog::backdrop{background:#0008}.wep-promo-dialog h2{margin-top:0}.wep-promo-dialog>div{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.wep-promo-card-note{background:#fff5d9;color:#372b0c;padding:10px 14px;font:700 12px/1.5 Arial,sans-serif;border-bottom:1px solid #d6cda9}
+.wep-promo-card-note p{margin:0}.wep-promo-card-note small{font-weight:400}
+.promo-empty{background:#fff;color:#17251b;border-radius:10px;padding:24px;grid-column:1/-1}
+.promo-category-count{color:#fff;font:14px Arial,sans-serif;margin:0 0 14px}
+.promo-categories a{display:flex;text-decoration:none;box-sizing:border-box}.promo-categories .shop-tile-name{align-items:center;justify-content:center}.promo-categories .shop-subimage{width:100%;cursor:pointer}.promo-categories .shop-product-powers a{background:#fff;color:#25462c;border:1px solid #9aa99c;border-bottom:2px solid #718874;border-radius:5px;padding:6px 8px;font-size:12px;font-weight:800}
+.promo-categories .shop-product-powers{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;padding:9px}.promo-categories .shop-tile-heading{margin:0}
+.promo-categories .shop-carousel-window{min-height:248px}.promo-categories .shop-subtile{height:208px}.promo-categories .shop-subimage{height:160px}.promo-categories .shop-subimage img{max-width:100%;max-height:100%;object-fit:contain}
+@media(max-width:600px){.wep-promo-controls{padding:12px}.wep-promo-buttons{gap:6px}.wep-promo-buttons button{padding:10px;font-size:13px}.wep-promo-controls h1{font-size:21px}}

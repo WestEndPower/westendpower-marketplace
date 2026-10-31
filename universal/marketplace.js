@@ -31,6 +31,7 @@
     availability: new Set(),
     buyOnline: false,
     promoOnly: false,
+    promoView: 'current',
     search: '',
     specFilters: new Map(),
     seriesModelOpen: false,
@@ -979,7 +980,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       }else{
         if(
           state.promoOnly &&
-          !(f.variants||[]).some(v=>promoInfo(v))
+          !(f.variants||[]).some(v=>marketplaceRowHasPromo(v.marketplaceRow))
         ){
           return false;
         }
@@ -1129,31 +1130,28 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       .join(' + ');
   }
   function marketplaceRowHasPromo(row){
-    if(!row) return false;
+    return window.WestEndPromotions.matches(row,state.promoView,DATA.promotionFinance||[]);
+  }
 
-    const msrp=num(row.MSRP);
-    const sale=num(row.SalePrice);
-    const rebate=num(row.RebateToCustomer);
+  async function ensurePromotionPrograms(){
+    if(!DATA.promotionProgramsRequest){
+      DATA.promotionProgramsRequest=window.WestEndPromotions.loadProgramCatalog(DATA.products).then(()=>{DATA.promotionProgramsError=false;}).catch(()=>{DATA.promotionProgramsError=true;});
+    }
+    await DATA.promotionProgramsRequest;
+  }
 
-    const saleActive=
-      sale>0 &&
-      msrp>0 &&
-      sale<msrp &&
-      dateActive(
-        row.SaleStartDate,
-        row.SaleEndDate
-      );
-
-    const rebateActive=
-      rebate>0 &&
-      msrp>0 &&
-      rebate<msrp &&
-      dateActive(
-        row.RebateStartDate,
-        row.RebateEndDate
-      );
-
-    return saleActive || rebateActive;
+  function renderPromotionControls(){
+    let host=$('#market-promotion-controls');
+    if(!host){host=document.createElement('section');host.id='market-promotion-controls';$('.market-shop-nav').before(host);}
+    host.hidden=!state.promoOnly;
+    if(!state.promoOnly)return;
+    window.WestEndPromotions.renderControls(host,state.promoView,async value=>{
+      if(['responders','fleet'].includes(value))await ensurePromotionPrograms();
+      state.promoView=value;state.promoOnly=true;
+      renderTopFilters();renderSidebar();filterFamilies();
+    });
+    const back=document.createElement('a');back.href='promotions.html?promo='+state.promoView;back.textContent='← Promotion categories';back.className='wep-promo-note';host.append(back);
+    if(DATA.promotionProgramsError&&['responders','fleet'].includes(state.promoView)){const note=document.createElement('p');note.textContent='Program availability is temporarily unavailable. Please refresh or see store for details.';note.setAttribute('role','status');host.append(note);}
   }
 
   function marketplaceRowMatches(
@@ -1368,6 +1366,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
 
   function renderTopFilters(){
+    renderPromotionControls();
     const homeButton='<button type="button" class="market-chip market-home" data-market-home aria-label="Return to Marketplace home">Home</button>';
     const tabs=$('#market-shop-tabs');
     tabs.innerHTML='';
@@ -1395,7 +1394,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
     const categories=
       distinct(
-        DATA.products.filter(p=>truthy(p.Active)).map(p=>clean(p.Category))
+        DATA.products.filter(p=>truthy(p.Active)&&(!state.promoOnly||marketplaceRowHasPromo(p))).map(p=>clean(p.Category))
       ).filter(x=>
         !/^batteries|chargers$/i.test(x)
       );
@@ -2357,7 +2356,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     if(state.seriesOrEngine) params.set('filter',state.seriesOrEngine);
     if(state.seriesFilter) params.set('series',state.seriesFilter);
     if(state.modelFilter) params.set('model',state.modelFilter);
-    if(state.promoOnly) params.set('promo','1');
+    if(state.promoOnly) params.set('promo',state.promoView);
     if(state.buyOnline) params.set('online','1');
     if(state.search) params.set('q',state.search);
 
@@ -2404,7 +2403,8 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     state.seriesOrEngine=clean(params.get('filter'));
     state.seriesFilter=clean(params.get('series'));
     state.modelFilter=clean(params.get('model'));
-    state.promoOnly=params.get('promo')==='1';
+    state.promoOnly=params.has('promo') && (params.get('promo')==='1'||Object.hasOwn(window.WestEndPromotions.views,params.get('promo')));
+    state.promoView=Object.hasOwn(window.WestEndPromotions.views,params.get('promo'))?params.get('promo'):'current';
     state.buyOnline=params.get('online')==='1';
     state.search=clean(params.get('q'));
 
@@ -2453,7 +2453,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     state.category='';state.subcategory='';state.power='';
     state.seriesOrEngine='';state.width='';
     state.brand.clear();state.availability.clear();
-    state.buyOnline=false;state.promoOnly=false;state.search='';
+    state.buyOnline=false;state.promoOnly=false;state.promoView='current';state.search='';
     state.specFilters.clear();state.hpRanges.clear();
     state.seriesModelOpen=false;state.seriesModelView='';
     state.seriesFilter='';state.modelFilter='';
@@ -2903,6 +2903,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
         throw new Error('Combined catalog does not match this Marketplace');
       }
       DATA.componentSources=Object.fromEntries((bundle.componentSources||[]).map(source=>[clean(source.brand).toUpperCase(),Object.fromEntries(['batteries','chargers','compatibility','packages','requirements','attachments','accessories','parts'].map(name=>[name,unpackMarketplaceTable(source[name])]))]));
+      DATA.promotionFinance=(bundle.financeSources||[]).flatMap(source=>unpackMarketplaceTable(source).map(row=>({...row,BrandID:source.brand})));
       const products=bundle.productSources.flatMap(unpackMarketplaceTable);
       if(!products.length)throw new Error('Combined catalog has no products');
       window.WESTEND_PUBLISHED_BRANDS=bundle.productSources.map(table=>{
@@ -2971,6 +2972,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     DATA.inventoryByBrand=new Map(results);
   }
   async function init(){
+    if(location.search==='?promo=1'){location.replace(new URL('promotions.html',location.href));return;}
     try{
       const [catalog,locations]=await Promise.all([
         loadMarketplaceCatalog(),
@@ -2978,10 +2980,14 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       ]);
       const [products,batteries,chargers,compatibility,financePrograms,settingsRows]=catalog;
       DATA.products=products;
+      if(['responders','fleet'].includes(new URLSearchParams(location.search).get('promo')))await ensurePromotionPrograms();
       DATA.batteries=batteries;
       DATA.chargers=chargers;
       DATA.compatibility=compatibility;
       DATA.financePrograms=financePrograms;
+      if(!DATA.promotionFinance?.length){
+        DATA.promotionFinance=(await Promise.all(marketplaceBrandProfiles().map(async profile=>{const brand=clean(profile.id).toUpperCase();try{return (await csv('brands/'+brand.toLowerCase()+'/data/finance-programs.csv')).map(row=>({...row,BrandID:brand}));}catch{return [];}}))).flat();
+      }
       DATA.batterySystems=new Set(
         batteries.filter(x=>truthy(x.Active)).map(x=>clean(x.BatteryID).match(/^[A-Za-z]+/)?.[0]||'').filter(Boolean).map(x=>x.toUpperCase())
       );

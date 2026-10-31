@@ -1,0 +1,730 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Promotions | West End Power Equipment</title><meta name="description" content="Shop current and upcoming equipment rebates, sale prices, 0% financing, First Responder and Fleet programs at West End Power Equipment."><style>
+:root{--ink:#171a1d;--muted:#66707a;--line:#d9dee3;--soft:#f6f8f9;--accent:#238b45;--accent2:#176c34;--max:1740px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#fff}
+button,input,select{font:inherit}button{cursor:pointer}button,a,input,select,summary,label{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.market-shell{max-width:var(--max);margin:auto;padding:18px}
+.market-header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 18px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.05)}
+.market-branding{display:flex;align-items:center;gap:14px;min-width:0}.market-home-link{display:flex;align-items:center;text-decoration:none}.market-branding img{max-width:210px;max-height:58px;object-fit:contain}.market-branding h1{margin:0;font-size:clamp(22px,3vw,34px)}.market-branding p{margin:3px 0 0;color:var(--muted)}
+.market-searchbox{display:flex;align-items:center;gap:8px;min-width:min(420px,38vw)}.market-searchbox input{width:100%;min-height:44px;padding:11px 13px;border:1px solid #aeb6bf;border-radius:9px}.market-clear{min-height:44px;border:1px solid #333;border-radius:8px;background:#fff;padding:10px 12px;font-weight:800}
+.market-shop-nav{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0 8px}.market-shop-tabs,.market-power-inline{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.market-shop-tab{min-height:36px;border:1px solid #333;border-radius:999px;background:#fff;padding:6px 12px;font-size:14px;font-weight:900}.market-shop-tab.active{background:var(--ink);color:#fff}.market-power-inline[hidden]{display:none!important}.market-power-inline .market-context-label{margin-right:2px}.market-top{display:block;margin:8px 0 16px}.market-top-panel{border:1px solid var(--line);border-radius:11px;background:var(--soft);padding:12px}.market-top-panel[hidden]{display:none!important}.market-context-panel{margin-top:8px}
+.market-top-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.market-top-title strong{font-size:13px;text-transform:uppercase;letter-spacing:.05em}
+.market-chip-row{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.market-chip{min-height:34px;border:1px solid #3f474f;border-radius:999px;background:#fff;padding:5px 10px;font-size:13px;font-weight:800}.market-chip.active{background:var(--ink);color:#fff}.market-category-row{gap:8px}.market-category-row .market-all-categories{font-weight:900;border-width:2px}.market-category-row [data-subcategory]{background:#eef1f3;border-color:#9ea6ae}.market-category-row [data-subcategory].active{background:#4b545d;color:#fff;border-color:#4b545d}.market-context-label{font-size:12px;font-weight:900;text-transform:uppercase;color:var(--muted);margin-right:2px}
+#market-context,#market-width{margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
+.market-layout{display:grid;grid-template-columns:245px minmax(0,1fr);gap:18px;align-items:start}
+.market-sidebar{position:sticky;top:10px;border:1px solid var(--line);border-radius:11px;background:#fff;overflow:hidden}.market-mobile-filter-head{display:flex;align-items:center;justify-content:space-between}.market-sidebar h2{font-size:17px;margin:0;padding:14px 14px 10px}.market-mobile-filter-close,.market-mobile-filter-toggle,.market-mobile-filter-backdrop{display:none}.market-sidebar details{border-top:1px solid var(--line)}.market-sidebar summary{list-style:none;min-height:44px;padding:12px 14px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:space-between}.market-sidebar summary:after{content:'+'}.market-sidebar details[open] summary:after{content:'-'}.market-sidebar summary::-webkit-details-marker{display:none}.market-checks{padding:0 14px 12px;display:grid;gap:8px}.market-checks label{display:flex;gap:8px;align-items:center;min-height:36px;font-size:14px}.market-checks input{width:20px;height:20px;margin:0}
+.market-main{min-width:0}.market-results{position:sticky;top:8px;z-index:30;display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 10px;padding:8px 10px;border:1px solid #cbd1d6;border-radius:10px;background:rgba(255,255,255,.97);color:var(--muted);box-shadow:0 4px 14px rgba(0,0,0,.09);backdrop-filter:blur(4px)}.market-results strong{color:var(--ink)}.market-results-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.market-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:stretch}.market-card{position:relative;display:flex;flex-direction:column;min-width:0;overflow:visible;border:2px solid #bcc3ca;border-radius:11px;background:linear-gradient(145deg,#fff 0%,#fbfcfd 42%,#f1f3f5 100%);box-shadow:0 3px 10px rgba(0,0,0,.09);padding:8px}.market-card:has(.market-inventory-button[aria-expanded="true"]){z-index:50}.market-card-head{position:relative;display:flex;align-items:center;min-height:42px;margin-bottom:6px;padding:6px 8px;border:1px solid #196b34;border-radius:7px;background:#238b45;color:#fff}.market-card-head h3{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;margin:0;flex-wrap:nowrap}.market-card-head h3 strong{white-space:normal;overflow-wrap:anywhere}.market-card-head h3 strong{font-size:20px;line-height:1;font-weight:900;white-space:nowrap}.market-card-head h3 span{font-size:13px;line-height:1.15;font-weight:700;color:#eef5f0;white-space:normal}.market-card-head-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}.market-inventory-wrap{position:relative}.market-inventory-button{min-height:30px;padding:4px 9px;border:1px solid #dfe5e1;border-radius:999px;background:#fff;color:#235c37;font:inherit;font-size:10px;font-weight:900;white-space:nowrap;cursor:pointer}.market-inventory-button:hover,.market-inventory-button[aria-expanded="true"]{background:#eef7f1}.market-inventory-popover{position:absolute;z-index:30;right:0;top:calc(100% + 7px);min-width:245px;max-width:min(320px,82vw);max-height:min(360px,70vh);overflow:auto;padding:10px;border:1px solid #b9c2bc;border-radius:9px;background:#fff;color:#202622;box-shadow:0 8px 24px rgba(0,0,0,.2);text-align:left}.market-inventory-line{padding:5px 2px;font-size:12px;font-weight:800;line-height:1.25}.market-inventory-line span{color:#238b45;font-weight:900}.market-inventory-order{color:#47514b}.market-inventory-contact{display:block;margin-top:7px;padding-top:8px;border-top:1px solid #e0e5e2;color:#176b35;font-size:12px;font-weight:900;text-decoration:none}.market-inventory-contact:hover{text-decoration:underline}.market-compare-pick{display:flex;align-items:center;gap:4px;flex:0 0 auto;padding:4px 8px;border:1px solid #e2e5e8;border-radius:999px;background:#fff;color:#252a2e;font-size:10px;font-weight:900;white-space:nowrap}.market-compare-pick input{width:20px;height:20px;margin:0}
+.market-card-body{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:8px;align-items:stretch}.market-card-left{display:flex;flex-direction:column;min-width:0}.market-image-wrap{position:relative}.market-image{display:flex;align-items:center;justify-content:center;width:100%;min-height:205px;overflow:hidden;border:2px solid #bcc3ca;border-radius:7px;background:linear-gradient(180deg,#fff,#f8fafb);color:var(--muted);text-decoration:none}.market-image img{display:block;width:100%;height:205px;object-fit:contain;padding:50px 8px 6px}.market-offer-row{position:absolute;z-index:5;left:7px;right:7px;top:6px;display:grid;grid-template-columns:1fr;align-items:center;gap:7px;min-height:42px;padding:6px 9px;border:2px solid #d6b53a;border-radius:5px;background:linear-gradient(90deg,#990000,#d72128 35%,#c4161d 70%,#8e0000);color:#fff3a3;text-align:center;box-shadow:0 2px 4px rgba(0,0,0,.18);pointer-events:none}.market-offer-row-both{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}.market-offer-promo,.market-offer-finance{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0}.market-offer-promo strong,.market-offer-finance strong{font-size:12px;line-height:1.05;font-weight:900;color:#fff3a3;white-space:nowrap}.market-offer-promo small,.market-offer-finance small{margin-top:3px;font-size:9px;line-height:1;font-weight:900;color:#fff;white-space:nowrap}.market-offer-joiner{display:flex;align-items:center;justify-content:center;min-width:32px;font-size:11px;font-weight:900;color:#fff3a3}.market-detail-actions{display:flex;align-items:center;justify-content:center;gap:6px;margin:5px auto 0;flex-wrap:wrap}.market-product-details{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:32px;margin:0;padding:5px 9px;border:1px solid #9fa7af;border-radius:6px;background:#fff;max-width:100%;font-size:12px;font-weight:800;color:#235c37;text-decoration:none;text-align:center;cursor:pointer}.market-product-details:hover{background:#f4f7f5;text-decoration:none}.market-compare-detail input{width:18px;height:18px;margin:0}.market-card-finance{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:3px;width:100%;max-width:100%;margin:8px 0 0;padding:0 0 7px;border:2px solid #1f5f35;border-radius:8px;background:#fffbea;color:#333;font-size:11px;font-weight:800;text-align:center;line-height:1.15;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.12)}.market-card-finance-loading{min-width:150px;padding:8px 12px;color:#666;border-color:#d6b53a}.market-card-finance-head{margin-bottom:2px;padding:6px 10px;background:#1f5f35;color:#fff;font-size:12px;font-weight:900;letter-spacing:.35px}.market-card-finance-payment{display:flex;align-items:baseline;justify-content:center;gap:5px;padding:2px 8px 0}.market-card-finance-aslow{font-size:9px;font-weight:900;color:#555;letter-spacing:.25px}.market-card-finance-payment strong{font-size:21px;font-weight:900;color:#a10f1d;line-height:1}.market-card-finance-apr{font-size:12px;font-weight:900;color:#1f5f35}.market-card-finance-dot{padding:0 2px;color:#777}.market-card-finance-note{padding:0 8px;font-size:10px;font-weight:800;color:#6a5a19}
+.market-buy{display:flex;flex-direction:column;gap:5px;min-width:0;height:100%}.market-price-lines{display:flex;flex-direction:column;gap:5px}.market-price-choice{display:flex;flex-direction:column;justify-content:flex-start;min-height:96px;padding:7px 9px;border:2px solid #bcc3ca;border-radius:7px;background:linear-gradient(180deg,#fff,#fafbfc);box-shadow:0 1px 3px rgba(0,0,0,.04)}.market-price-inventory{display:flex;justify-content:center;margin-top:auto;padding-top:4px}.market-price-inventory .market-inventory-button{min-width:120px}.market-price-choice.market-package-choice{border-color:#bcc3ca;background:linear-gradient(180deg,#fff,#fafbfc)}.market-price-heading{display:flex;align-items:baseline;justify-content:space-between;gap:7px;white-space:nowrap}.market-price-heading>span:first-child{font-size:18px;font-weight:900}.market-price-pair{display:flex;align-items:baseline;justify-content:flex-end;gap:5px}.market-price-pair del{font-size:12px;color:#666}.market-price-pair strong{font-size:21px;font-weight:900;color:#c8102e}.market-price-choice small{display:block;margin-top:4px;text-align:center;font-size:12px;line-height:1.15;color:#6f7881;font-weight:800}.market-sold-separate,.market-package-includes,.market-package-savings{white-space:nowrap}.market-package-includes{color:#6f7881!important}.market-package-savings{color:#2f6f3d!important;font-weight:900!important}.market-promo-price-note{color:#b20d22!important;font-weight:900!important}.market-series{font-size:12px;font-weight:800;color:var(--muted);text-align:center}.market-availability{font-size:12px;font-weight:900;color:#1e6f39;text-align:center}.market-cart-controls{display:grid;grid-template-columns:minmax(0,1fr) 52px;gap:6px}.market-cart-controls select,.market-cart-controls input{min-width:0;width:100%;height:44px;padding:7px 9px;border:2px solid #bcc3ca;border-radius:6px;background:#fff;font-size:14px;font-weight:700}.market-cart-controls input{text-align:center}.market-cart-controls button{grid-column:1/3;min-height:44px;border:1px solid #8d0b19;border-radius:6px;background:#c8102e;color:#fff;font-weight:900}.market-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.market-actions a{display:flex;align-items:center;justify-content:center;min-height:44px;padding:5px 6px;border:2px solid #9fa7af;border-radius:6px;background:#fff;color:#202832;text-decoration:none;font-size:12px;font-weight:900}.market-actions a:only-child{grid-column:1/3}
+.market-specs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:5px 0 0}.market-specs div{display:flex;flex-direction:column;justify-content:center;min-height:44px;padding:5px 6px;border:2px solid #aeb5bc;border-radius:7px;background:#d4d8dc}.market-specs dt{font-size:10px;color:#6a727a;text-align:center}.market-specs dd{margin:2px 0 0;font-size:12px;font-weight:900;text-align:center}
+.market-empty{grid-column:1/-1;text-align:center;padding:60px 20px;border:1px dashed #aaa;border-radius:10px}.market-empty h2{margin:0 0 6px}
+.market-compare-float{min-height:44px;border:0;border-radius:999px;background:var(--ink);color:#fff;padding:10px 14px;font-weight:900}.market-compare-float:disabled{opacity:.45;cursor:not-allowed}.market-cart-float{display:flex;align-items:center;gap:7px;min-height:44px;border-radius:999px;background:var(--accent);color:#fff;padding:9px 13px;text-decoration:none;font-weight:900}.market-cart-float svg{width:20px;height:20px}.market-cart-float sup{min-width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#fff;color:#111;font-size:10px;line-height:1}
+#market-compare-dialog{width:min(1200px,94vw);max-height:88vh;border:0;border-radius:12px;padding:0;box-shadow:0 18px 60px rgba(0,0,0,.3)}#market-compare-dialog::backdrop{background:rgba(0,0,0,.52)}.market-dialog-head{position:sticky;top:0;z-index:3;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#fff;border-bottom:1px solid var(--line)}.market-dialog-head h2{margin:0}.market-dialog-head button{border:0;background:#eee;border-radius:50%;width:38px;height:38px;font-size:24px}.market-compare-content{padding:0 14px 16px}.market-compare-scroll{overflow:auto;max-height:72vh}.market-compare-scroll table{border-collapse:separate;border-spacing:0;min-width:100%}.market-compare-scroll th,.market-compare-scroll td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:9px;min-width:150px;vertical-align:top}.market-compare-scroll thead th{position:sticky;top:0;background:#202428;color:#fff;z-index:2}.market-compare-scroll tbody th{position:sticky;left:0;background:#f3f5f6;z-index:1;text-align:left}
+#market-loading{max-width:900px;margin:80px auto;padding:30px;text-align:center;border:1px solid var(--line);border-radius:12px}
+.market-sort-filter-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:8px 0 0}
+.market-mobile-context{display:none}
+@media(max-width:1120px){.market-grid{grid-template-columns:1fr}.market-searchbox{min-width:300px}.market-shop-nav{align-items:flex-start;flex-direction:column}}
+@media(max-width:760px){
+.market-shell{padding:10px}
+.market-header{align-items:stretch;flex-direction:column}
+.market-searchbox{min-width:0;width:100%}
+.market-layout{grid-template-columns:1fr}
+.market-grid{grid-template-columns:1fr}
+.market-card-body{grid-template-columns:1fr}
+.market-top{margin:10px 0}
+.market-results{top:4px;flex-wrap:wrap}
+.market-results-actions{width:100%;justify-content:flex-end}
+.market-branding img{max-width:160px}
+.market-specs{grid-template-columns:repeat(2,minmax(0,1fr))}
+#market-context-panel{display:none!important}
+.market-mobile-filter-toggle{display:inline-flex;align-items:center;justify-content:center;width:max-content;min-height:40px;margin:0 0 10px;padding:8px 14px;border:1px solid #333;border-radius:999px;background:#fff;font-weight:900}
+.market-mobile-filter-close{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;margin-right:8px;border:0;border-radius:50%;background:#eef1f3;font-size:24px;line-height:1}
+.market-sidebar{position:fixed;z-index:1001;top:0;bottom:0;left:0;width:min(360px,88vw);max-height:100vh;overflow:auto;border-radius:0 12px 12px 0;transform:translateX(-105%);transition:transform .22s ease;box-shadow:8px 0 28px rgba(0,0,0,.24)}
+.market-mobile-filters-open .market-sidebar{transform:translateX(0)}
+.market-mobile-filter-backdrop{display:none;position:fixed;z-index:1000;inset:0;background:rgba(0,0,0,.42)}
+.market-mobile-filter-backdrop[hidden]{display:none}
+.market-mobile-filters-open .market-mobile-filter-backdrop{display:block}
+.market-mobile-context{display:block;padding:0 14px 12px;border-top:1px solid var(--line)}
+.market-mobile-context .market-primary-filter-row,.market-mobile-context .market-sort-filter-row{grid-template-columns:1fr!important}
+.market-mobile-context .market-primary-right,.market-mobile-context .market-primary-right .market-compact-heading{text-align:left!important}
+.market-mobile-context .market-primary-right .market-compact-buttons{justify-content:flex-start!important}
+.market-sidebar details:not([open]) .market-checks{display:none}
+}
+
+.market-notice{width:min(480px,calc(100vw - 32px));max-height:calc(100vh - 32px);padding:0;border:0;border-radius:14px;box-shadow:0 20px 70px rgba(0,0,0,.28);color:var(--ink)}
+.market-notice::backdrop{background:rgba(16,28,20,.65)}
+.market-notice-inner{padding:25px}
+.market-notice h2{margin:0 0 12px;font-size:24px}
+.market-notice p{margin:0 0 18px;line-height:1.5}
+.market-notice a{color:var(--accent2);font-weight:800}
+.market-notice button{width:100%;min-height:46px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-weight:800}
+
+.market-tractor-nav-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:10px;
+}
+.market-tractor-nav{min-width:110px}
+.market-tractor-filter-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px 16px;
+  margin-top:10px;
+}
+.market-tractor-filter-group{
+  min-width:0;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#fff;
+}
+.market-tractor-filter-group>strong,
+.market-tractor-detail>strong,
+.market-tractor-secondary>strong,
+.market-tractor-two-col>div>strong{
+  display:block;
+  margin-bottom:7px;
+  font-size:13px;
+  font-weight:900;
+}
+.market-tractor-detail{
+  margin:8px 0 10px;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#fff;
+}
+.market-tractor-secondary{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid var(--line);
+}
+.market-tractor-two-col{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:10px;
+}
+.market-tractor-packages{
+  margin-top:10px;
+}
+@media(max-width:760px){
+  .market-tractor-filter-grid,
+  .market-tractor-two-col{
+    grid-template-columns:1fr;
+  }
+}
+
+.market-card-finance{padding-bottom:0;gap:4px}.market-card-finance-payment{padding:0 5px 4px}.market-card-finance-payment strong span{font-size:12px;white-space:nowrap}.market-payment-options{display:flex;align-items:center;justify-content:center;min-height:34px;width:100%;padding:7px 6px;background:#1f5f35;color:#fff;border-top:1px solid #1f5f35;font-size:12px;font-weight:900;text-decoration:none;line-height:1.2}.market-payment-options:hover{background:#174a28}.market-payment-options:focus-visible{outline:3px solid #d6b53a;outline-offset:-3px}.market-payment-options-only{width:100%;margin-top:8px;border:2px solid #1f5f35;border-radius:7px;overflow:hidden}
+
+.market-brand-text{min-width:0}.market-construction{max-width:650px!important;font-size:12px!important;line-height:1.4!important;color:#59636c!important;margin-top:5px!important}
+.market-contact-launch{position:fixed;right:20px;bottom:20px;z-index:1000;width:58px;height:58px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:#176c34;color:#fff;box-shadow:0 4px 18px #0003}.market-contact-launch[hidden]{display:none!important}
+.market-contact-dialog{width:min(94vw,480px);max-height:90vh;border:1px solid #ccd3d8;border-radius:14px;padding:0;box-shadow:0 16px 48px #0004;color:#171a1d}.market-contact-dialog::backdrop{background:#0007}.market-contact-inner{padding:22px}.market-contact-head{display:flex;align-items:flex-start;gap:12px;justify-content:space-between}.market-contact-head h2{font-size:21px;line-height:1.25;margin:0}.market-contact-head button{border:0;background:transparent;font-size:28px;line-height:1;padding:0 4px}.market-contact-inner p{line-height:1.45}.market-contact-method{display:flex;gap:22px;flex-wrap:wrap;border:0;padding:10px 0;margin:12px 0}.market-contact-method legend{font-weight:700}.market-contact-method label{display:flex;gap:7px;align-items:center}.market-contact-method .market-contact-choice{display:flex;flex-direction:column;align-items:flex-start;gap:5px}.market-contact-choice span{display:flex;align-items:center;gap:7px;font-weight:700}.market-contact-choice a{font-size:13px;color:#176c34;text-decoration:underline;overflow-wrap:anywhere}.market-contact-inner>label{display:block;font-weight:700;margin-bottom:7px}.market-contact-inner textarea{width:100%;box-sizing:border-box;padding:11px;border:1px solid #aeb6bf;border-radius:8px;font:inherit;resize:vertical}.market-contact-hint,.market-contact-destination{font-size:13px;color:#59636c}.market-contact-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.market-contact-actions button{border:0;background:#176c34;color:white;padding:12px 16px;border-radius:8px;font-weight:700}.market-contact-actions a{color:#176c34;font-weight:700}.market-contact-call{display:inline-flex;align-items:center;min-height:44px;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:760px){.market-construction{font-size:11px!important}.market-contact-launch{right:14px;bottom:14px;width:52px;height:52px}}
+</style>
+<style id="compact-tractor-filter-spacing-fix">
+/* Compact Tractor filters: remove dead-space panels */
+.market-tractor-filter-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  column-gap:24px;
+  row-gap:10px;
+  margin-top:8px;
+}
+
+.market-tractor-filter-group{
+  border:0 !important;
+  border-radius:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  min-width:0;
+}
+
+.market-tractor-filter-group > strong{
+  display:block;
+  margin:0 0 4px !important;
+}
+
+.market-tractor-nav-row{
+  margin:0 0 8px !important;
+}
+
+.market-tractor-detail{
+  margin:4px 0 8px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+}
+
+.market-tractor-secondary{
+  margin-top:6px !important;
+  padding-top:4px !important;
+  border-top:0 !important;
+}
+
+.market-tractor-two-col{
+  margin-top:6px !important;
+  gap:12px !important;
+}
+
+.market-tractor-packages{
+  margin-top:10px !important;
+}
+
+.market-tractor-filter-group .market-chip-row{
+  margin:0 !important;
+}
+
+@media(max-width:760px){
+  .market-tractor-filter-grid{
+    grid-template-columns:1fr;
+    row-gap:8px;
+  }
+}
+</style>
+<style id="marketplace-simple-filter-layout">
+
+  #market-shop-tabs,
+  #market-power-wrap{
+    display:none !important;
+  }
+
+  .market-primary-filter-row{
+    display:grid;
+    grid-template-columns:minmax(260px,1fr) minmax(420px,2fr);
+    gap:20px;
+    align-items:start;
+    margin:0 0 8px;
+  }
+
+  .market-primary-left{
+    text-align:left;
+  }
+
+  .market-primary-right{
+    text-align:right;
+  }
+
+  .market-primary-right .market-compact-buttons{
+    justify-content:flex-end;
+  }
+
+  .market-compact-heading{
+    font-size:12px;
+    font-weight:800;
+    line-height:1.15;
+    margin:0 0 5px;
+    text-transform:uppercase;
+  }
+
+  .market-compact-buttons{
+    display:flex;
+    flex-wrap:wrap;
+    gap:5px;
+  }
+
+  .market-b-filter-tabs{
+    display:flex;
+    flex-wrap:wrap;
+    gap:5px;
+  }
+
+  @media (max-width:760px){
+    .market-card-head{align-items:center;flex-wrap:wrap}
+    .market-card-head h3{flex:1 1 auto}
+    .market-card-head-actions{margin-left:auto}
+    .market-inventory-popover{left:0;right:auto}
+
+    .market-primary-filter-row{
+      grid-template-columns:1fr;
+      gap:8px;
+    }
+
+    .market-primary-right{
+      text-align:left;
+    }
+
+    .market-primary-right .market-compact-buttons{
+      justify-content:flex-start;
+    }
+  }
+
+</style>
+<style id="marketplace-layout-lock">
+
+  /* ======================================================
+     FIRST ROW
+     Models / Series LEFT
+     Packages / Promos RIGHT
+     ====================================================== */
+
+  .market-primary-filter-row{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) !important;
+    width:100% !important;
+    gap:16px !important;
+    align-items:start !important;
+    margin:0 0 8px !important;
+  }
+
+  .market-primary-left{
+    min-width:0 !important;
+    text-align:left !important;
+    justify-self:start !important;
+  }
+
+  .market-primary-left .market-compact-buttons{
+    justify-content:flex-start !important;
+  }
+
+  .market-primary-right{
+    min-width:0 !important;
+    width:100% !important;
+    text-align:right !important;
+    justify-self:stretch !important;
+  }
+
+  .market-primary-right .market-compact-heading{
+    text-align:right !important;
+  }
+
+  .market-primary-right .market-compact-buttons{
+    display:flex !important;
+    flex-wrap:wrap !important;
+    justify-content:flex-end !important;
+    width:100% !important;
+  }
+
+
+  /* ======================================================
+     SERIES / MODEL OPTIONS
+     ALWAYS THEIR OWN FULL-WIDTH ROW
+     ====================================================== */
+
+  .market-series-options,
+  .market-model-options{
+    display:block !important;
+    width:100% !important;
+    clear:both !important;
+    text-align:left !important;
+    margin-top:6px !important;
+  }
+
+  .market-series-options .market-compact-buttons,
+  .market-model-options .market-compact-buttons{
+    justify-content:flex-start !important;
+  }
+
+
+  /* ======================================================
+     NARROW SEARCH
+     ALWAYS NEW FULL-WIDTH ROW
+     ====================================================== */
+
+  .market-narrow-search{
+    display:block !important;
+    position:relative !important;
+    float:none !important;
+    clear:both !important;
+    width:100% !important;
+    max-width:none !important;
+    flex:none !important;
+    margin:8px 0 0 !important;
+    padding:0 !important;
+    text-align:left !important;
+  }
+
+  .market-narrow-search .market-compact-heading{
+    display:block !important;
+    width:100% !important;
+    text-align:left !important;
+  }
+
+  .market-b-filter-tabs{
+    display:flex !important;
+    width:100% !important;
+    flex-wrap:wrap !important;
+    justify-content:flex-start !important;
+    gap:5px !important;
+  }
+
+  .market-b-filter-values{
+    display:block !important;
+    width:100% !important;
+    clear:both !important;
+    margin-top:6px !important;
+  }
+
+
+  /* ======================================================
+     TABLET / PHONE
+     KEEP PACKAGE SIDE RIGHT-ALIGNED
+     ====================================================== */
+
+  @media (max-width:760px){
+
+    .market-primary-filter-row{
+      grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr) !important;
+      gap:8px !important;
+    }
+
+    .market-primary-right{
+      text-align:right !important;
+    }
+
+    .market-primary-right .market-compact-heading{
+      text-align:right !important;
+    }
+
+    .market-primary-right .market-compact-buttons{
+      justify-content:flex-end !important;
+    }
+
+  }
+
+</style>
+<style id="inventory-text-confirm-v1">
+.market-price-inventory{padding-top:5px}
+.market-price-inventory .market-inventory-wrap{width:auto}
+.market-inventory-button,.market-price-inventory .market-inventory-button{width:auto;min-width:0;min-height:26px;padding:4px 7px;border:1px solid #9bb4c8;border-radius:5px;background:#edf3f8;color:#24577b;font-size:12px;font-weight:700;line-height:1.2;box-shadow:none}
+.market-inventory-button:hover,.market-inventory-button[aria-expanded="true"]{background:#dde9f2;color:#194b70;border-color:#6f95b2}
+.market-inventory-button:focus-visible,.market-inventory-text-action:focus-visible{outline:3px solid #e7a700;outline-offset:3px}
+.market-inventory-popover{min-width:265px;max-width:min(330px,82vw);padding:12px}
+.market-inventory-store+.market-inventory-store{margin-top:12px;padding-top:12px;border-top:1px solid #d9e1e7}
+.market-inventory-line{font-size:14px;line-height:1.35}
+.market-inventory-contact.market-inventory-text-action{display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:7px;padding:9px 10px;border:1px solid #176b35;border-radius:6px;background:#edf7ef;color:#155c2f;font-size:13px;font-weight:900;text-align:center;text-decoration:none;white-space:normal}
+.market-inventory-contact.market-inventory-text-action:hover{background:#dceee0;text-decoration:underline}
+</style>
+<style id="market-msrp-spacing-v1">
+.market-price-pair{gap:12px}
+.market-price-pair del{font-weight:800;color:#555}
+</style>
+<style id="market-price-fit-fix">
+.market-price-lines,.market-price-choice{min-width:0}
+.market-price-heading{flex-wrap:wrap;white-space:normal}
+.market-price-heading>span:first-child{
+  flex:1 1 100%;
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+.market-price-pair{
+  flex:1 1 100%;
+  min-width:0;
+  max-width:100%;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.market-price-pair del,.market-price-pair strong{
+  white-space:nowrap;
+}
+</style>
+<style>
+.we-nav{margin:12px auto;padding:12px 16px;background:#fff;border:1px solid #d9dee2;border-radius:12px;max-width:1740px;font:15px Arial,sans-serif}.we-nav *{box-sizing:border-box}.we-nav-top,.we-nav-tabs,.we-nav-dealer{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.we-nav-top{justify-content:space-between}.we-nav-top>a{font-weight:800;color:#176c34;text-decoration:none}.we-nav button,.we-nav .we-link{border:1px solid #777;background:#fff;color:#20272c;border-radius:8px;padding:10px 12px;cursor:pointer;font-weight:700;text-decoration:none}.we-nav button[aria-pressed=true],.we-nav button[aria-expanded=true],.we-nav .we-link[aria-current=page]{background:#171a1d;color:#fff;border-color:#171a1d}.we-nav-tabs{margin-top:12px}.we-nav-panel{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;padding:12px;background:#f4f6f7;border-radius:9px}.we-nav-panel[hidden]{display:none}.we-nav-panel .we-link{display:inline-flex;align-items:center}.we-nav-panel strong{align-self:center;margin-right:5px}.we-nav .we-brand-logo{max-width:115px;max-height:30px;object-fit:contain}.we-nav .we-info{font-size:14px;color:#39464d}.we-nav .we-info a{color:#176c34}.we-nav .we-info[hidden]{display:none}@media(max-width:620px){.we-nav-top{align-items:flex-start}.we-nav-tabs button,.we-nav-tabs .we-link{flex:1;text-align:center}.we-nav-dealer button{font-size:13px;padding:8px}}</style>
+<style>
+.market-shell{max-width:1740px}.market-brand-text h1{color:#176c34}.market-contact-launch{bottom:95px!important;right:22px!important}
+.shop-nav{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.shop-nav a,.shop-nav button{padding:11px 17px;border:1px solid #c9d0ce;border-radius:8px;background:white;color:#202c24;text-decoration:none;font-weight:700;min-height:44px}.shop-nav a[aria-current]{background:#176c34;color:white}.shop-stores{display:flex;flex-wrap:wrap;gap:10px 30px;font-size:14px;color:#56635b;margin:12px 0}.shop-stores a{color:#176c34}
+.market-category-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px}.shop-tile{display:flex;flex-direction:column;align-items:stretch;background:#fff;border:1px solid #cfd7d1;border-radius:12px;overflow:hidden;padding:0;text-align:center;transition:box-shadow .15s,transform .15s;min-width:0}.shop-tile:hover{box-shadow:0 5px 18px #18382322;transform:translateY(-2px)}.shop-tile:focus-visible{outline:3px solid #238b45;outline-offset:3px}.shop-tile-image{height:150px;display:flex;align-items:center;justify-content:center;padding:12px;background:white}.shop-tile img{width:100%;height:100%;object-fit:contain}.shop-tile-name{font-size:17px;font-weight:800;padding:12px 7px 5px;color:#172d1d}.shop-brands{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;padding:7px 6px 14px;min-height:42px}.shop-brand{background:white;padding:3px 5px;font-size:11px;font-weight:800;border:1px solid #e2e6e3;border-radius:4px;color:var(--brand,#176c34)}.shop-tile-empty{font-size:14px;color:#718076}.market-top-panel{padding:18px;background:#f5f7f5}.shop-intro{margin:0 0 15px;font-size:16px;color:#526057}.shop-category-home .market-layout,.shop-category-home .market-context-panel{display:none!important}.shop-brand-list{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.shop-brand-list[hidden]{display:none}.shop-brand-list a{padding:12px;border:1px solid #ccd4ce;border-radius:8px;font-weight:bold;text-decoration:none;background:#fff}.market-home{font-size:0}.market-home:after{content:'All Categories';font-size:13px}
+@media(max-width:1200px){.market-category-row{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:760px){.market-category-row{grid-template-columns:repeat(3,minmax(0,1fr))}.market-header{flex-direction:column;align-items:stretch}.market-searchbox{min-width:0;width:100%}.market-branding img{max-width:130px}.shop-tile-image{height:125px}}@media(max-width:500px){.market-category-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.shop-tile-name{font-size:15px}.shop-tile-image{height:115px}.market-shell{padding:10px}.shop-nav{gap:5px}.shop-nav a,.shop-nav button{font-size:13px;padding:9px 10px}}
+</style>
+<style>
+.shop-tile-heading{margin:0;font-size:17px;background:#f1f5f1;border-bottom:1px solid #dce3dc}.shop-tile-name{display:block;width:100%;border:0;background:transparent;padding:13px 8px;min-height:50px}.shop-tile-image{border:0;width:100%;margin:0}.shop-subcategories{display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-start;gap:6px;padding:12px 8px 15px;border-top:1px solid #edf0ed;flex:1}.shop-subcategories button{border:1px solid #d3dbd4;background:#fff;border-radius:6px;padding:7px 8px;min-height:36px;color:#176c34;font-size:12px;font-weight:700;max-width:100%;overflow-wrap:anywhere}.shop-subcategories button:hover{background:#edf5ee;border-color:#176c34}.shop-tile button:focus-visible{outline:3px solid #238b45;outline-offset:-3px}
+</style>
+<style>#we-shared-nav .wep-nav{
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		padding: 0 0 16px;
+		border-bottom: 1px solid #dce5de;
+		margin-bottom: 22px;
+	}
+#we-shared-nav .wep-nav > a,#we-shared-nav summary{
+		display: block;
+		padding: 12px 14px;
+		background: #fff;
+		color: #164829;
+		font-size: 16px;
+		font-weight: 700;
+		line-height: 1.3;
+		border-radius: 7px;
+		cursor: pointer;
+	}
+#we-shared-nav .wep-nav > a:hover,#we-shared-nav summary:hover{
+		background: #edf5ef;
+	}
+#we-shared-nav a:focus-visible,#we-shared-nav summary:focus-visible{
+		outline: 3px solid #166baf;
+		outline-offset: 3px;
+	}
+#we-shared-nav .wep-cart{
+		border: 1px solid #2b633c;
+	}
+#we-shared-nav details{
+		position: relative;
+	}
+#we-shared-nav summary{
+		list-style: none;
+	}
+#we-shared-nav summary::-webkit-details-marker{
+		display: none;
+	}
+#we-shared-nav summary::after{
+		content: " ▾";
+	}
+#we-shared-nav details[open] summary::after{
+		content: " ▴";
+	}
+#we-shared-nav .wep-menu{
+		position: absolute;
+		z-index: 100;
+		top: 100%;
+		left: 0;
+		min-width: 205px;
+		padding: 7px;
+		background: #fff;
+		border: 1px solid #d4ded6;
+		border-radius: 9px;
+		box-shadow: 0 10px 25px #183b2526;
+	}
+#we-shared-nav .wep-menu a{
+		display: block;
+		padding: 12px;
+		border-radius: 5px;
+		font-size: 16px;
+		font-weight: 700;
+		line-height: 1.35;
+	}
+#we-shared-nav .wep-menu a:hover{
+		background: #edf5ef;
+	}
+#we-shared-nav .wep-nav{
+			justify-content: flex-start;
+			gap: 4px;
+		}
+#we-shared-nav .wep-nav > a,#we-shared-nav summary{
+			padding: 10px;
+			font-size: 14px;
+		}
+#we-shared-nav .wep-nav{
+		background: #fff;
+		padding: 10px 14px;
+		border-radius: 8px;
+		border: 0;
+	}
+#we-shared-nav .wep-nav{
+		background: #fff;
+		border: 1px solid #dce2da;
+	}
+#we-shared-nav .wep-nav{
+		background: transparent;
+		border: 0;
+		border-bottom: 1px solid #ffffff30;
+		border-radius: 0;
+	}
+#we-shared-nav .wep-nav > a,#we-shared-nav summary{
+		background: transparent;
+		color: #edf1ed;
+	}
+#we-shared-nav .wep-nav > a:hover,#we-shared-nav summary:hover{
+		background: #ffffff14;
+		color: #fff;
+	}
+#we-shared-nav .wep-cart{
+		border-color: #ffffff65;
+	}
+#we-shared-nav .wep-menu{
+		background: #244b35;
+		border-color: #ffffff35;
+	}
+#we-shared-nav .wep-menu a{
+		color: #edf1ed !important;
+	}
+#we-shared-nav .wep-menu a:hover{
+		background: #ffffff14;
+	}
+#we-shared-nav .wep-nav{
+		background: transparent;
+	}
+#we-shared-nav .wep-nav > a,#we-shared-nav summary{
+		background: transparent;
+		color: #f0f2ef;
+	}
+#we-shared-nav .wep-menu{
+		background: #626b66;
+	}
+#we-shared-nav .wep-menu a{
+		color: #fff !important;
+	}
+#we-shared-nav .wep-menu{
+		background: #174B2B;
+	}
+#we-shared-nav,#we-shared-nav,#we-shared-nav .wep-season h3,#we-shared-nav .wep-season .wep-tile span,#we-shared-nav .wep-view-all,#we-shared-nav .wep-menu,#we-shared-nav .wep-buying-info,#we-shared-nav .wep-service,#we-shared-nav .wep-local-info{
+		background: #176A14;
+		color: #fff;
+	}
+
+#we-shared-nav{background:#173e29;padding:16px 14px 0;border-radius:10px;margin:16px 0}#we-shared-nav a{text-decoration:none}#we-shared-nav .wep-nav>[aria-current="page"]{background:#ffffff20;box-shadow:inset 0 -3px #fff}#we-shared-nav .wep-menu a{display:block;padding:10px 14px}#we-shared-nav .wep-nav{justify-content:space-between;margin-bottom:0}#we-shared-nav .wep-menu{min-width:180px}#we-shared-nav .wep-menu a:hover{background:#ffffff20}
+.market-category-row{grid-template-columns:repeat(5,minmax(0,1fr));align-items:stretch;gap:16px}.shop-tile{align-self:stretch;transform:none!important}.shop-tile-heading{flex:none;min-height:54px;display:flex;align-items:stretch}.shop-tile-name{line-height:1.25}.shop-subgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,154px);gap:9px;padding:12px;align-content:start;background:#fff;flex:1}.shop-subtile{padding:0;display:flex;flex-direction:column;width:100%;height:154px;min-width:0;border:1px solid #d6ddd7;border-radius:5px;overflow:hidden;background:#fff}.shop-subimage{display:flex;align-items:center;justify-content:center;height:108px;flex:none;padding:7px;background:#fff;color:#6a756b;font-size:12px}.shop-subimage img{width:100%;height:100%;object-fit:contain}.shop-sublabel{background:#111;color:white;display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;flex:1;padding:4px;font-size:12px;font-weight:700;line-height:1.2;overflow-wrap:anywhere}.shop-subtile:hover{border-color:#176c34;box-shadow:0 2px 7px #173e2930}.shop-subgrid-single .shop-subtile{grid-column:1/-1;justify-self:center;width:80%}.shop-subgrid-single .shop-subimage{height:108px}.shop-tile button:focus-visible{outline:3px solid #238b45;outline-offset:-3px}
+@media(max-width:1399px){.market-category-row{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:1000px){.market-category-row{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:720px){.market-category-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.shop-subgrid{padding:8px;gap:6px}.shop-sublabel{font-size:11px}#we-shared-nav .wep-nav{justify-content:flex-start}}@media(max-width:420px){.market-category-row{grid-template-columns:1fr}.shop-subgrid{grid-template-rows:repeat(2,166px)}.shop-subtile{height:166px}.shop-subimage{height:120px}.shop-sublabel{font-size:13px}}
+</style>
+<style>
+.market-category-row{gap:12px}.shop-tile-heading{min-height:46px}.shop-tile-name{min-height:46px;padding:10px 6px;font-size:16px}.shop-carousel-window{padding:8px 10px 0;background:#fff}.shop-carousel .shop-subtile{height:151px;width:100%}.shop-carousel .shop-subimage{height:112px;padding:7px}.shop-carousel .shop-sublabel{min-height:37px;font-size:13px}.shop-carousel .shop-slide[hidden]{display:none!important}.shop-carousel-controls{height:31px;display:flex;align-items:center;justify-content:center;gap:14px;color:#5d6a60;font-size:12px;background:#fff}.shop-carousel-controls button{width:34px;height:29px;padding:0;border:0;background:#fff;color:#176c34;font-size:26px;line-height:1}.shop-carousel-controls button:hover{background:#edf4ee}.shop-carousel-pause{border:1px solid #b8c7bc;background:#fff;border-radius:6px;padding:7px 12px;font-size:13px;font-weight:bold;color:#176c34;white-space:nowrap}.shop-browse-intro{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}.shop-browse-intro .shop-intro{margin:0}.market-top-panel{padding:12px}@media(max-width:500px){.shop-tile-name{font-size:15px}}
+</style>
+<style>
+/* Match the approved homepage background. Keep equipment images on white. */
+html,body,.market-shell{background:#173e29}
+.market-top-panel{background:#173e29;border-color:#ffffff30}
+.shop-browse-intro .shop-intro{color:#edf1ed}
+.market-header{border-color:#ffffff35}
+.shop-tile{border-color:#ffffff45}
+#market-loading{color:#edf1ed}
+</style>
+<style>
+/* Final approved October 13 charcoal palette. */
+html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#333936}
+#we-shared-nav .wep-menu,.market-contact-launch,.shop-sublabel{background:#333936;color:#fff}
+#we-shared-nav .wep-menu a:hover,.market-contact-launch:hover{background:#252A27}
+.shop-browse-intro .shop-intro,#market-loading{color:#fff}
+</style>
+<style>
+/* Page surround matches DealerSpike header; image labels retain charcoal. */
+html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
+.shop-sublabel{background:#333936;color:#fff}
+.shop-browse-intro .shop-intro,#market-loading{color:#fff}
+</style>
+<style>
+/* Floating cart stays visible on both category and product views. */
+#market-cart-float{position:fixed;right:24px;bottom:180px;z-index:1000;display:flex!important;min-height:50px;padding:11px 17px;background:#fff;color:#173c1a;border:2px solid #333936;box-shadow:0 5px 18px #0004;border-radius:999px;gap:9px}
+#market-cart-float svg{width:23px;height:23px}#market-cart-count{background:#333936;color:#fff;min-width:23px;height:23px;font-size:12px}#market-cart-float:hover{background:#f5f7f2;box-shadow:0 7px 22px #0005}#market-cart-float:focus-visible{outline:3px solid #f0cf69;outline-offset:3px}
+/* Give aligned category cards depth without increasing their height. */
+.shop-carousel{border:1px solid #ffffff70;border-radius:13px;box-shadow:0 4px 11px #06230438;transition:box-shadow .18s,border-color .18s;overflow:hidden;background:#fff}
+.shop-carousel:hover,.shop-carousel:focus-within{border-color:#e3c16a;box-shadow:0 7px 22px #06230466}
+.shop-carousel .shop-tile-heading{background:linear-gradient(115deg,#424c44,#28362c);border-bottom:3px solid #d2b765;min-height:46px}
+.shop-carousel .shop-tile-name{color:#fff;font-size:17px;letter-spacing:.15px;padding:9px 7px;min-height:43px;text-shadow:0 1px 1px #0006}
+.shop-carousel-window{padding:0;background:#fff}
+.shop-carousel .shop-subtile{border:0;border-radius:0;height:159px;box-shadow:none}
+.shop-carousel .shop-subimage{height:120px;padding:10px 16px;background:radial-gradient(ellipse at 50% 78%,#e5e9df 0,#f6f7f3 45%,#fff 80%)}
+.shop-carousel .shop-subimage img{filter:drop-shadow(0 4px 3px #0002);transition:transform .18s}
+.shop-carousel .shop-subtile:hover img{transform:scale(1.04)}
+.shop-carousel .shop-sublabel{background:#333936;color:#fff;font-size:13px;min-height:39px;border-top:1px solid #ffffff20}
+.shop-carousel-controls{height:30px;background:#f5f7f2;border-top:1px solid #e0e6da;gap:18px}
+.shop-carousel-controls button{height:25px;width:30px;border-radius:999px;background:#e5ebde;font-size:23px;color:#28592a}.shop-carousel-controls button:hover{background:#d5e2c9}
+@media(prefers-reduced-motion:reduce){.shop-carousel,.shop-carousel .shop-subimage img{transition:none}.shop-carousel .shop-subtile:hover img{transform:none}}
+@media(max-width:760px){#market-cart-float{right:16px;bottom:172px;min-height:46px;padding:9px 13px}}
+</style>
+<style>
+/* Category remains full width and reads as a pressable button. */
+.shop-carousel .shop-tile-heading{background:transparent;border:0;padding:7px 8px 2px;min-height:53px}
+.shop-carousel .shop-tile-name{width:100%;min-height:44px;border:1px solid #647768;border-bottom:3px solid #15271a;border-radius:8px;background:linear-gradient(#536858,#293f2f);color:#fff;box-shadow:inset 0 1px 0 #ffffff45,0 2px 3px #0002;padding:8px 6px;font-size:16px;cursor:pointer}
+.shop-carousel .shop-tile-name:hover{background:linear-gradient(#607b65,#35543b);border-color:#b9c9b3}
+.shop-carousel .shop-tile-name:active{background:#293f2f;box-shadow:inset 0 2px 4px #0004;border-bottom-width:1px;transform:translateY(1px)}
+/* Consistent centered subcategory buttons, with room for longer labels. */
+.shop-carousel-window{padding:7px 0 0;display:flex;justify-content:center}
+.shop-carousel .shop-subtile{width:75%;height:168px;flex:none;border:1px solid #b8c2b8;border-bottom:3px solid #212923;border-radius:7px;box-shadow:0 2px 5px #0002;overflow:hidden}
+.shop-carousel .shop-subimage{height:120px;width:100%;padding:8px 10px}
+.shop-carousel .shop-sublabel{height:46px;min-height:46px;max-height:46px;flex:none;white-space:normal;overflow-wrap:anywhere;font-size:12px;line-height:1.2;padding:4px 6px}
+.shop-carousel .shop-subtile:hover{border-color:#547b50;box-shadow:0 3px 8px #0003}
+.shop-carousel .shop-subtile:active{box-shadow:inset 0 2px 4px #0003}
+.shop-carousel-controls{margin-top:6px}
+@media(max-width:500px){.shop-carousel .shop-sublabel{font-size:11px}.shop-carousel .shop-tile-name{font-size:15px}}
+</style>
+<style>
+/* Keep cart at the upper right while scrolling. */
+#market-cart-float{top:18px;right:24px;bottom:auto;z-index:1000}
+.market-header{padding-right:150px}
+/* Warm gold gives category buttons contrast against the green surround. */
+.shop-carousel .shop-tile-name{background:linear-gradient(#ffe59a,#e9b943);color:#25321d;text-shadow:none;border:1px solid #b58a23;border-bottom:3px solid #956e12;box-shadow:inset 0 1px 0 #fff9,0 2px 4px #0003;font-weight:900}
+.shop-carousel .shop-tile-name:hover{background:linear-gradient(#ffedb7,#f4cc60);border-color:#9c741a;color:#182515}
+.shop-carousel .shop-tile-name:active{background:#e9b943;border-bottom-width:1px;box-shadow:inset 0 2px 4px #956e1250}
+@media(max-width:760px){#market-cart-float{top:12px;right:14px;bottom:auto}.market-header{padding-right:18px;padding-top:62px}}
+</style>
+<style>
+/* Muted warm rose-red category buttons. */
+.shop-carousel .shop-tile-name{background:linear-gradient(#e9b2aa,#cd8278);color:#34211e;border:1px solid #ae6258;border-bottom:3px solid #8d4b43;box-shadow:inset 0 1px 0 #ffffff70,0 2px 4px #0003}
+.shop-carousel .shop-tile-name:hover{background:linear-gradient(#efc0b8,#d9958b);border-color:#994f46;color:#2b1a17}
+.shop-carousel .shop-tile-name:active{background:#cd8278;border-bottom-width:1px;box-shadow:inset 0 2px 4px #8d4b4350}
+</style>
+<style>
+/* Soft brick red category buttons. */
+.shop-carousel .shop-tile-name{background:linear-gradient(#cf7165,#b84e43);color:#fff;text-shadow:0 1px 1px #66241e60;border:1px solid #a64339;border-bottom:3px solid #80352e;box-shadow:inset 0 1px 0 #ffffff55,0 2px 4px #0003}
+.shop-carousel .shop-tile-name:hover{background:linear-gradient(#d98074,#c45e51);border-color:#923a32;color:#fff}
+.shop-carousel .shop-tile-name:active{background:#b84e43;border-bottom-width:1px;box-shadow:inset 0 2px 4px #80352e60}
+</style>
+<style>
+/* Translucent red surface; text stays fully opaque. */
+.shop-carousel .shop-tile-name{background:linear-gradient(rgba(192,52,43,.62),rgba(168,37,30,.72));color:#fff;text-shadow:0 1px 2px #5d171760;border:1px solid rgba(154,39,31,.55);border-bottom:3px solid rgba(125,31,26,.65);box-shadow:inset 0 1px 0 #ffffff70,0 2px 4px #0002}
+.shop-carousel .shop-tile-name:hover{background:linear-gradient(rgba(192,52,43,.74),rgba(168,37,30,.82));color:#fff;border-color:rgba(154,39,31,.75)}
+.shop-carousel .shop-tile-name:active{background:rgba(168,37,30,.78);border-bottom-width:1px;box-shadow:inset 0 2px 4px #7d1f1a40}
+</style>
+<style>
+/* Deeper red with restrained transparency avoids a pale pink blend over white. */
+.shop-carousel .shop-tile-name{background:linear-gradient(rgba(169,18,8,.90),rgba(137,10,3,.94));color:#fff;text-shadow:0 1px 1px #43050060;border:1px solid #971208;border-bottom:3px solid #710b04;box-shadow:inset 0 1px 0 #ffffff40,0 2px 4px #0003}
+.shop-carousel .shop-tile-name:hover{background:linear-gradient(rgba(187,24,12,.94),rgba(151,12,4,.97));color:#fff;border-color:#850c04}
+.shop-carousel .shop-tile-name:active{background:rgba(137,10,3,.95);border-bottom-width:1px;box-shadow:inset 0 2px 4px #710b0460}
+</style>
+<style>
+/* Neutral hazy gray behind equipment images. */
+.shop-carousel .shop-subimage{background:radial-gradient(ellipse at 50% 45%,#f7f8f8 0%,#edf0f1 55%,#dde2e4 100%)}
+</style>
+<style>
+/* Visible gray surround, including the white backgrounds in product photos. */
+.shop-carousel,.shop-carousel-window,.shop-carousel-controls{background:#e1e5e7}
+.shop-carousel .shop-subimage{background:radial-gradient(ellipse at center,#edf0f2 0%,#d5dbde 100%)}
+.shop-carousel .shop-subimage img{mix-blend-mode:multiply;filter:drop-shadow(0 3px 3px #0002)}
+.shop-carousel-controls{border-top-color:#cbd3d7}
+</style>
+<style>
+/* Gray category box surround; restore the original image treatment. */
+.shop-carousel,.shop-carousel-window,.shop-carousel-controls{background:#d0d6d9}
+.shop-carousel-controls{border-top-color:#bcc5ca}
+.shop-carousel .shop-subimage{background:radial-gradient(ellipse at 50% 78%,#e5e9df 0,#f6f7f3 45%,#fff 80%)}
+.shop-carousel .shop-subimage img{mix-blend-mode:normal;filter:drop-shadow(0 4px 3px #0002)}
+</style>
+<style>
+.shop-notice{margin:24px 0 10px;padding:18px 20px;border:1px solid #ffffff40;border-radius:9px;background:#ffffff10;color:#fff;font-size:14px;line-height:1.6}
+.shop-notice p{margin:0 0 7px}.shop-notice p:last-child{margin-bottom:0}.shop-notice strong{font-size:15px}
+</style>
+<style>
+/* Center page title between the logo and search, matching category box gray. */
+.market-header{display:grid;grid-template-columns:minmax(150px,230px) minmax(0,1fr) minmax(300px,420px);align-items:center;gap:20px;background:#d0d6d9;padding:18px 150px 18px 20px}
+.market-branding{display:contents}
+.market-home-link{grid-column:1;justify-self:start}
+.market-brand-text{grid-column:2;text-align:center;min-width:0}
+.market-brand-text h1{margin:0;text-align:center;font-size:clamp(24px,2.5vw,38px)}
+.market-searchbox{grid-column:3;min-width:0;width:100%}
+@media(max-width:1100px){.market-header{grid-template-columns:170px minmax(0,1fr);padding-right:145px;gap:12px}.market-brand-text{grid-column:2}.market-searchbox{grid-column:1/-1;max-width:620px;justify-self:center}.market-branding img{max-width:170px}}
+@media(max-width:600px){.market-header{grid-template-columns:115px minmax(0,1fr);padding:65px 14px 16px;gap:12px}.market-branding img{max-width:115px}.market-brand-text h1{font-size:24px}.market-searchbox{grid-column:1/-1}}
+</style>
+<style>
+.market-brand-text h1{font-size:clamp(20px,1.75vw,30px);line-height:1.2;font-weight:900;color:#176A14;text-wrap:balance}
+.market-brand-text .shop-header-slogan{margin:8px 0 0;color:#333936;font-size:clamp(13px,1.1vw,17px);line-height:1.35;font-weight:700;text-wrap:balance}
+@media(max-width:600px){.market-brand-text h1{font-size:20px}.market-brand-text .shop-header-slogan{font-size:13px}}
+</style>
+<style>.shop-browse-intro{justify-content:flex-end;margin-bottom:10px}</style>
+<style>
+.shop-carousel .shop-slide{width:100%;display:flex;flex-direction:column;align-items:center}
+.shop-carousel .shop-product-powers{display:flex;align-items:center;justify-content:center;gap:5px;min-height:40px;width:90%;padding:7px 0 3px;flex-wrap:wrap}
+.shop-carousel .shop-product-powers button{background:#fff;color:#25462c;border:1px solid #9aa99c;border-bottom:2px solid #718874;border-radius:5px;padding:6px 8px;min-height:30px;font-size:12px;font-weight:800;cursor:pointer}
+.shop-carousel .shop-product-powers button:hover{background:#edf4e9;border-color:#176A14}
+.shop-carousel-window{display:block;padding-top:7px}
+.shop-carousel-controls{margin-top:4px}
+</style>
+<style>
+/* WEP_NAVIGATION_TRIANGLES_V1: encoding-independent dropdown indicators. */
+.wep-nav summary::after{content:''!important;display:inline-block!important;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor;border-bottom:0;margin-left:7px;vertical-align:middle}
+.wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
+</style>
+<style>.market-stock-dialog::backdrop{background:#0007}.market-stock-dialog button:disabled{opacity:.45;cursor:default}</style><link rel="stylesheet" href="universal/promotions.css?v=20261031-promo1"><script src="brand-settings.js"></script><script src="universal/promotions.js?v=20261031-promo1"></script><script src="universal/navigation-dropdowns.js?v=20261031-promo1" defer></script><script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/promotions-page.js?v=20261031-promo1" defer></script></head><body><main class="market-shell"><header class="market-header">
+    <div class="market-branding">
+      <a class="market-home-link" href="https://www.westendpower.com/" aria-label="West End Power home">
+        <img id="market-dealer-logo" alt="West End Power Equip. Co., Inc" src="data:image/png;base64,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">
+      </a>
+      <div class="market-brand-text"><h1>Power equipment shopping made easy.</h1><p id="market-dealer-name" hidden="">West End Power Equip. Co., Inc</p><p class="shop-header-slogan">Search for what you need. Discover something unexpected.</p></div>
+    </div>
+    <div class="market-searchbox">
+      <input id="market-search" type="search" placeholder="Search model, category, specification…">
+      <button id="market-clear" class="market-clear" type="button">Clear</button>
+    </div>
+  </header><div id="we-shared-nav"><nav class="wep-nav"><a href="https://westendpower.github.io/westendpower-marketplace/marketplace.html">Shop Marketplace</a> <a href="shop-by-product.html">Shop by Product</a><details id="wep-home-brands"><summary>Shop by Brand</summary><div class="wep-menu"><a href="https://westendpower.github.io/westendpower-marketplace/marketplace.html?brand=BILLYGOAT" style="color:#00653d;">Billy Goat</a> <a href="https://westendpower.github.io/westendpower-marketplace/marketplace.html?brand=GREENWORKS" style="color:#447a12;">Greenworks</a> <a href="https://westendpower.github.io/westendpower-marketplace/marketplace.html?brand=HONDA" style="color:#c00000;">Honda</a> <a href="https://westendpower.github.io/westendpower-marketplace/marketplace.html?brand=MITM" style="color:#003b70;">Mi-T-M</a> <a href="https://westendpower.github.io/westendpower-marketplace/marketplace.html?brand=REDMAX" style="color:#ba1425;">RedMax</a> <a href="https://westendpower.github.io/westendpower-marketplace/marketplace.html?brand=STIHL" style="color:#aa4b00;">STIHL</a> <a href="https://westendpower.github.io/westendpower-marketplace/marketplace.html?brand=TORO" style="color:#c00025;">Toro</a> <a href="https://westendpower.github.io/westendpower-marketplace/marketplace.html?brand=YANMAR" style="color:#bb002a;">Yanmar</a></div></details><a href="promotions.html" aria-current="page">Promotions</a> <a href="https://www.westendpower.com/#wep-home-service">Service &amp; Parts</a><details><summary>Locations</summary><div class="wep-menu wep-locations"><a href="https://www.westendpower.com/danbury">Danbury, CT</a> <a href="https://www.westendpower.com/new-milford">New Milford, CT</a> <!-- Add future location links here, using the same format. --></div></details><a href="https://www.westendpower.com/contactus">Contact</a> <a class="wep-cart" href="cart.html">Cart</a></nav></div><section id="promo-controls" aria-label="Promotions"></section><div class="shop-browse-intro"><p id="promo-category-count" class="promo-category-count" aria-live="polite">Loading promotions…</p><button type="button" class="shop-carousel-pause" id="shop-carousel-pause" aria-pressed="false">Pause rotation</button></div><div id="promo-categories" class="market-category-row promo-categories" aria-live="polite"></div><noscript><p class="promo-empty">Enable JavaScript to browse current promotions, or call 860-355-8722 for details.</p></noscript><footer class="shop-notice" aria-label="Pricing and availability notice"><p><strong>Pricing &amp; Availability</strong></p><p>Prices, availability, specifications, promotions and financing programs are subject to change. Images are representative and may show optional equipment. Taxes, setup, freight, shipping and delivery charges may apply unless expressly included. Financing is subject to credit approval, program eligibility and applicable terms; promotional offers are valid only during their stated dates. Please confirm current pricing, equipment configuration, availability and lead time with your selected West End Power Equipment store before ordering. We strive for accuracy; if an error is identified, we will contact you to confirm any correction before proceeding.</p></footer></main></body></html>
