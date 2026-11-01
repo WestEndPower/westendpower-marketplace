@@ -12,6 +12,15 @@ function fixture(){
  const c={selectedPriceVariant:()=>selected,selectedStock:()=>null,DATA:{batteries:[{SKU:'BAT',BatteryID:'AK30',MSRP:60},{SKU:'BAT2',BatteryID:'AK20',MSRP:50}],chargers:[{SKU:'CHG',ChargerID:'AL101',MSRP:40}],compatibility:[{ToolSKU:'TOOL',BatteryID1:'AK20'}],packages:[{ParentSKU:'KIT',BatterySKU1:'BAT',ChargerSKU1:'CHG'}]},currentPrice:r=>Number(r.MSRP),paymentSelectionUrl:()=>`https://dealer.example/payment-options.html?brand=STIHL&sku=${selected.sku}&quantity=1`,inventoryMarkup:()=>'',priceChoices:()=>[],pricePanel:()=>'',stockHeaderMarkup:()=>'',sawHeaderBars:()=>'',state:{compare:new Set()},promoInfo:()=>null,money:String,cardFinanceMarkup:()=>'',selectPackageVariant:(_,v)=>selected=v,refreshSelectedCard(){}};
  c.selectedPriceQuantity=()=>1;c.updateCartFloat=()=>{};c.track=()=>{};return {window,document,f,c,stored};
 }
+test('compact image rebate follows the exact selected factory SKU rather than the bare identity',()=>{
+ const {window,f,c}=fixture();f.brand='YANMAR';f.category='Compact Tractors';f.power='Diesel';
+ const bare=f.variants[0],loader=f.variants[1];bare.sku='TRACTOR';loader.sku='TRACTOR-L';
+ window.WestEndEquipmentPackages={render:()=>null,tool:()=>bare,buildUrl:()=>'',actions:()=>''};
+ c.compactBaseVariant=()=>bare;
+ c.promoInfo=v=>({type:'rebate',savings:v.sku==='TRACTOR-L'?2400:500,end:'2026-12-31'});
+ let html=window.WestEndMarketplaceCard.render(f,c);assert.match(html,/>2400 Rebate</);assert.doesNotMatch(html,/>500 Rebate</);
+ c.selectPackageVariant(f,bare);html=window.WestEndMarketplaceCard.render(f,c);assert.match(html,/>500 Rebate</);assert.doesNotMatch(html,/>2400 Rebate</);
+});
 test('package cards keep bare-tool identity, link the image, and share compact actions',()=>{
  const {window,f,c}=fixture(),html=window.WestEndMarketplaceCard.render(f,c);
  assert.match(html,/SKU: TOOL/);assert.match(html,/title="Bare Blower"/);assert.match(html,/href="https:\/\/manufacturer.example\/blower"/);
