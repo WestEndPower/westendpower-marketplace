@@ -34,9 +34,13 @@
    if(!document.querySelector('link[href*="build-buy.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='universal/build-buy.css';document.head.append(link);}
    if(!window.WEPBuildBuy&&!document.querySelector('script[src*="build-buy-tools.js"]')){const script=document.createElement('script');script.src='universal/build-buy-tools.js';document.head.append(script);}
   }
+  const promotion=context.state.promoOnly?window.WestEndPromotions:null;
+  const labels=promotion&&context.state.promoView==='coming'?(f.variants||[]).filter(item=>item.marketplaceRow).flatMap(item=>promotion.offerLabels(item.marketplaceRow,'coming',context.DATA.promotionFinance||[])):[];
+  const special=promotion?.messages[context.state.promoView];
+  const promoNote=labels.length?'<div class="wep-promo-card-note">'+[...new Set(labels)].map(label=>'<p>'+escape(label)+'</p>').join('')+'<small>Current prices apply until the offer starts. Offers may not combine. See store for details.</small></div>':special?'<div class="wep-promo-card-note">'+escape(special)+' See store for details.</div>':'';
   return '<article class="market-card wep-blended-card wep-restored-card" data-key="'+escape(f.key)+'" data-brand="'+escape(clean(f.brand).toUpperCase())+'">'+
    '<header class="market-card-head"><h3><strong class="market-card-title" title="'+escape(heading)+'">'+escape(heading)+'</strong><div class="wep-card-sku"><span>SKU: '+escape(displaySku)+(tool.chainsawBarTrial?'':sawHeaderBars(f))+'</span>'+stockHeaderMarkup(f)+'</div></h3></header>'+
-   '<div class="market-card-body"><div class="market-card-overview"><section class="market-card-left">'+
+   promoNote+'<div class="market-card-body"><div class="market-card-overview"><section class="market-card-left">'+
     '<div class="market-image-wrap">'+banner(equipment?.tool(f)||v,context)+'<a class="market-image" href="'+escape(product)+'" target="_blank" rel="noopener noreferrer" title="View product details" aria-label="View product details for '+escape(heading)+'">'+(image?'<img src="'+escape(image)+'" alt="'+escape(heading)+'" loading="lazy">':'<span>Image Coming Soon</span>')+'</a></div>'+
    '</section>'+
    (specs.length?'<dl class="market-specs market-card-side-specs" tabindex="0" aria-label="Product specifications">'+specs.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+escape(value)+'</dd></div>').join('')+'</dl>':'<div class="market-empty-specs" aria-hidden="true"></div>')+

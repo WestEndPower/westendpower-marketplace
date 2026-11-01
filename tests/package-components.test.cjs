@@ -11,8 +11,27 @@ test('multiple included batteries and chargers scale from package quantity witho
 test('dealer allocations have no $10 rounding and preserve actual tool and charger costs',()=>{
  const prices={TOOL:140.13,BAT:99.17,CHG:29.73},rows=K.breakdown(def,200.11,2,{dealer:true,price:r=>prices[r.SKU]});assert.equal(rows[0].unitPrice,140.13);assert.equal(rows[1].unitPrice,30.25);assert.equal(rows[2].unitPrice,29.73);assert.equal(rows.reduce((n,l)=>n+Math.round(l.itemTotal*100),0),40022);
 });
-test('negative or unpriceable allocations require confirmation instead of fabricating a component amount',()=>{
- assert.throws(()=>K.breakdown(def,275.36),/rounding/);assert.throws(()=>K.breakdown(def,100),/below/);assert.throws(()=>K.breakdown(def,269.99,{value:1}),/./);
+test('rounding fallback retains the exact package balance; invalid allocations still require confirmation',()=>{
+ const rows=K.breakdown(def,275.36);assert.equal(rows[1].unitPrice,50);assert.equal(rows[2].unitPrice,5.37);
+ assert.throws(()=>K.breakdown(def,100),/below/);assert.throws(()=>K.breakdown(def,269.99,{value:1}),/./);
+});
+test('BRA280 two-battery kit keeps exact tool MSRP and rounds down only when rounding up does not fit',()=>{
+ const bra={parent:{SKU:'BRA-KIT'},tool:{SKU:'BRA-TOOL',MSRP:649.99},parts:[{type:'battery',row:{SKU:'AP300S',MSRP:320.99},qty:2},{type:'charger',row:{SKU:'AL301',MSRP:117.99},qty:1}]};
+ for(const [total,batteryPrice] of [[999.99,170],[979.99,160]]){
+  const rows=K.breakdown(bra,total,3);assert.equal(rows[0].unitPrice,649.99);assert.equal(rows[1].unitPrice,batteryPrice);assert.equal(rows[1].quantity,6);assert.equal(rows[2].unitPrice,10);
+  assert.equal(rows.reduce((sum,row)=>sum+Math.round(row.itemTotal*100),0),Math.round(total*100)*3);
+ }
+ const belowStep=K.breakdown({...bra,parts:[{type:'battery',row:{SKU:'BAT',MSRP:9.99},qty:1},bra.parts[1]]},679.99);
+ assert.equal(belowStep[1].unitPrice,10);assert.equal(belowStep[2].unitPrice,20);
+});
+test('customer tool allocation always uses MSRP, including sales, explicit price overrides and repricing',()=>{
+ const discounted={...def,tool:{...tool,SalePrice:199.99}};
+ const children=K.breakdown(discounted,269.99,1,{toolPrice:190,price:row=>row.SKU==='TOOL'?180:Number(row.MSRP)});
+ assert.equal(children[0].unitPrice,219.99);
+ children[0].unitPrice=190;
+ const line={sku:'KIT',quantity:1,itemTotal:259.99,kitComponents:children};K.reprice(line);
+ assert.equal(line.kitComponents[0].unitPrice,219.99);assert.equal(line.kitComponents.reduce((sum,row)=>sum+Math.round(row.itemTotal*100),0),25999);
+ assert.throws(()=>K.breakdown({...def,tool:{SKU:'NO-MSRP'}},269.99),/confirmation/);
 });
 test('series grouping preserves old full names and shortens only the contextual button label',()=>{
  assert.equal(K.batteryGroup(battery,'STIHL'),'AP / AR Series');assert.equal(K.batteryGroup({BatteryID:'AP300PC'},'STIHL'),'PRO AP Series');assert.equal(K.shortName({BatteryID:'AP300PC'},'PRO AP Series'),'300.0PC');assert.equal(K.shortName({BatteryID:'82BD250'},'82BD Series'),'250');assert.equal(K.shortName({BatteryID:'CORE530'},'CORE Series'),'530');assert.equal(K.shortName(battery,'AP / AR Series'),'AP300S');
@@ -30,9 +49,9 @@ test('requirements are specific to tool and battery, deduplicated, and absent af
  const cable={SKU:'CABLE',Description:'AR cable',MSRP:20},rules=[{ToolSKU:'TOOL',BatterySKU:'BAT',RequiredType:'accessory',RequiredSKU:'CABLE',RequiredQty:1},{ToolSKU:'OTHER',BatterySKU:'BAT',RequiredSKU:'MISSING'}],catalog={accessories:[cable]};
  assert.equal(K.required(tool,[{row:battery,qty:2}],rules,catalog)[0].qty,1);assert.deepEqual(K.required(tool,[{row:{SKU:'OTHER'},qty:1}],rules,catalog),[]);assert.throws(()=>K.required(tool,[{row:battery,qty:1}],rules,{accessories:[]}),/confirmation/);
 });
-test('real BGA60 and multi-AS2 kit definitions produce exact sums from current published rows',()=>{
+test('real BGA60, multi-AS2 and BRA280 kit definitions produce exact sums from current published rows',()=>{
  const data=Object.fromEntries(['products','packages','batteries','chargers','attachments','accessories','parts'].map(t=>[t,parse(fs.readFileSync('brands/stihl/data/'+t+'.csv','utf8')).rows]));
- for(const sku of ['BA04 011 5941 US','BA08 011 5912 US']){const product=data.products.find(p=>p.SKU===sku),definition=K.definition(product,data.products,data.packages,data),rows=K.breakdown(definition,K.current(product));assert.equal(rows.reduce((n,l)=>n+Math.round(l.itemTotal*100),0),Math.round(K.current(product)*100));assert.equal(rows[0].sku,definition.tool.SKU);}
+ for(const sku of ['BA04 011 5941 US','BA08 011 5912 US','BA11 011 5951 US']){const product=data.products.find(p=>p.SKU===sku),definition=K.definition(product,data.products,data.packages,data),rows=K.breakdown(definition,K.current(product));assert.equal(rows.reduce((n,l)=>n+Math.round(l.itemTotal*100),0),Math.round(K.current(product)*100));assert.equal(rows[0].sku,definition.tool.SKU);assert.equal(rows[0].unitPrice,Number(definition.tool.MSRP));if(sku==='BA11 011 5951 US')assert.deepEqual(rows.map(row=>row.unitPrice),[649.99,170,10]);}
 });
 test('quote snapshot retains the priced package identity and strips all dealer data from included rows',()=>{
  const D=require('../universal/quote-document.js'),children=K.breakdown(def,269.99,2);children[0].DealerCost=123;

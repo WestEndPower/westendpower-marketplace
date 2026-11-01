@@ -2,11 +2,11 @@
 (function(){
  'use strict';
  const form=document.getElementById('choices');if(!form)return;
- let saved,cart;try{cart=JSON.parse(localStorage.getItem('wepCart')||'[]');saved=JSON.parse(sessionStorage.getItem('wepBuildCheckoutChoices')||'null');}catch(_){return;}
+ let saved,cart;try{cart=JSON.parse((window.WEPBuildStorage||localStorage).getItem('wepCart')||'[]');saved=JSON.parse(sessionStorage.getItem('wepBuildCheckoutChoices')||'null');}catch(_){return;}
  if(!Array.isArray(cart)||!cart.length)return;
  const key=rows=>JSON.stringify(rows.map(x=>[String(x.brandId).toUpperCase(),x.type,x.sku,Number(x.quantity),x.setupSelected===true,String(x.inventoryId||'')]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))));
  const candidates=[saved];
- try{const review=JSON.parse(sessionStorage.getItem('wepCheckoutReviewSelection')||'null');if(review?.cart===localStorage.getItem('wepCart')&&review.context){const ctx=review.context,main=ctx.items?.find(x=>x.type==='tool');candidates.push({...ctx,review:true,quote:review.quote,paymentConfirmed:true,brandId:main?.brandId,sku:main?.sku,updated:review.updated});}}catch(_){}
+ try{const review=JSON.parse(sessionStorage.getItem('wepCheckoutReviewSelection')||'null');if(review?.cart===(window.WEPBuildStorage||localStorage).getItem('wepCart')&&review.context){const ctx=review.context,main=ctx.items?.find(x=>x.type==='tool');candidates.push({...ctx,review:true,quote:review.quote,paymentConfirmed:true,brandId:main?.brandId,sku:main?.sku,updated:review.updated});}}catch(_){}
 
  // Existing saved packages also have a product-page draft; use it when the
  // customer reaches checkout from View Cart instead of the Checkout button.
@@ -21,7 +21,7 @@
  window.WEPCheckoutSelection=saved;
  document.body.classList.add('checkout-preloaded');
  document.getElementById('fulfillment-editor').open=false;document.getElementById('payment-editor').open=false;
- try{let changed=false;for(const row of cart.filter(x=>String(x.brandId).toUpperCase()===saved.brandId&&x.packageId===saved.brandId+':'+saved.sku)){if(!row.inventoryId&&row.quoteStockChoice!=='orderable'){row.quoteStockChoice='orderable';changed=true;}}if(changed)localStorage.setItem('wepCart',JSON.stringify(cart));}catch(_){return;}
+ try{let changed=false;for(const row of cart.filter(x=>String(x.brandId).toUpperCase()===saved.brandId&&x.packageId===saved.brandId+':'+saved.sku)){if(!row.inventoryId&&row.quoteStockChoice!=='orderable'){row.quoteStockChoice='orderable';changed=true;}}if(changed)(window.WEPBuildStorage||localStorage).setItem('wepCart',JSON.stringify(cart));}catch(_){return;}
  function radio(name,value){const input=[...form.querySelectorAll('input')].find(x=>x.name===name&&x.value===value);if(input&&!input.disabled){input.checked=true;return input;}return null;}
  const fulfillment=radio('fulfillment',saved.fulfillment),method=radio('paymentMethod',saved.paymentMethod),zip=document.getElementById('zip');if(zip&&/^\d{5}$/.test(saved.zip))zip.value=saved.zip;
  // The checkout's existing handlers load and verify eligible programs for every cart item.

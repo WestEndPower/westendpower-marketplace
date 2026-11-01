@@ -114,7 +114,7 @@
    const {s,c}=verifiedCustomer(),q=s.quote;
    if(checkoutIdentity(s,c)!==checkoutContext)throw Error('Your quote or details changed. Return to the quote and review checkout again.');
    if(q.fulfillment==='SHIP'&&q.paymentMethod!=='credit')throw Error('Shipped orders require credit card payment.');
-   const body={items:s.selection.items,financeDownPayments:s.selection.financeDownPayments||{},customer:c,customerNotes:c.notes,paymentMethod:q.paymentMethod,fulfillment:q.fulfillment,zip:q.zip,financeProgramIds:s.selection.financeProgramIds||{},shippingAddress:q.fulfillment==='SHIP'?q.shippingDetails.destination:undefined,termsAccepted:true,termsVersion:q.terms.version,quoteFingerprint:q.fingerprint,testMode:s.testMode===true};
+   const body={items:s.selection.items,...(s.selection.dealerPrograms?{dealerPrograms:s.selection.dealerPrograms}:{}),...(s.selection.toroFreightMethod?{toroFreightMethod:s.selection.toroFreightMethod}:{}),financeDownPayments:s.selection.financeDownPayments||{},customer:c,customerNotes:c.notes,paymentMethod:q.paymentMethod,fulfillment:q.fulfillment,zip:q.zip,financeProgramIds:s.selection.financeProgramIds||{},shippingAddress:q.fulfillment==='SHIP'?q.shippingDetails.destination:undefined,termsAccepted:true,termsVersion:q.terms.version,quoteFingerprint:q.fingerprint,testMode:s.testMode===true};
    // The builder stores its selected program as programId; preserve that exact program.
    if(q.paymentMethod==='finance')body.financeProgramIds=Object.fromEntries(q.financePlans.map(p=>[p.brandId,p.program.ProgramID]));
    const identity=JSON.stringify(body);try{pending=JSON.parse(sessionStorage.getItem('wepInlinePurchase')||'null');}catch(_){}

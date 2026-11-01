@@ -41,8 +41,10 @@
    distribute(remaining,batteries,price);remaining=0;
   }else{
    for(const p of batteries){
-    const exact=Math.min(cents(price(p.row)),Math.floor(remaining/p.qty)),rounded=Math.ceil(exact/1000)*1000;
-    if(rounded*p.qty>remaining)throw Error('Battery rounding exceeds the package balance.');
+    const exact=Math.min(cents(price(p.row)),Math.floor(remaining/p.qty));
+    // Keep tool MSRP and the package total fixed. If rounding up overruns
+    // the available balance, use the largest $10 unit price that fits.
+    const rounded=Math.min(Math.ceil(exact/1000)*1000,Math.floor(remaining/(p.qty*1000))*1000);
     p.totalCents=rounded*p.qty;remaining-=p.totalCents;
    }
    if(chargers.length){distribute(remaining,chargers,price);remaining=0;}
@@ -58,7 +60,7 @@
  }
  function breakdown(def,total,quantity=1,options={}){
   if(!Number.isInteger(quantity)||quantity<1||quantity>100)throw Error('Choose a whole package quantity from 1 to 100.');
-  const price=options.price||current,toolPrice=options.toolPrice??price(def.tool),rows=allocate({total,tool:toolPrice,parts:def.parts,price,dealer:options.dealer});
+  const price=options.price||current,toolPrice=options.dealer?(options.toolPrice??price(def.tool)):amount(def.tool.MSRP),rows=allocate({total,tool:toolPrice,parts:def.parts,price,dealer:options.dealer});
   rows[0]={...rows[0],sku:clean(def.tool.SKU),productName:clean(def.tool.Description||def.tool.Model||def.tool.SKU),regularUnitPrice:amount(def.tool.MSRP),included:true,locked:true};
   return rows.map(row=>({...row,perPackageQuantity:row.quantity,perPackageTotal:row.itemTotal,quantity:row.quantity*quantity,itemTotal:Math.round(row.itemTotal*quantity*100)/100,parentSku:clean(def.parent.SKU)}));
  }
@@ -88,7 +90,7 @@
  function visible(row,stock){return active(row)&&(!yes(row.SellRemainingStockOnly)||Number(stock??((amount(row.QtyNewMilford)||0)+(amount(row.QtyDanbury)||0)))>0);}
  function reprice(line){
   if(!line.kitComponents?.length)return line;
-  try{const tool=line.kitComponents.find(c=>c.type==='tool'),parts=line.kitComponents.filter(c=>c.type!=='tool'),def={parent:{SKU:line.sku},tool:{SKU:tool.sku,Description:tool.productName,MSRP:tool.regularUnitPrice},parts:parts.map(c=>({type:c.type,row:{SKU:c.sku,Description:c.productName,MSRP:c.regularUnitPrice,StandalonePrice:c.standaloneUnitPrice??c.regularUnitPrice},qty:c.quantity/line.quantity}))};line.kitComponents=breakdown(def,line.itemTotal/line.quantity,line.quantity,{toolPrice:tool.unitPrice,price:r=>r.StandalonePrice});delete line.kitBreakdownIssue;}
+  try{const tool=line.kitComponents.find(c=>c.type==='tool'),parts=line.kitComponents.filter(c=>c.type!=='tool'),def={parent:{SKU:line.sku},tool:{SKU:tool.sku,Description:tool.productName,MSRP:tool.regularUnitPrice},parts:parts.map(c=>({type:c.type,row:{SKU:c.sku,Description:c.productName,MSRP:c.regularUnitPrice,StandalonePrice:c.standaloneUnitPrice??c.regularUnitPrice},qty:c.quantity/line.quantity}))};line.kitComponents=breakdown(def,line.itemTotal/line.quantity,line.quantity,{price:r=>r.StandalonePrice});delete line.kitBreakdownIssue;}
   catch(error){delete line.kitComponents;line.kitBreakdownIssue=error.message;}return line;
  }
  function displayLines(lines){return (lines||[]).flatMap(line=>Array.isArray(line.kitComponents)&&line.kitComponents.length?line.kitComponents.map((c,i)=>({...line,...c,productName:(i===0?'Package '+line.sku+' · '+new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(line.itemTotal)+' total — ':'')+c.productName,brandId:line.brandId,setupTotal:i===0?line.setupTotal:0,setupSelected:i===0?line.setupSelected:false,setupUnit:i===0?line.setupUnit:0,assemblyOption:i===0?line.assemblyOption:'',kitComponents:undefined,pricingSource:line.pricingSource,packageSku:line.sku,packagePrice:line.itemTotal,packageQuantity:line.quantity,baseUnitPrice:c.regularUnitPrice})): [line]);}

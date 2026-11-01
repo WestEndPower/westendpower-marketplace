@@ -710,7 +710,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-recommended-series1"></script><script src="universal/package-pricing.js?v=20261026-recommended-series1"></script><script src="universal/equipment-package-pricing.js?v=20261026-energy-tabs1"></script><script src="universal/marketplace-card.js?v=20261026-energy-tabs1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261026-energy-tabs2"></head>
+<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-recommended-series1"></script><script src="universal/package-pricing.js?v=20261026-recommended-series1"></script><script src="universal/equipment-package-pricing.js?v=20261029-picker1"></script><script src="universal/marketplace-card.js?v=20261031-promo1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261029-picker1"><link rel="stylesheet" href="universal/promotions.css?v=20261031-promo1"><script src="universal/promotions.js?v=20261031-verified-finance5"></script></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -726,7 +726,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
       <button id="market-clear" class="market-clear" type="button">Clear</button>
     </div>
   </header>
-<div id="we-shared-nav"><nav class="wep-nav"><a href="https://westendpower.github.io/westendpower-marketplace/marketplace.html">Shop Marketplace</a> <a href="shop-by-product.html">Shop by Product</a><a href="shop-by-brand.html" aria-current="page" data-shop-current="">Shop by Brand</a><a href="https://westendpower.github.io/westendpower-marketplace/marketplace.html?promo=1">Promotions</a> <a href="https://www.westendpower.com/#wep-home-service">Service &amp; Parts</a><details><summary>Locations</summary><div class="wep-menu wep-locations"><a href="https://www.westendpower.com/danbury">Danbury, CT</a> <a href="https://www.westendpower.com/new-milford">New Milford, CT</a> <!-- Add future location links here, using the same format. --></div></details><a href="https://www.westendpower.com/contactus">Contact</a> <a class="wep-cart" href="cart.html">Cart</a></nav></div><section class="market-shop-nav" aria-label="Shop type and power type">
+<div id="we-shared-nav"><nav class="wep-nav"><a href="https://westendpower.github.io/westendpower-marketplace/marketplace.html">Shop Marketplace</a> <a href="shop-by-product.html">Shop by Product</a><a href="shop-by-brand.html" aria-current="page" data-shop-current="">Shop by Brand</a><a href="https://westendpower.github.io/westendpower-marketplace/promotions.html">Promotions</a> <a href="https://www.westendpower.com/#wep-home-service">Service &amp; Parts</a><details><summary>Locations</summary><div class="wep-menu wep-locations"><a href="https://www.westendpower.com/danbury">Danbury, CT</a> <a href="https://www.westendpower.com/new-milford">New Milford, CT</a> <!-- Add future location links here, using the same format. --></div></details><a href="https://www.westendpower.com/contactus">Contact</a> <a class="wep-cart" href="cart.html">Cart</a></nav></div><section class="market-shop-nav" aria-label="Shop type and power type">
     <div id="market-shop-tabs" class="market-shop-tabs" hidden=""></div>
     <div id="market-power-wrap" class="market-power-inline" hidden="">
       <span class="market-context-label">Power Type</span>
@@ -950,15 +950,15 @@ async function drainPricingQueue(){
    try{
     if(job.options.shouldRun&&!job.options.shouldRun())throw pricingCancelled();
     lastPricingRequest=Date.now();
-    job.resolve(await sendPaymentRequest('/customer-pricing',job.body));
+    job.resolve(await sendPaymentRequest(job.path,job.body));
    }catch(error){job.reject(error);}
   }
  }finally{pricingRunning=false;}
 }
 async function post(path,body,options={}){
- if(path!=='/customer-pricing')return sendPaymentRequest(path,body);
+ if(!['/customer-pricing','/customer-finance-programs'].includes(path))return sendPaymentRequest(path,body);
  return new Promise((resolve,reject)=>{
-  pricingQueue.push({body,options,resolve,reject});
+  pricingQueue.push({path,body,options,resolve,reject});
   void drainPricingQueue();
  });
 }
@@ -987,12 +987,12 @@ function selectedPackageItems(items,quantity){
     return {sku:clean(item.sku),quantity:count};
   });
 }
-async function programs(brandId,sku,inventoryId,quantity=1,packageItems=[]){
+async function programs(brandId,sku,inventoryId,quantity=1,packageItems=[],requestOptions={}){
   quantity=Number(quantity);
   if(!Number.isInteger(quantity)||quantity<1||quantity>100)throw new Error('Choose a whole-number quantity from 1 to 100.');
   const selected=await selectInventory(brandId,sku,inventoryId);
   const selectionItems=selectedPackageItems(packageItems,quantity);
-  const data=await post('/customer-finance-programs',{brandId,sku,inventoryId:selected,quantity,...(selected?{inventorySelectionRequired:true}:{}),...(selectionItems.length?{selectionItems}:{})});
+  const data=await post('/customer-finance-programs',{brandId,sku,inventoryId:selected,quantity,...(selected?{inventorySelectionRequired:true}:{}),...(selectionItems.length?{selectionItems}:{})},requestOptions);
   return (data.programs||[]).filter(p=>num(p.TermMonths)>0 && clean(p.ProgramID));
 }
 async function quote(brandId,sku,row,paymentMethod,program,inventoryId,quantity=1,requestOptions={}){
@@ -1077,6 +1077,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     availability: new Set(),
     buyOnline: false,
     promoOnly: false,
+    promoView: 'current',
     search: '',
     specFilters: new Map(),
     seriesModelOpen: false,
@@ -1899,7 +1900,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
   }
   function refreshSelectedCard(f){
     const host=document.querySelector('.market-card[data-key="'+CSS.escape(f.key)+'"]');
-    if(host)host.outerHTML=card(f);fitPriceDescriptions();
+    if(host){financeCardObserver?.unobserve(host);host.outerHTML=card(f);}fitPriceDescriptions();observeCardFinance();
   }
   function handlePriceSelection(event){
     const control=event.target.closest('[data-price-select]');if(!control)return false;
@@ -1927,12 +1928,31 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     return clean(f.brand).toUpperCase()+'|'+skuKey(variant.sku)+'|'+cardSelectionFor(f).index+'|'+selectedPriceQuantity(f)+'|'+(selectedInventoryId(f)===undefined?'AUTO':selectedInventoryId(f)||'ORDER')+'|'+JSON.stringify(variant.recommendedPackage?variant.packageItems||[]:[]);
   }
 
+  let financeCardObserver;
+  function observeCardFinance(){
+    if(typeof IntersectionObserver!=='function')return;
+    if(!financeCardObserver)financeCardObserver=new IntersectionObserver(entries=>{
+      for(const entry of entries){
+        if(!entry.isIntersecting||document.hidden)continue;
+        const f=DATA.filtered.find(f=>f.key===entry.target.dataset.key);
+        if(f)requestMarketplaceFinanceSummary(f);
+      }
+    },{rootMargin:'100px'});
+    for(const element of document.querySelectorAll('#market-grid .market-card'))financeCardObserver.observe(element);
+  }
+  function financeCardCurrent(f,key){
+    if(document.hidden||financeSummaryKey(f)!==key)return false;
+    const element=document.querySelector('.market-card[data-key="'+CSS.escape(f.key)+'"]'),bounds=element?.getBoundingClientRect?.();
+    return Boolean(bounds&&bounds.bottom>=-100&&bounds.top<=(window.innerHeight||800)+100);
+  }
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){financeCardObserver?.disconnect();observeCardFinance();}});
+
   function cardFinanceMarkup(f,buildHref){
     const key=financeSummaryKey(f),url=new URL(buildHref||catalogBuildUrl(f));url.hash='';
     const bottom=new URL(url);bottom.hash='wep-itemized-quote';
     const links='<div class="market-card-price-links"><a class="market-payment-options" target="_blank" rel="noopener noreferrer" href="'+esc(url.href)+'">View All Promotions</a><a class="market-payment-options" target="_blank" rel="noopener noreferrer" href="'+esc(bottom.href)+'">Out-the-Door Price</a></div>';
     if(!key || /\|$/.test(key))return links;
-    const summary=DATA.financeSummaryCache.get(key);if(!summary)requestMarketplaceFinanceSummary(f);
+    const summary=DATA.financeSummaryCache.get(key);
     if(!summary||summary.none)return (!summary?'<div class="market-finance-pending" role="status">Updating financing…</div>':'')+links;
     return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+'<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+((summary.expirationLabel||((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false))?'<div class="market-card-finance-note">'+esc(summary.expirationLabel||'')+((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false?' <span class="market-card-finance-rebate">(In lieu of customer rebate)</span>':'')+'</div>':'')+links+'</div>';
   }
@@ -1951,7 +1971,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
 
     const request=(async()=>{
       try{
-        const programs=await window.WestEndPayments.programs(brandId,sku,inventoryId,quantity,row.__packageItems);
+        const programs=await window.WestEndPayments.programs(brandId,sku,inventoryId,quantity,row.__packageItems,{shouldRun:()=>financeCardCurrent(f,key),priority:()=>f.financePriority||1});
         const program=bestMarketplaceFinanceProgram(programs);
         if(!program){
           DATA.financeSummaryCache.set(key,{none:true});
@@ -1959,7 +1979,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
         }
         if(financeSummaryKey(f)!==key)return;
         const summary=await window.WestEndPayments.quote(brandId,sku,row,'finance',program,inventoryId,quantity,{
-          shouldRun:()=>financeSummaryKey(f)===key,
+          shouldRun:()=>financeCardCurrent(f,key),
           priority:()=>{
             if(f.financePriority)return f.financePriority;
             const element=document.querySelector('.market-card[data-key="'+CSS.escape(f.key)+'"]');
@@ -2075,7 +2095,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
       }else{
         if(
           state.promoOnly &&
-          !(f.variants||[]).some(v=>promoInfo(v))
+          !(f.variants||[]).some(v=>marketplaceRowHasPromo(v.marketplaceRow))
         ){
           return false;
         }
@@ -2225,31 +2245,26 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
       .join(' + ');
   }
   function marketplaceRowHasPromo(row){
-    if(!row) return false;
+    return window.WestEndPromotions.matches(row,state.promoView,DATA.promotionFinance||[]);
+  }
 
-    const msrp=num(row.MSRP);
-    const sale=num(row.SalePrice);
-    const rebate=num(row.RebateToCustomer);
+  async function ensurePromotionPrograms(view=state.promoView){
+    if(!DATA.promotionProgramsRequest){
+      DATA.promotionProgramsRequest=(view==='zero'?window.WestEndPromotions.loadFinanceCatalog(DATA.products):window.WestEndPromotions.loadProgramCatalog(DATA.products)).then(()=>{DATA.promotionProgramsError=false;}).catch(()=>{DATA.promotionProgramsError=true;});
+    }
+    await DATA.promotionProgramsRequest;
+  }
 
-    const saleActive=
-      sale>0 &&
-      msrp>0 &&
-      sale<msrp &&
-      dateActive(
-        row.SaleStartDate,
-        row.SaleEndDate
-      );
-
-    const rebateActive=
-      rebate>0 &&
-      msrp>0 &&
-      rebate<msrp &&
-      dateActive(
-        row.RebateStartDate,
-        row.RebateEndDate
-      );
-
-    return saleActive || rebateActive;
+  function renderPromotionControls(){
+    let host=$('#market-promotion-controls');
+    if(!host){host=document.createElement('section');host.id='market-promotion-controls';$('.market-shop-nav').before(host);}
+    host.hidden=!state.promoOnly;
+    if(!state.promoOnly)return;
+    window.WestEndPromotions.renderControls(host,state.promoView,value=>{
+      location.href=new URL('promotions.html?'+new URLSearchParams({promo:value}),location.href).href;
+    });
+    const back=document.createElement('a');back.href='promotions.html?promo='+state.promoView;back.textContent='← Promotion categories';back.className='wep-promo-note';host.append(back);
+    if(DATA.promotionProgramsError&&['zero','responders','fleet'].includes(state.promoView)){const note=document.createElement('p');note.textContent='Program availability is temporarily unavailable. Please refresh or see store for details.';note.setAttribute('role','status');host.append(note);}
   }
 
   function marketplaceRowMatches(
@@ -2464,6 +2479,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
   }
 
   function renderTopFilters(){
+    renderPromotionControls();
     const homeButton='<button type="button" class="market-chip market-home" data-market-home aria-label="Return to all brands">Home</button>';
     const tabs=$('#market-shop-tabs');
     tabs.innerHTML='';
@@ -2491,7 +2507,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
 
     const categories=
       distinct(
-        DATA.products.filter(p=>truthy(p.Active)).map(p=>clean(p.Category))
+        DATA.products.filter(p=>truthy(p.Active)&&(!state.promoOnly||marketplaceRowHasPromo(p))).map(p=>clean(p.Category))
       ).filter(x=>
         !/^batteries|chargers$/i.test(x)
       );
@@ -3356,6 +3372,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
   let cardRenderVersion=0;
   function renderCards(){
     const version=++cardRenderVersion;
+    financeCardObserver?.disconnect();
     if(!marketplaceHasSelection()){
       $('#market-grid').setAttribute('aria-busy','false');
       $('#market-grid').innerHTML='';
@@ -3371,13 +3388,13 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
       return;
     }
     grid.innerHTML=families.slice(0,batchSize).map(card).join('');
-    fitPriceDescriptions();
+    fitPriceDescriptions();observeCardFinance();
     offset=batchSize;
     function appendBatch(){
       // A changed filter invalidates any pending cards from the previous results.
       if(version!==cardRenderVersion) return;
       grid.insertAdjacentHTML('beforeend',families.slice(offset,offset+batchSize).map(card).join(''));
-      fitPriceDescriptions();
+      fitPriceDescriptions();observeCardFinance();
       offset+=batchSize;
       if(offset<families.length) setTimeout(appendBatch,16);
       else grid.setAttribute('aria-busy','false');
@@ -3478,7 +3495,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     if(state.seriesOrEngine) params.set('filter',state.seriesOrEngine);
     if(state.seriesFilter) params.set('series',state.seriesFilter);
     if(state.modelFilter) params.set('model',state.modelFilter);
-    if(state.promoOnly) params.set('promo','1');
+    if(state.promoOnly) params.set('promo',state.promoView);
     if(state.buyOnline) params.set('online','1');
     if(state.search) params.set('q',state.search);
 
@@ -3523,7 +3540,8 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     state.seriesOrEngine=clean(params.get('filter'));
     state.seriesFilter=clean(params.get('series'));
     state.modelFilter=clean(params.get('model'));
-    state.promoOnly=params.get('promo')==='1';
+    state.promoOnly=params.has('promo') && (params.get('promo')==='1'||Object.hasOwn(window.WestEndPromotions.views,params.get('promo')));
+    state.promoView=Object.hasOwn(window.WestEndPromotions.views,params.get('promo'))?params.get('promo'):'current';
     state.buyOnline=params.get('online')==='1';
     state.search=clean(params.get('q'));
 
@@ -3564,7 +3582,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     state.category='';state.subcategory='';state.power='';
     state.seriesOrEngine='';state.width='';
     state.brand.clear();state.availability.clear();
-    state.buyOnline=false;state.promoOnly=false;state.search='';
+    state.buyOnline=false;state.promoOnly=false;state.promoView='current';state.search='';
     state.specFilters.clear();state.hpRanges.clear();
     state.seriesModelOpen=false;state.seriesModelView='';
     state.seriesFilter='';state.modelFilter='';
@@ -3897,7 +3915,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     });
     $('#market-search').addEventListener('input',e=>{ state.search=e.target.value; filterFamilies(); });
     $('#market-clear').addEventListener('click',()=>{
-      state.shopMode='equipment';state.category='';state.subcategory='';state.power='';state.seriesOrEngine='';state.width='';state.brand.clear();state.availability.clear();state.buyOnline=false;state.promoOnly=false;state.search='';state.specFilters.clear();state.packageFilter='';
+      state.shopMode='equipment';state.category='';state.subcategory='';state.power='';state.seriesOrEngine='';state.width='';state.brand.clear();state.availability.clear();state.buyOnline=false;state.promoOnly=false;state.promoView='current';state.search='';state.specFilters.clear();state.packageFilter='';
       $('#market-search').value=''; $('#filter-buy-online').checked=false;
       renderTopFilters();renderSidebar();filterFamilies();
       track('marketplace_clear_filters');
@@ -4016,6 +4034,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
         throw new Error('Combined catalog does not match this Marketplace');
       }
       DATA.componentSources=Object.fromEntries((bundle.componentSources||[]).map(source=>[clean(source.brand).toUpperCase(),Object.fromEntries(['batteries','chargers','compatibility','packages','requirements','attachments','accessories','parts'].map(name=>[name,unpackMarketplaceTable(source[name])]))]));
+      DATA.promotionFinance=(bundle.financeSources||[]).flatMap(source=>unpackMarketplaceTable(source).map(row=>({...row,BrandID:source.brand})));
       const products=bundle.productSources.flatMap(unpackMarketplaceTable);
       if(!products.length)throw new Error('Combined catalog has no products');
       window.WESTEND_PUBLISHED_BRANDS=bundle.productSources.map(table=>{
@@ -4084,6 +4103,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     DATA.inventoryByBrand=new Map(results);
   }
   async function init(){
+    if(location.search==='?promo=1'){location.replace(new URL('promotions.html',location.href));return;}
     try{
       const [catalog,locations]=await Promise.all([
         loadMarketplaceCatalog(),
@@ -4091,10 +4111,14 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
       ]);
       const [products,batteries,chargers,compatibility,financePrograms,settingsRows]=catalog;
       DATA.products=products;
+      if(['zero','responders','fleet'].includes(new URLSearchParams(location.search).get('promo')))await ensurePromotionPrograms(new URLSearchParams(location.search).get('promo'));
       DATA.batteries=batteries;
       DATA.chargers=chargers;
       DATA.compatibility=compatibility;
       DATA.financePrograms=financePrograms;
+      if(!DATA.promotionFinance?.length){
+        DATA.promotionFinance=(await Promise.all(marketplaceBrandProfiles().map(async profile=>{const brand=clean(profile.id).toUpperCase();try{return (await csv('brands/'+brand.toLowerCase()+'/data/finance-programs.csv')).map(row=>({...row,BrandID:brand}));}catch{return [];}}))).flat();
+      }
       DATA.batterySystems=new Set(
         batteries.filter(x=>truthy(x.Active)).map(x=>clean(x.BatteryID).match(/^[A-Za-z]+/)?.[0]||'').filter(Boolean).map(x=>x.toUpperCase())
       );
@@ -4159,4 +4183,3 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
  setInterval(()=>{if(paused||document.hidden)return;tick++;document.querySelectorAll('.shop-carousel').forEach(box=>{if(Number(box.dataset.count)<2||box.matches(':hover')||box.contains(document.activeElement)||Date.now()<Number(box.dataset.manualUntil||0))return;if((tick+Number(box.dataset.offset))%5===0)advance(box,1);});},1000);
 })();</script><script>/* WEP_SHARED_NAVIGATION_DROPDOWNS */
 (()=>{const script=document.createElement('script');script.src=new URL('universal/navigation-dropdowns.js?v=20261025-brandnav1',window.location.href).href;document.head.appendChild(script);})();</script><script src="universal/build-phone-notice.js?v=20261022-phone1" defer></script></body></html>
-

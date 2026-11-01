@@ -15,6 +15,7 @@ test('workbook package exports retain parent SKU and quantities while excluding 
 test('published catalog carries brand-specific package contents and changes its version when a package changes',t=>{
  const root=temporary(t),brands=['stihl','yanmar','billygoat','toro','honda','redmax','greenworks','mitm'];
  for(const brand of brands)write(root,'brands/'+brand+'/data/products.csv',['SKU','BrandID','Model'],[{SKU:brand+'-TOOL',BrandID:brand.toUpperCase(),Model:'Model'}]);
+ for(const brand of brands)write(root,'brands/'+brand+'/data/finance-programs.csv',['Active','APR','StartDate','EndDate'],[]);
  for(const name of ['batteries','chargers','compatibility-runtime','finance-programs'])write(root,'brands/stihl/data/'+name+'.csv',['SKU','Active'],[]);
  write(root,'data/dealer-settings.csv',['DealerName'],[{DealerName:'West End'}]);fs.writeFileSync(path.join(root,'marketplace.html'),'<html><head></head><body></body></html>');
  const headers=['ParentSKU','Active','BatterySKU1','BatteryQty1'];

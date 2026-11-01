@@ -24,6 +24,6 @@
    const profiles=(data.productSources||[]).filter(src=>{const ix=(src.headers||[]).indexOf('Active');return ix>=0&&(src.rows||[]).some(row=>{let value;if(src.encoding==='sparse'){for(let i=0;i<row.length;i+=2)if(row[i]===ix){value=row[i+1];break}}else value=row[ix];return active(value)})}).map(src=>({id:clean(src.brand).toUpperCase(),name:displayNames[clean(src.brand).toUpperCase()]||clean(src.brand)}));drawBrands(profiles);
   }catch(error){console.warn('Brand navigation will use its existing links until the catalog is available.',error);}
  }
- function start(){initializeMenus();loadBrands();window.addEventListener('westend:catalog-ready',()=>drawBrands(window.WESTEND_PUBLISHED_BRANDS||[]));}
+ function start(){document.querySelectorAll('a[href*="marketplace.html?promo=1"]').forEach(link=>{link.href=new URL('promotions.html',document.currentScript?.src||'https://westendpower.github.io/westendpower-marketplace/').href;});initializeMenus();loadBrands();window.addEventListener('westend:catalog-ready',()=>drawBrands(window.WESTEND_PUBLISHED_BRANDS||[]));}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();

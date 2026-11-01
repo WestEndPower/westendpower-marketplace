@@ -12,7 +12,7 @@ function fixture(published=false){
  }
  const tool={sku:row.SKU,model:row.Model,description:row.Description,type:'Tool',price:Kit.current(row),msrp:Number(row.MSRP),marketplaceRow:row};
  const f={key:'STIHL|RZ142',brand:'STIHL',model:'RZ 142',category:'Mowers',power:'Gas',variants:[tool]};
- let selected=tool,quantity=1;const saved=new Map(),status={textContent:''},host={dataset:{key:f.key},querySelector:()=>status},window={WEPKitComponents:Kit,dispatchEvent(){}},document={querySelector:()=>null};
+ let selected=tool,quantity=1;const saved=new Map(),status={textContent:''},host={dataset:{key:f.key},querySelector:()=>status},window={crypto:require("node:crypto").webcrypto,WEPKitComponents:Kit,dispatchEvent(){}},document={querySelector:()=>null};
  const context={window,document,URL,URLSearchParams,Intl,CustomEvent:class{},localStorage:{getItem:k=>saved.get(k)||'[]',setItem:(k,v)=>saved.set(k,v)}};
  vm.runInNewContext(fs.readFileSync('universal/equipment-package-pricing.js','utf8'),context);
  const c={DATA:{componentSources:{STIHL:source}},selectedStock:()=>null,selectedPriceVariant:()=>selected,selectPackageVariant:(_,v)=>selected=v,currentPrice:Kit.current,money:n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n),promoInfo:()=>({type:'rebate',savings:400,regular:4399.99,price:3999.99}),paymentSelectionUrl:()=> 'https://dealer.example/payment-options.html?brand=STIHL&sku='+encodeURIComponent(tool.sku)+'&quantity='+quantity,selectedPriceQuantity:()=>quantity,updateCartFloat(){},track(){}};
@@ -21,11 +21,13 @@ function fixture(published=false){
  const toggle=sku=>click('[data-eqp-option]',{dataset:{eqpOption:sku}}),base=()=>click('[data-eqp-select]',{dataset:{eqpSelect:'tool'}}),add=()=>click('[data-eqp-add]',{});
  return {api,f,c,source,tool,saved,status,toggle,base,add,window,context,setQuantity:q=>quantity=q};
 }
-test('RZ142 keeps base pricing and blank option rows',()=>{
+test('RZ142 keeps base pricing and offers compatible options in separate tabs',()=>{
  const r=fixture(),html=r.api.render(r.f,r.c);
  assert.match(html,/pp-equipment-base pp-selected/);assert.match(html,/STIHL Base Price:/);assert.match(html,/Package MSRP:/);assert.match(html,/\$4,399\.99/);
  assert.doesNotMatch(html,/data-eqp-option=/);
- assert.match(html,/role="group" aria-label="Accessories"><\/div>/);assert.doesNotMatch(html,/>Mower Boot Kit<|>Bagging Blower</);
+ for(const type of ['attachment','accessory']){const url=new URL(r.api.pickerUrl(r.f,r.c,type));assert.match(url.pathname,/product-options.html$/);assert.equal(url.searchParams.get('group'),type);assert.equal(url.hash,'#wep-panel-'+type);assert.ok(url.searchParams.get('configuration'));}
+ assert.notEqual(new URL(r.api.pickerUrl(r.f,r.c,'attachment')).searchParams.get('configuration'),new URL(r.api.pickerUrl(r.f,r.c,'attachment')).searchParams.get('configuration')); 
+ assert.match(html,/Accessories \(0 Available\)/);assert.doesNotMatch(html,/>Mower Boot Kit<|>Bagging Blower</);
  assert.equal(r.c.selectedPriceVariant(r.f).sku,r.tool.sku);assert.equal(r.c.selectedPriceVariant(r.f).price,3999.99);
  assert.match(r.api.tool(r.f).marketplaceRow.ImageURL,/RZ142\.jpg$/);
 });
@@ -47,7 +49,7 @@ test('multiple options, mandatory requirements and package quantity reach cart w
 });
 test('compatible workbook additions/removals populate the right row and explicit exclusions beat group flags',()=>{
  const r=fixture();r.api.render(r.f,r.c);r.source.accessories.push({SKU:'TEST-ACCESS',Description:'Seat Cover',Active:'T',MSRP:'50','WB01 011 3600 US':'T'});
- assert.match(r.api.render(r.f,r.c),/aria-label="Accessories"/);r.toggle('TEST-ACCESS');assert.equal(r.c.selectedPriceVariant(r.f).msrp,4449.99);
+ assert.match(r.api.render(r.f,r.c),/Accessories \(1 Available\)/);r.toggle('TEST-ACCESS');assert.equal(r.c.selectedPriceVariant(r.f).msrp,4449.99);
  r.source.accessories.find(p=>p.SKU==='TEST-ACCESS').Active='F';assert.doesNotMatch(r.api.render(r.f,r.c),/data-eqp-option="TEST-ACCESS"/);assert.equal(r.c.selectedPriceVariant(r.f).sku,r.tool.sku);
  assert.equal(r.api.compatibility({'WB01 011 3600 US':'F','Group_ALL_STIHL':'T'},r.tool.marketplaceRow),false);
 });
@@ -77,13 +79,15 @@ test('the published combined workbook export contains the RZ142 choices and corr
  assert.equal(r.c.selectedPriceVariant(r.f).msrp,5309.97);assert.equal(r.c.selectedPriceVariant(r.f).packageItems.length,2);
 });
 
-test('Attach and Access remain empty even when compatible workbook options exist',()=>{
+test('attachment and accessory buttons show available counts and disable empty groups',()=>{
  const r=fixture();
  for(let i=0;i<6;i++)r.source.accessories.push({SKU:'ACCESS-'+i,Description:'Accessory '+i,Active:'T',MSRP:'10',SortOrder:String(i),'WB01 011 3600 US':'T'});
- let html=r.api.render(r.f,r.c);assert.equal((html.match(/class="pp-component-row"/g)||[]).length,2);
+ let html=r.api.render(r.f,r.c);assert.equal((html.match(/pp-picker-row/g)||[]).length,2);assert.match(html,/Accessories \(6 Available\)/);assert.match(html,/target="_blank" rel="noopener"/);
  assert.doesNotMatch(html,/data-eqp-option=/);
+ for(const type of ['attachment','accessory']){const url=new URL(r.api.pickerUrl(r.f,r.c,type));assert.match(url.pathname,/product-options.html$/);assert.equal(url.searchParams.get('group'),type);assert.equal(url.hash,'#wep-panel-'+type);assert.ok(url.searchParams.get('configuration'));}
+ assert.notEqual(new URL(r.api.pickerUrl(r.f,r.c,'attachment')).searchParams.get('configuration'),new URL(r.api.pickerUrl(r.f,r.c,'attachment')).searchParams.get('configuration')); 
  r.source.attachments=[];r.source.accessories=[];r.source.parts=[];html=r.api.render(r.f,r.c);
- assert.match(html,/>Attach<\/span><div role="group" aria-label="Attachments"><\/div>/);assert.match(html,/>Access<\/span><div role="group" aria-label="Accessories"><\/div>/);assert.match(html,/Package MSRP:/);
+ assert.match(html,/disabled aria-label="View Attachments \(0 Available\)">View \(0 Available\)/);assert.match(html,/disabled aria-label="View Accessories \(0 Available\)">View \(0 Available\)/);assert.match(html,/Package MSRP:/);
 });
 
 function sawFixture(){
@@ -133,8 +137,10 @@ test('all published active SKUs follow battery, Yanmar compact, chainsaw or stan
    const html=r.api.render(r.f,r.c),battery=/battery/i.test(row.PowerType),compact=table.brand==='YANMAR'&&/^compact tractors?$/i.test(row.Category),saw=/^chainsaws?$/i.test(row.Category);
    if(battery||compact){assert.equal(html,null,row.SKU);counts[battery?'battery':'compact']++;continue;}
    assert.ok(html,row.SKU);assert.match(html,/Package MSRP:/);assert.doesNotMatch(html,/data-eqp-option=/);
+ for(const type of ['attachment','accessory']){const url=new URL(r.api.pickerUrl(r.f,r.c,type));assert.match(url.pathname,/product-options.html$/);assert.equal(url.searchParams.get('group'),type);assert.equal(url.hash,'#wep-panel-'+type);assert.ok(url.searchParams.get('configuration'));}
+ assert.notEqual(new URL(r.api.pickerUrl(r.f,r.c,'attachment')).searchParams.get('configuration'),new URL(r.api.pickerUrl(r.f,r.c,'attachment')).searchParams.get('configuration')); 
    if(saw){assert.match(html,/>Std\. Bar</);assert.match(html,/>Light Bar</);counts.saw++;}
-   else{assert.match(html,/>Attach</);assert.match(html,/>Access</);counts.standard++;}
+   else{assert.match(html,/>View \(/);assert.match(html,/>Access:</);counts.standard++;}
    assert.equal(r.api.tool(r.f).sku,row.SKU);
   }
  }
