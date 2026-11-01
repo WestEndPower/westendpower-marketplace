@@ -9,6 +9,22 @@ function runtime(file){
  return {...window.test,paths};
 }
 for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-brand.html']){
+ test(file+': compact tractors without a bare SKU use the shared package layout',()=>{
+  for(const [model,sku,tires,flags] of [['SA223 KURO','SA223KBH-L','Hybrid',{'P1-Loader':'T'}],['SM240','SM240-L','R-4',{'P1-Loader':'T'}],['YT359C','YT359C-L','R-4',{'P1-Loader':'T','P4-Cab':'T'}]]){
+   const r=runtime(file),v={sku,type:'Tool',price:22299,msrp:23199,workbookSort:0,marketplaceRow:{'B2-Tires':tires,...flags}},f={key:model,brand:'YANMAR',category:'Compact Tractors',model,variants:[v]};
+   assert.equal(r.compactBaseVariant(f),null);
+   const html=r.compactPriceBoxes(f,r.selectedPriceVariant(f));
+   assert.match(html,/pp-box pp-package pp-compact-package pp-selected/);
+   assert.match(html,/pp-compact-base/);assert.match(html,/YANMAR Base Price:/);
+   assert.equal((html.match(/data-compact-sku=/g)||[]).length,2);
+   assert.ok(html.indexOf('Package MSRP:')<html.indexOf('Factory Installed'));
+   assert.match(html,/\$23,199\.00/);assert.doesNotMatch(html,/\$22,299\.00|<del>/);
+   assert.ok(html.includes('data-compact-sku="'+sku+'" aria-pressed="true"'));
+   assert.match(html,/aria-pressed="true" title="Loader included on this model" disabled/);
+   assert.match(html,/market-compact-tire-label/);assert.ok(html.includes('data-compact-tire="'+tires+'"'));
+   assert.equal(r.selectedPriceVariant(f).sku,sku);
+  }
+ });
  test(file+': CSV recovery loads all published brands without needing an existing product list',async()=>{const r=runtime(file),rows=await r.loadMarketplaceProducts();assert.equal(rows.length,2);assert.equal(rows[1].SKU,'TRACTOR');assert.deepEqual(r.paths,['brands/stihl/data/products.csv','brands/yanmar/data/products.csv']);});
  test(file+': changing package components invalidates the financing preview',()=>{const r=runtime(file),tool={sku:'TOOL',price:100,type:'Tool'},f={key:'STIHL|TOOL',brand:'STIHL',category:'Blowers',variants:[tool]};const select=(sku,quantity)=>r.selectPackageVariant(f,{...tool,recommendedPackage:true,packageItems:[{sku,quantity,price:50}]});select('BAT-A',1);const first=r.financeSummaryKey(f);select('BAT-B',1);assert.notEqual(r.financeSummaryKey(f),first);const second=r.financeSummaryKey(f);select('BAT-B',2);assert.notEqual(r.financeSummaryKey(f),second);});
 }

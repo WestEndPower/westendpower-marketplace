@@ -710,7 +710,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-recommended-series1"></script><script src="universal/package-pricing.js?v=20261026-recommended-series1"></script><script src="universal/equipment-package-pricing.js?v=20261029-picker1"></script><script src="universal/marketplace-card.js?v=20261031-promo1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261029-picker1"><link rel="stylesheet" href="universal/promotions.css?v=20261031-promo1"><script src="universal/promotions.js?v=20261031-verified-finance5"></script></head>
+<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-recommended-series1"></script><script src="universal/package-pricing.js?v=20261026-recommended-series1"></script><script src="universal/equipment-package-pricing.js?v=20261029-picker1"></script><script src="universal/marketplace-card.js?v=20261101-rebate-selection1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261101-down-slot1"><link rel="stylesheet" href="universal/promotions.css?v=20261031-promo1"><script src="universal/promotions.js?v=20261031-verified-finance5"></script></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -914,10 +914,11 @@ const num=v=>{const n=Number(clean(v).replace(/[$,%]/g,''));return Number.isFini
   }
 
 
-// PAYMENT_PRICING_REQUEST_PACING_V1
+// PAYMENT_PRICING_BOUNDED_CONCURRENCY_V2
 const pricingQueue=[];
-let pricingRunning=false;
-let lastPricingRequest=-Infinity;
+const pricingStarts=new Map();
+const pricingConcurrency=3,pricingWindow=60000,pricingBudget=40;
+let pricingActive=0,pricingWake;
 const paymentDelay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function sendPaymentRequest(path,body){
  for(let attempt=0;attempt<2;attempt++){
@@ -928,7 +929,6 @@ async function sendPaymentRequest(path,body){
    const seconds=Number(retry);
    const wait=retry&&Number.isFinite(seconds)?seconds*1000:Date.parse(retry)-Date.now();
    await paymentDelay(Math.max(Number.isFinite(wait)?wait:60000,1000)+1000);
-   lastPricingRequest=Date.now();
    continue;
   }
   if(!response.ok || data.ok===false || data.error) throw new Error(data.error||'Payment options are temporarily unavailable.');
@@ -937,29 +937,33 @@ async function sendPaymentRequest(path,body){
 }
 function pricingCancelled(){const error=new Error('Selection changed.');error.name='AbortError';return error;}
 function pricingPriority(job){try{return Number(job.options.priority?.())||0;}catch(_){return 0;}}
-async function drainPricingQueue(){
- if(pricingRunning)return;
- pricingRunning=true;
- try{
-  while(pricingQueue.length){
-   // Keep service pacing, but choose the next job after the wait so a new selection can move ahead.
-   const wait=1500-(Date.now()-lastPricingRequest);
-   if(wait>0)await paymentDelay(wait);
-   pricingQueue.sort((a,b)=>pricingPriority(b)-pricingPriority(a));
-   const job=pricingQueue.shift();
-   try{
-    if(job.options.shouldRun&&!job.options.shouldRun())throw pricingCancelled();
-    lastPricingRequest=Date.now();
-    job.resolve(await sendPaymentRequest(job.path,job.body));
-   }catch(error){job.reject(error);}
+function drainPricingQueue(){
+ if(pricingWake!==undefined){clearTimeout(pricingWake);pricingWake=undefined;}
+ for(let i=pricingQueue.length-1;i>=0;i--){
+  const job=pricingQueue[i];
+  try{if(job.options.shouldRun&&!job.options.shouldRun()){pricingQueue.splice(i,1);job.reject(pricingCancelled());}}
+  catch(error){pricingQueue.splice(i,1);job.reject(error);}
+ }
+ pricingQueue.sort((a,b)=>pricingPriority(b)-pricingPriority(a));
+ while(pricingActive<pricingConcurrency&&pricingQueue.length){
+  const now=Date.now();
+  for(const [path,times] of pricingStarts)pricingStarts.set(path,times.filter(time=>now-time<pricingWindow));
+  const index=pricingQueue.findIndex(job=>(pricingStarts.get(job.path)||[]).length<pricingBudget);
+  if(index<0){
+   const wait=Math.min(...pricingQueue.map(job=>pricingStarts.get(job.path)[0]+pricingWindow-now));
+   pricingWake=setTimeout(()=>{pricingWake=undefined;drainPricingQueue();},Math.max(1,wait));
+   return;
   }
- }finally{pricingRunning=false;}
+  const [job]=pricingQueue.splice(index,1),starts=pricingStarts.get(job.path)||[];
+  starts.push(now);pricingStarts.set(job.path,starts);pricingActive++;
+  void sendPaymentRequest(job.path,job.body).then(job.resolve,job.reject).finally(()=>{pricingActive--;drainPricingQueue();});
+ }
 }
 async function post(path,body,options={}){
  if(!['/customer-pricing','/customer-finance-programs'].includes(path))return sendPaymentRequest(path,body);
  return new Promise((resolve,reject)=>{
   pricingQueue.push({path,body,options,resolve,reject});
-  void drainPricingQueue();
+  drainPricingQueue();
  });
 }
 const inventoryCache=new Map();
@@ -1954,7 +1958,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     if(!key || /\|$/.test(key))return links;
     const summary=DATA.financeSummaryCache.get(key);
     if(!summary||summary.none)return (!summary?'<div class="market-finance-pending" role="status">Updating financing…</div>':'')+links;
-    return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+'<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+((summary.expirationLabel||((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false))?'<div class="market-card-finance-note">'+esc(summary.expirationLabel||'')+((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false?' <span class="market-card-finance-rebate">(In lieu of customer rebate)</span>':'')+'</div>':'')+links+'</div>';
+    return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+'<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+'<div class="market-card-finance-down"'+(summary.requiredDown>0?'':' aria-hidden="true"')+'>'+(summary.requiredDown>0?money(summary.requiredDown)+' required down':'&nbsp;')+'</div>'+((summary.expirationLabel||((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false))?'<div class="market-card-finance-note">'+esc(summary.expirationLabel||'')+((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false?' <span class="market-card-finance-rebate">(In lieu of customer rebate)</span>':'')+'</div>':'')+links+'</div>';
   }
 
   async function requestMarketplaceFinanceSummary(f){
@@ -3184,12 +3188,12 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
       .sort((a,b)=>Number(compactTire(a)!==(fixedIdentity?'R-4':compactTire(current)))-Number(compactTire(b)!==(fixedIdentity?'R-4':compactTire(current)))||a.msrp-b.msrp)[0]||null;
   }
   function compactPriceBoxes(f,current){
-    const base=compactBaseVariant(f,current);if(!base)return null;
+    const base=compactBaseVariant(f,current);
     const attached=compactFlags(current).some(Boolean),locked=!!selectedStock(f);
     const amount=(v,msrpOnly=false)=>{const offer=msrpOnly?null:promoInfo(v),sale=offer?.type==='sale';return '<span class="pp-prices">'+(sale?'<del>'+money(offer.regular)+'</del>':'')+'<strong>'+money(sale?offer.price:v.msrp||v.price)+'</strong></span>';};
     const control=(v,pressed,extra,label)=>'<button type="button" class="pp-price-select'+extra+'" data-compact-family="'+esc(f.key)+'" data-compact-sku="'+esc(v.sku)+'" aria-pressed="'+pressed+'" '+(locked?'disabled ':'')+'><span>'+esc(label)+'</span>'+amount(v,label==='Package MSRP:')+'</button>';
-    return '<div class="pp-box pp-compact-base'+(!attached?' pp-selected':'')+'" data-pp-box="tool">'+control(base,!attached,'',clean(f.brand)+' Base Price:')+'</div>'+
-      '<div class="pp-box pp-package pp-compact-package'+(attached?' pp-selected':'')+'" data-pp-box="package">'+control(current,attached,' pp-package-total','Package MSRP:')+stockUnitMarkup(f)+compactHeaderOptions(f)+compactTireMarkup(f)+'</div>';
+    return '<div class="pp-box pp-compact-base'+(!attached?' pp-selected':'')+'" data-pp-box="tool">'+control(base||current,!attached,'',clean(f.brand)+' Base Price:')+'</div>'+
+      '<div class="pp-box pp-package pp-compact-package'+(attached||!base?' pp-selected':'')+'" data-pp-box="package">'+control(current,attached||!base,' pp-package-total','Package MSRP:')+stockUnitMarkup(f)+compactHeaderOptions(f)+compactTireMarkup(f)+'</div>';
   }
 
   function pricePanel(label,v,isPackage,f,variantGroup,hideInventory=false){

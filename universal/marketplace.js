@@ -857,7 +857,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     if(!key || /\|$/.test(key))return links;
     const summary=DATA.financeSummaryCache.get(key);
     if(!summary||summary.none)return (!summary?'<div class="market-finance-pending" role="status">Updating financing…</div>':'')+links;
-    return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+'<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+(summary.requiredDown>0?'<div class="market-card-finance-down">'+money(summary.requiredDown)+' required down</div>':'')+((summary.expirationLabel||((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false))?'<div class="market-card-finance-note">'+esc(summary.expirationLabel||'')+((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false?' <span class="market-card-finance-rebate">(In lieu of customer rebate)</span>':'')+'</div>':'')+links+'</div>';
+    return '<div class="market-card-finance"><div class="market-card-finance-apr">'+esc(summary.aprLabel)+' for '+esc(summary.termMonths)+' Months</div>'+'<div class="market-card-finance-payment"><strong>'+money(summary.monthly)+'<span> per Month (est.)</span></strong></div>'+'<div class="market-card-finance-down"'+(summary.requiredDown>0?'':' aria-hidden="true"')+'>'+(summary.requiredDown>0?money(summary.requiredDown)+' required down':'&nbsp;')+'</div>'+((summary.expirationLabel||((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false))?'<div class="market-card-finance-note">'+esc(summary.expirationLabel||'')+((isCompactTractor(f)||window.WestEndEquipmentPackages?.tool(f))&&summary.rebateCompatible===false?' <span class="market-card-finance-rebate">(In lieu of customer rebate)</span>':'')+'</div>':'')+links+'</div>';
   }
 
   async function requestMarketplaceFinanceSummary(f){
@@ -2087,12 +2087,12 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       .sort((a,b)=>Number(compactTire(a)!==(fixedIdentity?'R-4':compactTire(current)))-Number(compactTire(b)!==(fixedIdentity?'R-4':compactTire(current)))||a.msrp-b.msrp)[0]||null;
   }
   function compactPriceBoxes(f,current){
-    const base=compactBaseVariant(f,current);if(!base)return null;
+    const base=compactBaseVariant(f,current);
     const attached=compactFlags(current).some(Boolean),locked=!!selectedStock(f);
     const amount=(v,msrpOnly=false)=>{const offer=msrpOnly?null:promoInfo(v),sale=offer?.type==='sale';return '<span class="pp-prices">'+(sale?'<del>'+money(offer.regular)+'</del>':'')+'<strong>'+money(sale?offer.price:v.msrp||v.price)+'</strong></span>';};
     const control=(v,pressed,extra,label)=>'<button type="button" class="pp-price-select'+extra+'" data-compact-family="'+esc(f.key)+'" data-compact-sku="'+esc(v.sku)+'" aria-pressed="'+pressed+'" '+(locked?'disabled ':'')+'><span>'+esc(label)+'</span>'+amount(v,label==='Package MSRP:')+'</button>';
-    return '<div class="pp-box pp-compact-base'+(!attached?' pp-selected':'')+'" data-pp-box="tool">'+control(base,!attached,'',clean(f.brand)+' Base Price:')+'</div>'+
-      '<div class="pp-box pp-package pp-compact-package'+(attached?' pp-selected':'')+'" data-pp-box="package">'+control(current,attached,' pp-package-total','Package MSRP:')+stockUnitMarkup(f)+compactHeaderOptions(f)+compactTireMarkup(f)+'</div>';
+    return '<div class="pp-box pp-compact-base'+(!attached?' pp-selected':'')+'" data-pp-box="tool">'+control(base||current,!attached,'',clean(f.brand)+' Base Price:')+'</div>'+
+      '<div class="pp-box pp-package pp-compact-package'+(attached||!base?' pp-selected':'')+'" data-pp-box="package">'+control(current,attached||!base,' pp-package-total','Package MSRP:')+stockUnitMarkup(f)+compactHeaderOptions(f)+compactTireMarkup(f)+'</div>';
   }
 
   function pricePanel(label,v,isPackage,f,variantGroup,hideInventory=false){
