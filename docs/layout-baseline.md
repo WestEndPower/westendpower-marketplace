@@ -1,5 +1,11 @@
 # Marketplace and generated-page layouts
 
+## Compact tractors sold only as configured packages (November 1, 2026)
+
+- Compact tractors without a published bare-tractor SKU, including SA223 KURO, use the same compact package box as other tractors: Package MSRP above horizontal Factory Installed and Tires rows, with Guide beside Tires.
+- Omit the bare-tractor price box when no bare SKU exists. Keep included equipment selected; only published alternate SKUs can change factory options or tires. Preserve the exact package SKU, MSRP, inventory and purchase actions.
+- Apply the same financing typography to compact package boxes with or without a bare-tractor price box on all three shopping routes.
+
 John requested that approved layouts be preserved across later changes (October 25, 2026).
 
 ## Marketplace, Shop by Product, Shop by Brand
