@@ -2091,7 +2091,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const attached=compactFlags(current).some(Boolean),locked=!!selectedStock(f);
     const amount=(v,msrpOnly=false)=>{const offer=msrpOnly?null:promoInfo(v),sale=offer?.type==='sale';return '<span class="pp-prices">'+(sale?'<del>'+money(offer.regular)+'</del>':'')+'<strong>'+money(sale?offer.price:v.msrp||v.price)+'</strong></span>';};
     const control=(v,pressed,extra,label)=>'<button type="button" class="pp-price-select'+extra+'" data-compact-family="'+esc(f.key)+'" data-compact-sku="'+esc(v.sku)+'" aria-pressed="'+pressed+'" '+(locked?'disabled ':'')+'><span>'+esc(label)+'</span>'+amount(v,label==='Package MSRP:')+'</button>';
-    return (base?'<div class="pp-box pp-compact-base'+(!attached?' pp-selected':'')+'" data-pp-box="tool">'+control(base,!attached,'',clean(f.brand)+' Base Price:')+'</div>':'')+
+    return '<div class="pp-box pp-compact-base'+(!attached?' pp-selected':'')+'" data-pp-box="tool">'+control(base||current,!attached,'',clean(f.brand)+' Base Price:')+'</div>'+
       '<div class="pp-box pp-package pp-compact-package'+(attached||!base?' pp-selected':'')+'" data-pp-box="package">'+control(current,attached||!base,' pp-package-total','Package MSRP:')+stockUnitMarkup(f)+compactHeaderOptions(f)+compactTireMarkup(f)+'</div>';
   }
 

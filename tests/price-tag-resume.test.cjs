@@ -15,7 +15,8 @@ for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-br
    assert.equal(r.compactBaseVariant(f),null);
    const html=r.compactPriceBoxes(f,r.selectedPriceVariant(f));
    assert.match(html,/pp-box pp-package pp-compact-package pp-selected/);
-   assert.doesNotMatch(html,/pp-compact-base|Base Price/);
+   assert.match(html,/pp-compact-base/);assert.match(html,/YANMAR Base Price:/);
+   assert.equal((html.match(/data-compact-sku=/g)||[]).length,2);
    assert.ok(html.indexOf('Package MSRP:')<html.indexOf('Factory Installed'));
    assert.match(html,/\$23,199\.00/);assert.doesNotMatch(html,/\$22,299\.00|<del>/);
    assert.ok(html.includes('data-compact-sku="'+sku+'" aria-pressed="true"'));
