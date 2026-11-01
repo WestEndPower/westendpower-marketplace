@@ -336,3 +336,8 @@
 /* Keep every compact-tractor tag on the same header and option-row grid. */
 #market-app .wep-restored-card:has(.pp-compact-package) .market-card-head{height:90px;min-height:90px;box-sizing:border-box}
 #market-app .wep-restored-card .pp-compact-package [role=group]{flex-wrap:nowrap!important}
+
+/* All four factory-installed choices remain visible on compact tractor tags. */
+#market-app .wep-restored-card .pp-compact-package .market-factory-options,#market-app .wep-restored-card .pp-compact-package .market-compact-tires{grid-template-columns:72px minmax(0,1fr);gap:4px;margin:3px 6px 0!important}
+#market-app .wep-restored-card .pp-compact-package .market-factory-options [role=group]{overflow:visible;flex-wrap:nowrap!important;gap:4px!important}
+#market-app .wep-restored-card .pp-compact-package .market-factory-options [role=group] button{flex:0 1 64px;min-width:min-content;max-width:64px;padding:5px 4px!important}
