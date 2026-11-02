@@ -1,5 +1,11 @@
 # Marketplace and generated-page layouts
 
+## Battery package contents alignment (November 2, 2026)
+
+- Every battery equipment price tag shows a contents line below the charger choices, including one-battery packages and bare tools. Counts follow the selected configuration; absent components say Batteries sold separately, Charger sold separately, or Batteries and chargers sold separately.
+- Reserve the same 30px contents area on battery tags so purchase actions remain aligned. Retain required-item notices. Fixed stock and kit-only products use their published package contents; missing kit data refers to product details rather than inventing counts.
+- Marketplace, Shop by Product and Shop by Brand share this behavior. Non-battery equipment and generated-page controls retain their existing layouts.
+
 ## Compact tractors sold only as configured packages (November 1, 2026)
 
 - Compact tractors without a published bare-tractor SKU, including SA223 KURO, use the same compact package box as other tractors: Package MSRP above horizontal Factory Installed and Tires rows, with Guide beside Tires.
@@ -167,3 +173,4 @@ Change a baseline only when John requests or approves that layout change.
 
 - Across every manufacturer, Attachments and Accessories each use one horizontal scrolling row with previous/next arrows, keyboard scrolling and touch scrolling. They do not expand into a multirow View All grid. Implements retain their existing category and View All controls.
 - Opening a price-tag View link preserves the requested Attachments or Accessories panel during compact-layout enhancement.
+
