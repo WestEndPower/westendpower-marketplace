@@ -814,6 +814,16 @@
 
  function currentIdentity(){const p=new URL(app.querySelector('.wep-spec-link').href,location.href).searchParams;return {brandId:clean(p.get('brand')).toUpperCase(),sku:clean(p.get('sku'))};}
  function buildLines(){const s=currentIdentity();return [{type:'tool',sku:s.sku,quantity:Number(app.querySelector('#equipment-qty').value),target:app.querySelector('.wep-build-stock .stock-details'),name:app.querySelector('h1')?.textContent||s.sku},...[...app.querySelectorAll('.option-check')].map(c=>({type:c.dataset.type,sku:c.dataset.sku,quantity:Number([...app.querySelectorAll('[data-qty]')].find(q=>q.dataset.qty===c.dataset.sku)?.value),target:c.closest('.card')?.querySelector('.wep-option-stock-content,.stock-details'),name:c.dataset.name||c.dataset.sku}))];}
+ // A fresh equipment visit starts with eligible stock, even after an orderable card/cart preview.
+ // Exact unit links and resumed private builds retain their explicit pricing source.
+ function initialStockChoice(line,available,stored){
+  if(line.type==='tool'&&clean(query.get('inventoryId')))return clean(query.get('inventoryId'));
+  if(line.type==='tool'&&query.get('unit'))return clean(available.find(x=>clean(x.unitRef)===clean(query.get('unit')))?.selectionId)||'__unavailable__';
+  if(line.type==='tool'&&query.get('stockChoice')==='orderable')return '';
+  if(stored?.inventoryId)return clean(stored.inventoryId);
+  if(stored?.quoteStockChoice==='orderable'&&(line.type!=='tool'||window.WEPDealerOrderEdit||window.WEPBuildSession))return '';
+  return available.length?clean(available[0].selectionId):'';
+ }
  function refreshStockControls(){
   if(!inventoryRows)return;
   const identity=currentIdentity(),saved=cart();
@@ -825,7 +835,7 @@
    const inlineMain=line.type==='tool'&&!!app.querySelector('.hero.wep-tractor-compact');
    const key=sourceKey(line.type,line.sku),existing=stockChoices.get(key),stored=saved.find(x=>clean(x.brandId).toUpperCase()===identity.brandId&&x.packageId===identity.brandId+':'+identity.sku&&x.type===line.type&&clean(x.sku)===line.sku&&Number(x.quantity)===line.quantity);
    let value=existing?.value;
-   if(!existing){if(line.type==='tool'&&query.has('inventoryId'))value=clean(query.get('inventoryId'));else if(line.type==='tool'&&query.get('unit'))value=clean(available.find(x=>clean(x.unitRef)===clean(query.get('unit')))?.selectionId)||'__unavailable__';else if(stored?.inventoryId)value=clean(stored.inventoryId);else if(stored?.quoteStockChoice==='orderable')value='';else value=available.length?clean(available[0].selectionId):'';}
+   if(!existing)value=initialStockChoice(line,available,stored);
    if(value&&(!available.some(x=>clean(x.selectionId)===value)||exact.length>1))value='__unavailable__';
    stockChoices.set(key,{value,quantity:line.quantity});
    let wrap=inlineMain?line.target.parentElement.querySelector(':scope>.wep-build-stock-choice'):line.target.querySelector('.wep-build-stock-choice');if(!wrap){wrap=document.createElement('label');wrap.className='wep-build-stock-choice';wrap.append(document.createTextNode(line.type==='tool'?'Choose Your Unit':'Availability'));const select=document.createElement('select');select.setAttribute('aria-label','Pricing source for '+line.name);wrap.append(select);if(inlineMain)line.target.after(wrap);else line.target.append(wrap);select.addEventListener('change',()=>{stockChoices.set(key,{value:select.value,quantity:Number(line.type==='tool'?app.querySelector('#equipment-qty').value:[...app.querySelectorAll('[data-qty]')].find(q=>q.dataset.qty===line.sku)?.value)});cartPaused=false;schedule(true);});}
@@ -1151,3 +1161,4 @@
  window.addEventListener('resize',()=>syncPaymentCards());
  new MutationObserver(()=>{mount();syncOptionButtons();syncPaymentCards();}).observe(app,{childList:true,subtree:true});mount();syncOptionButtons();syncPaymentCards();
 })();
+
