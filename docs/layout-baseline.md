@@ -174,3 +174,9 @@ Change a baseline only when John requests or approves that layout change.
 - Across every manufacturer, Attachments and Accessories each use one horizontal scrolling row with previous/next arrows, keyboard scrolling and touch scrolling. They do not expand into a multirow View All grid. Implements retain their existing category and View All controls.
 - Opening a price-tag View link preserves the requested Attachments or Accessories panel during compact-layout enhancement.
 
+
+## Build & Buy chainsaw bars (November 2, 2026)
+
+- Non-battery chainsaws show Std. Bar and Light Bar rows under the equipment price, using active published family SKUs and the same first-by-SortOrder size choices as the shopping tags. The incoming exact SKU stays selected.
+- A bar change transfers quantity, delivery, payment preferences and compatible extras through the existing configuration migration, then reloads pricing for the selected SKU. Other cart packages remain intact. In-stock bar choices stay locked until Build to Order is selected.
+

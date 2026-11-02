@@ -1,0 +1,10 @@
+.wep-bar-options{margin:10px 0 14px;max-width:100%;font:13px/1.4 Arial,sans-serif}
+.wep-bar-row{display:flex;align-items:center;gap:8px;margin:5px 0}
+.wep-bar-row>strong{flex:0 0 58px;white-space:nowrap;text-align:right}
+.wep-bar-row>[role=group]{display:flex;gap:4px;min-width:0;overflow-x:auto;padding:2px}
+.wep-bar-row button{flex:0 0 auto;min-width:36px;padding:7px 8px;border:1px solid #9ebda7;border-radius:4px;background:#fff;color:#155d2d;font:inherit;cursor:pointer;white-space:nowrap}
+.wep-bar-row button[aria-pressed=true]{background:#e1e3e5;border-color:#73777b;box-shadow:inset 0 -2px #73777b;color:#292d31}
+.wep-bar-row button:disabled{cursor:default;opacity:.55}
+.wep-bar-row button[aria-pressed=true]:disabled{opacity:1}
+.wep-bar-row button:focus-visible{outline:2px solid #287a32;outline-offset:2px}
+.wep-bar-options>p{font-size:12px;color:#56635b;margin:5px 0}

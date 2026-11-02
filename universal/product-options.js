@@ -785,7 +785,7 @@ async function init(){
   wireBuildPage();
   if(location.hash==='#wep-itemized-quote')requestAnimationFrame(()=>requestAnimationFrame(()=>{$('wep-itemized-quote')?.scrollIntoView({block:'start'});}));
   if(!implementBrowser&&window.WEPFactoryOptions){
-   WEPFactoryOptions.mount({products,product,brand:selectedBrand,onChange:next=>{
+   const changeConfiguration=next=>{
     const snapshot=window.WEPBuildConfiguration?.snapshot();
     if(!snapshot)throw Error('Please wait for availability to load, then try again.');
     const nextSku=clean(next.SKU),nextContext=WEPBuildBuy.context(next,runtime,batteries,chargers);
@@ -799,9 +799,11 @@ async function init(){
     const cart=JSON.parse(buildStorage.getItem('wepCart')||'[]');
     const plan=WEPFactoryOptions.transfer({snapshot,current:product,next,brand:selectedBrand,cart,allowed});
     WEPFactoryOptions.persist(plan,buildStorage,sessionStorage);
-    const url=new URL(location.href);url.searchParams.set('sku',nextSku);url.searchParams.set('brand',selectedBrand);url.searchParams.delete('unit');url.searchParams.delete('inventoryId');url.hash='';
+    const url=new URL(location.href);url.searchParams.set('sku',nextSku);url.searchParams.set('brand',selectedBrand);url.searchParams.delete('unit');url.searchParams.delete('inventoryId');url.searchParams.delete('cardOptions');url.searchParams.set('quantity',String(plan.draft.items[0].quantity));url.hash='';
     window.WEPBuildConfiguration.leave();location.replace(url.href);
-   }});
+   };
+   WEPFactoryOptions.mount({products,product,brand:selectedBrand,onChange:changeConfiguration});
+   window.WEPBarOptions?.mount({products,product,brand:selectedBrand,onChange:changeConfiguration});
    try{
     const saved=JSON.parse(sessionStorage.getItem('wepBuildDraft:'+selectedBrand.toUpperCase()+':'+sku)||'null');
     if(saved?.configurationNotice){const notice=document.createElement('p');notice.className='wep-configuration-notice';notice.setAttribute('role','status');notice.textContent=saved.configurationNotice+'. Pricing is being updated for this configuration; select a payment option when ready.';document.querySelector('.hero').after(notice);}
@@ -812,3 +814,4 @@ async function init(){
 }
 init();
 })();
+
