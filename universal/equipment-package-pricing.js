@@ -112,7 +112,7 @@
   }).join('');
   const offer=c.promoInfo(m.tool),sale=offer?.type==='sale',basePrice=sale?offer.price:m.tool.msrp||m.tool.price;
   return '<div class="pp-box pp-equipment-base'+(!selected?' pp-selected':'')+'" data-pp-box="tool"><button class="pp-price-select" type="button" data-eqp-select="tool" aria-pressed="'+!selected+'"><span>'+esc(f.brand)+' Base Price:</span><span class="pp-prices">'+(sale?'<del>'+c.money(offer.regular)+'</del>':'')+'<strong>'+c.money(basePrice)+'</strong></span></button></div>'+
-   '<div class="pp-box pp-package pp-equipment-package'+(selected?' pp-selected':'')+'" data-pp-box="package"><button class="pp-price-select pp-package-total" type="button" data-eqp-select="package" aria-pressed="'+selected+'"><span>'+(m.emptyBattery?'Package Price:':'Package MSRP:')+'</span><span class="pp-prices"><strong>'+(config.error?'Confirm price':c.money(config.msrp))+'</strong></span></button>'+rows+(config.parts.some(p=>p.required)?'<small class="pp-package-contents">Includes required '+esc(config.parts.filter(p=>p.required).map(p=>p.row.Description).join(' · '))+'</small>':'')+(config.error?'<small class="pp-package-contents" role="alert">'+esc(config.error)+'</small>':'')+'</div>';
+   '<div class="pp-box pp-package pp-equipment-package'+(selected?' pp-selected':'')+'" data-pp-box="package"><button class="pp-price-select pp-package-total" type="button" data-eqp-select="package" aria-pressed="'+selected+'"><span>'+(m.emptyBattery?'Package Price:':'Package MSRP:')+'</span><span class="pp-prices"><strong>'+(config.error?'Confirm price':c.money(config.msrp))+'</strong></span></button>'+rows+(m.emptyBattery?window.WestEndPackagePricing?.inclusion(f,c)||'':'')+(config.parts.some(p=>p.required)?'<small class="pp-package-contents">Includes required '+esc(config.parts.filter(p=>p.required).map(p=>p.row.Description).join(' · '))+'</small>':'')+(config.error?'<small class="pp-package-contents" role="alert">'+esc(config.error)+'</small>':'')+'</div>';
  }
  function tool(f){return entry(f)?.m.tool;}
  function buildUrl(f,c){const e=entry(f);if(!e||e.m.stock||e.m.standard)return null;const config=configuration(e.m,e.s,c),url=new URL(c.paymentSelectionUrl(f));url.pathname=url.pathname.replace(/payment-options(?:\.html)?\/?$/,'product-options.html');url.hash='';url.searchParams.set('sku',e.m.tool.sku);url.searchParams.delete('package');url.searchParams.set('cardOptions',JSON.stringify(config.parts.filter(p=>!p.required).map(p=>({type:p.type,sku:clean(p.row.SKU),quantity:p.quantity}))));return url.href;}
@@ -163,3 +163,4 @@
  }
  window.WestEndEquipmentPackages={render,tool,buildUrl,actions,handle,publishedPrice,compatibility,requirements,requirementSlots,hasModelRequirements,pickerUrl,shortName};
 })();
+

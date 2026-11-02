@@ -344,3 +344,7 @@
 
 /* Required down payments occupy a reserved row on every financing tag. */
 #market-app .wep-restored-card .market-card-finance-down{min-height:18px;flex:0 0 18px;font:700 12px/18px Arial,sans-serif}
+
+
+/* Every battery tag reserves the same space for its selected package contents. */
+#market-app .wep-restored-card .pp-inclusion{height:30px;min-height:30px;display:flex;align-items:center;justify-content:center;line-height:15px;overflow:auto}

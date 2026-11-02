@@ -110,6 +110,23 @@
 
  }
  function inventory(c,f,v,kind){return '<div class="market-price-inventory">'+c.inventoryMarkup(f,v,kind)+'</div>';}
+ function inclusion(f,c){
+  if(!/battery/i.test(f.power))return '';
+  const m=model(f,c);let parts=[];
+  if(m){const s=state(f,m);parts=s.choice==='tool'?[]:configured(m,s,c).parts;}
+  else {
+   // Fixed stock and kit-only cards use their exact published package contents.
+   const source=c.DATA.componentSources?.[key(f.brand)]||(key(f.brand)==='STIHL'?{packages:c.DATA.packages||[]}:null),selected=c.selectedPriceVariant(f);
+   const row=source?.packages?.find(r=>(!clean(r.Active)||yes(r.Active))&&key(r.ParentSKU)===key(selected?.sku));
+   if(row){for(const type of ['Battery','Charger'])for(const field of Object.keys(row).filter(h=>new RegExp('^'+type+'SKU\\d+$','i').test(h))){if(clean(row[field]))parts.push({type:type.toLowerCase(),qty:qty(row[type+'Qty'+field.match(/\d+$/)[0]])});}}
+   else if(/kit|package/i.test(selected?.type))return '<small class="pp-package-contents pp-inclusion">See product details for battery and charger contents</small>';
+  }
+  const battery=parts.filter(p=>p.type==='battery').reduce((n,p)=>n+p.qty,0),charger=parts.filter(p=>p.type==='charger').reduce((n,p)=>n+p.qty,0);
+  const included=[battery?battery+' '+(battery===1?'battery':'batteries'):'',charger?charger+' '+(charger===1?'charger':'chargers'):''].filter(Boolean);
+  if(parts.some(p=>!['battery','charger'].includes(p.type)))included.push('Required items included');
+  const missing=!battery&&!charger?'Batteries and chargers sold separately':!battery?'Batteries sold separately':!charger?'Charger sold separately':'';
+  return '<small class="pp-package-contents pp-inclusion">'+esc((included.length?'Includes: '+included.join(' · '):'')+(included.length&&missing?' · ':'')+missing)+'</small>';
+ }
  function render(f,c){
   contexts.set(f.key,{f,c});const m=model(f,c);if(!m)return null;
   const initial=!states.has(f.key),s=state(f,m),pkg=configured(m,s,c);
@@ -118,7 +135,7 @@
    '<button class="pp-price-select" type="button" data-pp-select="tool" aria-pressed="'+(s.choice==='tool')+'"><span>'+esc(clean(f.brand)?clean(f.brand)+' Base Price:':'Base Price:')+'</span>'+prices(m.tool.msrp,m.tool.price)+'</button></div>'+
    '<div class="pp-box pp-package'+(s.choice==='package'?' pp-selected':'')+'" data-pp-box="package">'+
    '<button class="pp-price-select pp-package-total" type="button" data-pp-select="package" aria-pressed="'+(s.choice==='package')+'"><span>Package Price:</span>'+prices(pkg.regular,pkg.price)+'</button>'+
-   row(f,m,s,'Battery')+row(f,m,s,'Charger')+((pkg.parts.some(p=>p.qty>1)||pkg.parts.some(p=>!['battery','charger'].includes(p.type)))?'<small class="pp-package-contents">Includes: '+esc(['battery','charger'].map(type=>{const count=pkg.parts.filter(p=>p.type===type).reduce((n,p)=>n+p.qty,0);return count?count+' '+(type==='battery'?(count===1?'battery':'batteries'):(count===1?'charger':'chargers')):'';}).filter(Boolean).concat(pkg.parts.some(p=>!['battery','charger'].includes(p.type))?['Required items included']:[]).join(' · '))+'</small>':'')+(pkg.error?'<small class="pp-package-contents">'+esc(pkg.error)+'</small>':'')+'</div>';
+   row(f,m,s,'Battery')+row(f,m,s,'Charger')+inclusion(f,c)+(pkg.error?'<small class="pp-package-contents">'+esc(pkg.error)+'</small>':'')+'</div>';
  }
  function popup(message,opener){
   document.querySelector('.pp-dialog')?.remove();const dialog=document.createElement('dialog');dialog.className='pp-dialog';dialog.setAttribute('aria-label','Choose your purchase option');
@@ -192,5 +209,6 @@
   let url='';try{const parsed=new URL(clean(row.WarrantyURL||row.WarrantyStatementURL||row.ManufacturerWarrantyURL));if(['http:','https:'].includes(parsed.protocol))url=parsed.href;}catch{}
   return '<div class="market-card-warranty">'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">':'<span>')+esc(text)+(url?'</a>':'</span>')+'</div>';
  }
- window.WestEndPackagePricing={render,actions,handle,warranty,tool,buildUrl};
+ window.WestEndPackagePricing={inclusion,render,actions,handle,warranty,tool,buildUrl};
 })();
+

@@ -12,6 +12,27 @@ function fixture(){
  const c={selectedPriceVariant:()=>selected,selectedStock:()=>null,DATA:{batteries:[{SKU:'BAT',BatteryID:'AK30',MSRP:60},{SKU:'BAT2',BatteryID:'AK20',MSRP:50}],chargers:[{SKU:'CHG',ChargerID:'AL101',MSRP:40}],compatibility:[{ToolSKU:'TOOL',BatteryID1:'AK20'}],packages:[{ParentSKU:'KIT',BatterySKU1:'BAT',ChargerSKU1:'CHG'}]},currentPrice:r=>Number(r.MSRP),paymentSelectionUrl:()=>`https://dealer.example/payment-options.html?brand=STIHL&sku=${selected.sku}&quantity=1`,inventoryMarkup:()=>'',priceChoices:()=>[],pricePanel:()=>'',stockHeaderMarkup:()=>'',sawHeaderBars:()=>'',state:{compare:new Set()},promoInfo:()=>null,money:String,cardFinanceMarkup:()=>'',selectPackageVariant:(_,v)=>selected=v,refreshSelectedCard(){}};
  c.selectedPriceQuantity=()=>1;c.updateCartFloat=()=>{};c.track=()=>{};return {window,document,f,c,stored};
 }
+test('battery contents line always follows selected quantities and removed components',()=>{
+ const {window,f,c}=fixture(),api=window.WestEndPackagePricing;
+ c.DATA.packages[0].BatteryQty1=2;
+ let html=api.render(f,c);assert.match(html,/pp-inclusion">Includes: 2 batteries · 1 charger<\/small>/);
+ const host={dataset:{key:f.key}},click=(selector,dataset)=>api.handle({target:{closest(s){return s==='.wep-restored-card'?host:s===selector?{dataset,disabled:false}:null;}}});
+ click('[data-pp-component]',{ppComponent:'charger',ppIndex:'0'});
+ html=api.render(f,c);assert.match(html,/Includes: 2 batteries · Charger sold separately/);
+ click('[data-pp-select]',{ppSelect:'tool'});
+ html=api.render(f,c);assert.match(html,/pp-inclusion">Batteries and chargers sold separately<\/small>/);
+ click('[data-pp-select]',{ppSelect:'package'});
+ assert.match(api.render(f,c),/Includes: 2 batteries · Charger sold separately/);
+});
+test('one-battery kits and fixed stock retain a visible exact contents line',()=>{
+ const {window,f,c}=fixture(),api=window.WestEndPackagePricing;
+ assert.match(api.render(f,c),/pp-inclusion">Includes: 1 battery · 1 charger<\/small>/);
+ c.selectedStock=()=>({selectionId:'stock'});c.DATA.packages[0].BatteryQty1=2;
+ assert.match(api.inclusion(f,c),/Includes: 2 batteries · 1 charger/);
+ c.selectPackageVariant(f,f.variants[0]);assert.match(api.inclusion(f,c),/Batteries and chargers sold separately/);
+ c.selectPackageVariant(f,f.variants[1]);c.DATA.packages=[];assert.match(api.inclusion(f,c),/See product details/);
+ f.power='Gas';assert.equal(api.inclusion(f,c),'');
+});
 test('compact image rebate follows the exact selected factory SKU rather than the bare identity',()=>{
  const {window,f,c}=fixture();f.brand='YANMAR';f.category='Compact Tractors';f.power='Diesel';
  const bare=f.variants[0],loader=f.variants[1];bare.sku='TRACTOR';loader.sku='TRACTOR-L';
@@ -177,3 +198,4 @@ for(const path of ['universal/marketplace.js','shop-by-product.html','shop-by-br
  const result=vm.runInNewContext(fn+';cardFinanceMarkup({brand:"STIHL"},"https://dealer.example/product-options.html")',{financeSummaryKey:()=> 'STIHL|SKU|1',URL,esc:x=>x,DATA:{financeSummaryCache:new Map([['STIHL|SKU|1',{none:true}]])},requestMarketplaceFinanceSummary(){}});
  assert.match(result,/View All Promotions/);assert.match(result,/Out-the-Door Price/);assert.doesNotMatch(result,/market-card-finance|market-payment-options-only|Updating financing/);
 });
+
