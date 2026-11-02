@@ -394,7 +394,7 @@
   const offers=Array.isArray(window.WEPBuildRebateOffers)?window.WEPBuildRebateOffers:[],details=[];
   for(const line of quote.lines||[]){const rows=offers.filter(o=>o.type===line.type&&clean(o.sku).toUpperCase()===clean(line.sku).toUpperCase()&&offerMetadataActive(o,quote.createdAt));if(rows.length===1&&validMoney(rows[0].amount)&&Number.isInteger(Number(line.quantity))&&Number(line.quantity)>0)details.push({...rows[0],amount:Math.round(rows[0].amount*Number(line.quantity)*100)/100});}
   if(details.length&&Math.abs(details.reduce((n,o)=>n+o.amount,0)-amount)<.01){
-   for(const raw of [...new Set(details.map(o=>clean(o.endDate)).filter(Boolean))]){const date=new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw)?raw+'T12:00:00':raw);if(Number.isFinite(date.getTime()))footer.append(note('Ends '+date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),'wep-rebate-expiry'));}
+   for(const raw of [...new Set(details.map(o=>clean(o.endDate)).filter(Boolean))]){const date=new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw)?raw+'T12:00:00':raw);if(Number.isFinite(date.getTime()))footer.append(note('Expires '+date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),'wep-rebate-expiry'));}
   }
   card.append(footer);
  }
@@ -427,7 +427,7 @@
   const monthly=note('','wep-build-finance-monthly'),strong=document.createElement('strong');strong.textContent=money(plan.monthlyPayment);monthly.append(strong,document.createTextNode(' / month (est.)'));target.append(monthly);
   target.append(note(money(plan.requiredDown)+' down payment','wep-finance-rebate-note'));
   if(rebateCompatible(plan.program))appendManufacturerRebate(target,quote,financeRebate(quote,snapshot));
-  if(target===inLieuOutput&&clean(plan.program.EndDate)){
+  if(clean(plan.program.EndDate)){
    const raw=clean(plan.program.EndDate),date=new Date(/^\d{4}-\d{2}-\d{2}$/.test(raw)?raw+'T12:00:00':raw);
    if(Number.isFinite(date.getTime())){const footer=document.createElement('div');footer.className='wep-finance-expiry-footer';footer.append(note('Ends '+date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),'wep-rebate-expiry'));target.closest('.wep-package-payment-card')?.append(footer);}
   }
