@@ -442,3 +442,15 @@
 /* Clearly distinguish stocked equipment from a configurable order unit. */
 .wep-main-unit-choice{font-weight:700}.wep-main-unit-choice select{font-weight:700;border-width:2px}.wep-main-unit-choice[data-unit-source="stock"] select{border-color:#287a32;background:#edf5ed;color:#174f22}.wep-main-unit-choice[data-unit-source="orderable"] select{border-color:#356c99;background:#edf3f8;color:#214c70}.wep-main-unit-choice[data-unit-source="unavailable"] select{border-color:#a33b30;background:#fff1ed;color:#84261e}
 #app .wep-tractor-compact .wep-build-controls-row .wep-main-unit-choice{flex:0 1 252px;min-width:210px;max-width:100%}
+
+/* Keep financing choices readable when browser text sizing differs between stores. */
+.wep-finance-chart-host{max-width:100%}
+.wep-finance-chart-host .wep-finance-compare-row{display:flex;flex-wrap:nowrap;width:100%;min-width:0;overflow-x:auto;align-items:stretch}
+.wep-finance-chart-host .wep-finance-compare-card{box-sizing:border-box;height:auto;min-height:0}
+.wep-finance-chart-host .wep-chart-choice{box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;width:100%;height:auto;min-width:0;white-space:normal;line-height:1.4}
+.wep-finance-chart-host .wep-chart-choice h4,
+.wep-finance-chart-host .wep-chart-choice .wep-finance-compare-monthly,
+.wep-finance-chart-host .wep-chart-choice .wep-chart-out-the-door,
+.wep-finance-chart-host .wep-chart-choice .wep-chart-required-down{box-sizing:border-box;display:block;flex:none;position:static;width:100%;max-width:100%;height:auto;margin:0;white-space:normal;overflow-wrap:anywhere;line-height:1.4}
+.wep-finance-chart-host .wep-finance-compare-heading{min-width:0;flex-wrap:wrap}
+.wep-finance-chart-host .wep-finance-compare-heading h2{min-width:0;overflow-wrap:anywhere}
