@@ -162,22 +162,23 @@ function showMarketplacePayment(q,snapshot){
  $('payment-status').textContent=q.fulfillment==='SHIP'?'Shipping and billing addresses must match. Stripe verification and fraud checks are required.':'';
 }
 /* WEP_CUSTOMER_SESSION_V1 */
+const customerStorageKey=window.WEPDealerOrderEdit?.customerKey||'wepCheckoutCustomer';
 const customerSessionFields=['firstName','lastName','companyName','email','phone','address1','address2','city','state','zip'];
 function rememberCheckoutCustomer(){
  try{
-  const customer={},form=$('payment-form');
+  const customer=JSON.parse(sessionStorage.getItem(customerStorageKey)||'{}'),form=$('payment-form');
   for(const key of customerSessionFields){
    const input=form.elements.namedItem(key);
    if(input)customer[key]=String(input.value||'');
   }
-  sessionStorage.setItem('wepCheckoutCustomer',JSON.stringify(customer));
+  sessionStorage.setItem(customerStorageKey,JSON.stringify(customer));
  }catch(_error){}
 }
 function restoreCheckoutCustomer(){
  const form=$('payment-form');
  try{
-  let customer=JSON.parse(sessionStorage.getItem('wepCheckoutCustomer')||'null');
-  if(!customer){
+  let customer=JSON.parse(sessionStorage.getItem(customerStorageKey)||'null');
+  if(!customer&&!window.WEPDealerOrderEdit){
    const pending=paymentRecord();
    customer=pending?.identity?JSON.parse(pending.identity).customer:null;
   }
