@@ -114,6 +114,7 @@ function acceptCarried(q,originalItems){
  render(q);showMarketplacePayment(q,cartText());return true;
 }
 window.WEPCheckout={
+ current:()=>({selection:window.WEPCheckout.context(),quote:quote&&paymentCart===cartText()&&Date.now()-Date.parse(quote.createdAt)<300000?quote:null,paymentConfirmed:!!quote&&['cash','credit','finance'].includes(quote.paymentMethod)}),
  quoteSlot,acceptCarried,
  context:()=>({items:readCart(),...toroChoices(),financeDownPayments:financeDownPayments(),paymentMethod:new FormData($('choices')).get('paymentMethod'),fulfillment:selectedFulfillment(),zip:$('zip').value||'',financeProgramIds:new FormData($('choices')).get('paymentMethod')==='finance'?financeProgramIds():{},...(selectedFulfillment()==='SHIP'?{shippingAddress:shippingAddress()}:{})}),
  api,
@@ -281,3 +282,4 @@ try{readCart();loadShippingEligibility();changes();}catch(e){$('choices').hidden
 // WEP_MARKETPLACE_SECURE_CHECKOUT_V1
 
 // WEP_MARKETPLACE_DELIVERY_V1
+

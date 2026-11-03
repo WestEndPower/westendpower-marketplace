@@ -23,7 +23,7 @@
   host.append(make('h3','TORO Programs'));
   const row=make('div');row.className='wep-toro-choice-row';
   for(const program of options.programs){const button=make('button',program.label),active=selected?.key===program.key;button.type='button';button.setAttribute('aria-pressed',String(active));button.onclick=()=>{if(active){selected=null;render();change();}else confirmProgram(program);};row.append(button);}
-  host.append(row,make('p',selected?options.programs.find(p=>p.key===selected.key)?.message+' Eligibility confirmed by customer.':'Select a program to review and confirm eligibility.'));
+  host.append(row,make('p',selected?options.programs.find(p=>p.key===selected.key)?.message+(window.WEPDealerOrderEdit?' Program selected for staff review. Confirm customer eligibility before saving.':' Eligibility confirmed by customer.'):'Select a program to review and confirm eligibility.'));
  }
  function mount(parent){host=make('section');host.className='wep-toro-programs';host.hidden=true;parent.append(host);render();}
  async function load(snapshot,post,signal){
@@ -47,3 +47,4 @@
  }
  window.WEPToroCustomerOptions={choices,restore,load,mount,freightControl};
 })();
+
