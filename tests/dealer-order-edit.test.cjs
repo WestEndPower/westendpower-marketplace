@@ -38,3 +38,10 @@ test('the actual Toro program control restores Fleet1 as the selected button',as
  await ui.load({items:[{brandId:'TORO',type:'tool',sku:'72525'}]},async()=>({programs:[{key:'NALP',label:'NALP',qualified:true,message:'NALP'},{key:'FleetTier1',label:'Toro Fleet Pro',qualified:true,message:'Fleet'}],freight:{available:false}}),{aborted:false});
  const buttons=parent.children[0].children[1].children;assert.equal(buttons[1].textContent,'Toro Fleet Pro');assert.equal(buttons[1].attributes['aria-pressed'],'true');assert.equal(buttons[0].attributes['aria-pressed'],'false');assert.equal(ui.choices().dealerPrograms.TORO.key,'FleetTier1');
 });
+
+test('entering from a pricing-program button clears every saved payment choice without clearing the program or package',()=>{
+ const f=setup({multi:true,section:'programs'}),draft=JSON.parse(f.session.getItem('wepBuildDraft:TORO:72525')),other=JSON.parse(f.session.getItem('wepBuildDraft:HONDA:667570')),review=JSON.parse(f.session.getItem('wepCheckoutReviewSelection'));
+ for(const value of [draft,other,review.context]){assert.equal(value.paymentMethod,'standard');assert.equal(value.paymentConfirmed,false);assert.deepEqual(value.financeProgramIds,{});assert.deepEqual(value.financeProgramEndDates,{});assert.equal(value.dealerPrograms.TORO.key,'NALP');}
+ assert.equal(draft.programId,'');assert.equal(draft.items.length,2);assert.equal(other.items.length,1);assert.equal(f.seed.draft.paymentMethod,'finance');assert.equal(f.local.getItem('wepCart'),'NORMAL CART');
+ const payment=setup({section:'payment'}),saved=JSON.parse(payment.session.getItem('wepBuildDraft:TORO:72525'));assert.equal(saved.paymentConfirmed,true);assert.equal(saved.programId,'PLAN');
+});
