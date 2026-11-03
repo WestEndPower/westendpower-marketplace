@@ -27,7 +27,9 @@
   for(const main of editable.filter(line=>line.type==='tool')){const packageId=main.packageId;sessionStorage.setItem('wepBuildDraft:'+main.brandId+':'+main.sku,JSON.stringify({...draft,brandId:main.brandId,sku:main.sku,programId:draft.financeProgramIds?.[main.brandId]||'',items:editable.filter(line=>line.packageId===packageId),paymentConfirmed:draft.paymentConfirmed!==false,updated:Date.now()}));}
   saveContext({...draft,items:editable});
  }
- window.WEPBuildStorage=storage;window.WEPDealerOrderEdit={storage,quoteId:seed.quoteId,fullQuote:seed.fullQuote===true};
+ const customerKey=prefix+':customer',customerFields=['firstName','lastName','companyName','phone','cell','email','address1','address2','city','state','zip','notes'];
+ if(sessionStorage.getItem(customerKey)===null)sessionStorage.setItem(customerKey,JSON.stringify(Object.fromEntries(customerFields.map(key=>[key,typeof seed.customer?.[key]==='string'?seed.customer[key]:'']))));
+ window.WEPBuildStorage=storage;window.WEPDealerOrderEdit={storage,customerKey,quoteId:seed.quoteId,fullQuote:seed.fullQuote===true};
  sessionStorage.setItem('wepDealerEditSeed:'+seed.nonce,JSON.stringify(seed));
  const url=new URL(location.href);url.searchParams.set('dealerEdit',seed.nonce);url.hash='';history.replaceState(null,'',url.href);
  let pendingRequest='',handoffTimer;

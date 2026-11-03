@@ -3,10 +3,11 @@
  'use strict';
  const $=id=>document.getElementById(id),clean=v=>String(v??'').trim();
  let shippingTimer,shippingController,shippingGeneration=0,shippingKey='',opened=false,busy=false;
+ const customerStorageKey=window.WEPDealerOrderEdit?.customerKey||'wepCheckoutCustomer';
  const fields=['firstName','lastName','companyName','phone','cell','email','address1','city','state','zip','notes'];
  function state(){if(!window.WEPBuilderCheckout)throw Error('Wait for your package to finish loading.');return WEPBuilderCheckout.current();}
  function customer(){const form=$('wep-inline-form');return WEPCustomerFormat.customer({address2:'',...Object.fromEntries(fields.map(k=>[k,clean(form?.elements.namedItem(k)?.value)]))});}
- function remember(){try{sessionStorage.setItem('wepCheckoutCustomer',JSON.stringify(customer()));}catch(_){}}
+ function remember(){try{sessionStorage.setItem(customerStorageKey,JSON.stringify(customer()));}catch(_){}}
  function message(text){for(const target of document.querySelectorAll('#wep-inline-status,#options-message,.wep-inline-print-status'))target.textContent=text;}
  function fresh(){const s=state();if(!s.paymentConfirmed||!s.quote||!['cash','credit','finance'].includes(s.quote.paymentMethod))throw Error('Select a payment option and wait for your current quote.');if(s.quote.fulfillment==='SHIP'&&WEPQuoteRequest.addressKey(customer())!==WEPQuoteRequest.addressKey(s.quote.shippingDetails?.destination))throw Error('Wait for shipping and tax to update for this address.');return s;}
   function reference(force=false){try{let saved=JSON.parse(sessionStorage.getItem('wepInlineReference')||'null');const s=state(),key=JSON.stringify(s.selection.items);if(!force&&saved?.key===key)return saved.reference;const id=crypto.randomUUID?crypto.randomUUID().slice(0,8):Array.from(crypto.getRandomValues(new Uint8Array(4)),n=>n.toString(16).padStart(2,'0')).join('');saved={key,reference:'Q-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+id.toUpperCase()};sessionStorage.setItem('wepInlineReference',JSON.stringify(saved));return saved.reference;}catch(_){return 'Equipment Quote';}}
@@ -46,7 +47,7 @@
   for(const group of [actions,totals])if(group&&!group.querySelector('.wep-inline-print-status')){const status=document.createElement('p');status.className='wep-inline-print-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');group.append(status);}
   if(!$('wep-inline-customer')){
    const section=document.createElement('section');section.id='wep-inline-customer';section.className='wep-inline-customer';section.hidden=true;section.innerHTML=formMarkup();invoice.after(section);
-   try{const saved=JSON.parse(sessionStorage.getItem('wepCheckoutCustomer')||sessionStorage.getItem('wepQuoteCustomer')||'{}');for(const key of fields)if(typeof saved[key]==='string')$('wep-inline-form').elements.namedItem(key).value=saved[key];if(clean(saved.address2))$('wep-inline-form').elements.namedItem('address1').value=[clean(saved.address1),clean(saved.address2)].filter(Boolean).join(', ');}catch(_){}
+   try{const saved=JSON.parse(sessionStorage.getItem(customerStorageKey)||(!window.WEPDealerOrderEdit?sessionStorage.getItem('wepQuoteCustomer'):null)||'{}');for(const key of fields)if(typeof saved[key]==='string')$('wep-inline-form').elements.namedItem(key).value=saved[key];if(clean(saved.address2))$('wep-inline-form').elements.namedItem('address1').value=[clean(saved.address1),clean(saved.address2)].filter(Boolean).join(', ');}catch(_){}
    $('wep-inline-print-copy').onclick=printQuote;$('wep-inline-form').addEventListener('submit',submit);
    $('wep-inline-checkout-final').onclick=reviewCheckout;
    for(const key of fields)formatField($('wep-inline-form').elements.namedItem(key));
@@ -213,5 +214,6 @@
  window.addEventListener('focus',update);
  const app=$('app');if(app)new MutationObserver(mount).observe(app,{childList:true,subtree:true});mount();
 })();
+
 
 

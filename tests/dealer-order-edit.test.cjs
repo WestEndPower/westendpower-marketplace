@@ -1,9 +1,9 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const source=fs.readFileSync(require.resolve('../universal/dealer-order-edit.js'),'utf8');
 function store(entries=[]){const map=new Map(entries);return {getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,String(v)),removeItem:k=>map.delete(k)};}
-function setup({multi=false,fresh=true,checkout=false,section='equipment'}={}){
+function setup({multi=false,fresh=true,checkout=false,section='equipment',customer}={}){
  const items=[{brandId:'TORO',type:'tool',sku:'72525',quantity:1,inventoryId:'STOCK1',packageId:'TORO:72525'},{brandId:'TORO',type:'attachment',sku:'78593',quantity:1,inventoryId:'',packageId:'TORO:72525'}];if(multi)items.push({brandId:'HONDA',type:'tool',sku:'667570',quantity:1,inventoryId:'',packageId:'HONDA:667570'});
- const seed={quoteId:42,reference:'Q-TEST',nonce:'11111111-2222-3333-4444-555555555555',returnOrigin:'https://westendpower-configurator-api.westendpower-nm.workers.dev',fullQuote:true,section,draft:{brandId:'TORO',sku:'72525',items,paymentMethod:'finance',financeProgramIds:{TORO:'PLAN',HONDA:'OTHER'},financeDownPayments:{TORO:500},dealerPrograms:{TORO:{key:'NALP',verified:false,reference:''}},fulfillment:'NEW_MILFORD',zip:''}};
+ const seed={customer,quoteId:42,reference:'Q-TEST',nonce:'11111111-2222-3333-4444-555555555555',returnOrigin:'https://westendpower-configurator-api.westendpower-nm.workers.dev',fullQuote:true,section,draft:{brandId:'TORO',sku:'72525',items,paymentMethod:'finance',financeProgramIds:{TORO:'PLAN',HONDA:'OTHER'},financeDownPayments:{TORO:500},dealerPrograms:{TORO:{key:'NALP',verified:false,reference:''}},fulfillment:'NEW_MILFORD',zip:''}};
  const location=new URL('https://westendpower.github.io/westendpower-marketplace/product-options.html?brand=toro&sku=72525#dealer-edit='+encodeURIComponent(Buffer.from(JSON.stringify(seed)).toString('base64')));if(checkout)location.pathname='/westendpower-marketplace/checkout.html';location.assign=url=>location.assigned=url;
  const local=store([['wepCart','NORMAL CART']]),session=store(),listeners={},messages=[],buttons=[],nodes={},focused=[];
  const node=tag=>({tag,style:{},children:[],append(...children){this.children.push(...children);},setAttribute(k,v){this[k]=v;},scrollIntoView(){}});
@@ -44,4 +44,10 @@ test('entering from a pricing-program button clears every saved payment choice w
  for(const value of [draft,other,review.context]){assert.equal(value.paymentMethod,'standard');assert.equal(value.paymentConfirmed,false);assert.deepEqual(value.financeProgramIds,{});assert.deepEqual(value.financeProgramEndDates,{});assert.equal(value.dealerPrograms.TORO.key,'NALP');}
  assert.equal(draft.programId,'');assert.equal(draft.items.length,2);assert.equal(other.items.length,1);assert.equal(f.seed.draft.paymentMethod,'finance');assert.equal(f.local.getItem('wepCart'),'NORMAL CART');
  const payment=setup({section:'payment'}),saved=JSON.parse(payment.session.getItem('wepBuildDraft:TORO:72525'));assert.equal(saved.paymentConfirmed,true);assert.equal(saved.programId,'PLAN');
+});
+
+test('customer imports use a quote-specific session and whitelist only contact fields',()=>{
+ const f=setup({customer:{firstName:'Barry',lastName:'Decker',companyName:'Example Co',phone:'9144905866',cell:'2035550199',email:'barry@example.test',address1:'4 Bogus Hill Road',address2:'Unit 2',city:'New Fairfield',state:'CT',zip:'06812',notes:'Set delivery when in.',dealerCost:999}});
+ const key=f.window.WEPDealerOrderEdit.customerKey,customer=JSON.parse(f.session.getItem(key));assert.match(key,/wepDealerCart:42:.*:customer$/);assert.equal(customer.firstName,'Barry');assert.equal(customer.cell,'2035550199');assert.equal(customer.notes,'Set delivery when in.');assert.equal(customer.dealerCost,undefined);assert.equal(f.session.getItem('wepCheckoutCustomer'),null);assert.equal(f.seed.draft.customer,undefined);
+ const empty=setup(),blank=JSON.parse(empty.session.getItem(empty.window.WEPDealerOrderEdit.customerKey));assert.equal(blank.firstName,'');assert.equal(blank.notes,'');
 });
