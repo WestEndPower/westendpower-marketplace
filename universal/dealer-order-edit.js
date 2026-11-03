@@ -69,6 +69,11 @@
   const status=document.createElement('span');status.id='dealer-edit-status';status.setAttribute('role','status');status.textContent='Customer details, delivery charges and recorded payments stay on the original quote. Review before saving.';
   const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel & Return to Quote / Order';cancel.onclick=()=>{clearTimeout(handoffTimer);pendingRequest='';window.close();};
   bar.append(label,button,cancel,status);document.body.prepend(bar);
+  if(!checkout&&['programs','payment'].includes(seed.section)){
+   let observer;
+   const focus=()=>{const target=document.querySelector(seed.section==='programs'?'.wep-toro-programs':'.wep-package-payment-previews');if(!target||target.hidden||!target.getClientRects().length)return false;target.scrollIntoView({block:'center'});observer?.disconnect();return true;};
+   if(!focus()){observer=new MutationObserver(focus);observer.observe(document.getElementById('app')||document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});setTimeout(()=>observer.disconnect(),30000);}
+  }
   if(checkout){
    const editor=document.getElementById('payment-editor');if(editor)editor.open=true;
    if(draft.items.some(line=>line.brandId==='TORO')&&window.WEPToroCustomerOptions){
