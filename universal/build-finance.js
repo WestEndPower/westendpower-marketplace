@@ -185,7 +185,7 @@
   for(const method of ['finance','finance-inlieu']){
    const card=panel?.querySelector('[data-payment-preview="'+method+'"]');if(!card)continue;
    const kind=method==='finance-inlieu'?'inlieu':financeLayout.primary;
-   const title=financeLayout.hasRebate?(kind==='inlieu'?'Financing in Lieu of Rebates':'Financing + Rebates'):'';
+   const title=financeLayout.hasRebate?(kind==='inlieu'?'Financing in Lieu of Rebates':'Financing + Rebates'):'Financing';
    let heading=card.querySelector('h4');if(!title)heading?.remove();else if(!heading){heading=document.createElement('h4');heading.textContent=title;card.prepend(heading);}else if(heading.textContent!==title)heading.textContent=title;
    const choice=card.querySelector('.wep-payment-card-choice');const label='Select '+(title||'Financing');if(choice?.getAttribute('aria-label')!==label)choice?.setAttribute('aria-label',label);
    if(method==='finance-inlieu')card.hidden=!financeLayout.dual;
@@ -374,6 +374,18 @@
   }
   return waitForEligibility(job,signal);
  }
+ function rebateMetadataHint(snapshot,offers,createdAt){
+  // A selected program may exclude the regular catalog rebates. Wait for its
+  // actual priced quote instead of carrying a standard-price metadata hint.
+  if(Object.keys(snapshot.dealerPrograms||{}).length)return false;
+  return snapshot.items.some(item=>offers.some(o=>o.type===item.type&&clean(o.sku).toUpperCase()===clean(item.sku).toUpperCase()&&o.amount>0&&offerMetadataActive(o,createdAt)));
+ }
+ function resetProgramPaymentOffers(){
+  stopOffers();
+  panel?.querySelectorAll('.wep-payment-rebate-footer,.wep-finance-expiry-footer').forEach(el=>el.remove());
+  setFinanceLayout({}, {primary:'any',dual:false,hasRebate:false});
+  inLieuOutput?.replaceChildren();syncPaymentCards();
+ }
  function includedRebate(base,quote){
   if(!validMoney(base?.merchandise)||!validMoney(quote?.merchandise)||!Array.isArray(quote.lines))return 0;
   const paymentSavings=quote.lines.reduce((n,line)=>n+(validMoney(line.discount)?line.discount:0),0);
@@ -474,7 +486,7 @@
    }catch(error){if(signal.aborted||!fresh())return null;if(error.httpStatus===400&&/not eligible|financed amount.*limits|requires full payment upfront/i.test(error.message))continue;throw error;}}return null;};
    const baseTask=getQuote('standard').catch(()=>null),cashTask=getQuote('cash').catch(()=>null);
    const offers=Array.isArray(window.WEPBuildRebateOffers)?window.WEPBuildRebateOffers:[];
-   const metadataHint=snapshot.items.some(item=>offers.some(o=>o.type===item.type&&clean(o.sku).toUpperCase()===clean(item.sku).toUpperCase()&&o.amount>0&&offerMetadataActive(o,currentQuote.createdAt)));
+   const metadataHint=rebateMetadataHint(snapshot,offers,currentQuote.createdAt);
    // Start eligible financing quotes before the independent cash preview finishes.
    const compatibleTask=metadataHint?findEligible(candidates.filter(rebateCompatible)):null;
    const inlieuTask=metadataHint?findEligible(candidates.filter(p=>!rebateCompatible(p))):null;
@@ -1133,7 +1145,7 @@
  setInterval(()=>{if(!document.hidden)loadInventory(true);},300000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastInventoryCheck>300000)loadInventory(true);});
  // Public builder state shared with its own customer form; no separate review page.
- window.addEventListener('wep:toro-choice',event=>{if(event.detail?.kind==='program'){preferred='';paymentConfirmed=false;paymentSelect.value='';}schedule(true);});
+ window.addEventListener('wep:toro-choice',event=>{if(event.detail?.kind==='program'){preferred='';paymentConfirmed=false;paymentSelect.value='';resetProgramPaymentOffers();}schedule(true);});
  window.WEPBuilderCheckout={
   printPreviews:()=>{const build=JSON.stringify(previewBuild(state()));return JSON.parse(JSON.stringify([...paymentPreviews.values()].filter(col=>JSON.stringify(col.build)===build)));},
   refresh:()=>schedule(true),
@@ -1161,4 +1173,5 @@
  window.addEventListener('resize',()=>syncPaymentCards());
  new MutationObserver(()=>{mount();syncOptionButtons();syncPaymentCards();}).observe(app,{childList:true,subtree:true});mount();syncOptionButtons();syncPaymentCards();
 })();
+
 
