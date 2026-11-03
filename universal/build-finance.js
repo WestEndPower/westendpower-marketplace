@@ -658,8 +658,8 @@
  function createFinancingComparison(filter,mode){
  // WEP_MANUAL_FINANCE_COMPARISON_V1
  let comparisonDialog,comparisonController,comparisonGeneration=0,comparisonColumns=[],comparisonSnapshot,comparisonTable,comparisonStatus,comparisonMore,comparisonBusy=false,comparisonOpener,comparisonUpdate;
- let comparisonStale=false,comparisonFinancingOnly=mode,comparisonGroupFilter=filter,comparisonLimit=3,comparisonNext,comparisonDetails,comparisonShowDetails=false,comparisonProgramRows=[],comparisonSort,comparisonSortBy='rate',comparisonRanked=false,rankingCancel;
- const comparisonPageSize=3;
+ let comparisonStale=false,comparisonFinancingOnly=mode,comparisonGroupFilter=filter,comparisonLimit=6,comparisonNext,comparisonDetails,comparisonShowDetails=false,comparisonProgramRows=[],comparisonSort,comparisonSortBy='rate',comparisonRanked=false,rankingCancel;
+ const comparisonPageSize=6;
  function comparisonPrograms(){return comparisonProgramRows.filter(p=>comparisonGroupFilter==='any'||financeGroup(p)===comparisonGroupFilter);}
  function comparisonFresh(){try{return !!comparisonSnapshot&&JSON.stringify(comparisonSnapshot)===JSON.stringify(compareState());}catch(_){return false;}}
  function comparisonPlan(col){return col.quote?.financePlans?.find(p=>clean(p.brandId).toUpperCase()===comparisonSnapshot?.brandId&&clean(p.program?.ProgramID)===clean(col.program?.ProgramID));}
