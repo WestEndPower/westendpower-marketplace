@@ -165,9 +165,10 @@
   for(const p of programs)paymentSelect.append(new Option(programLabel(p),'finance:'+clean(p.ProgramID)));
   if(s.paymentMethod!=='finance')paymentSelect.value=s.paymentMethod;
   else if(chosen&&programs.some(p=>clean(p.ProgramID)===chosen))paymentSelect.value='finance:'+chosen;
-  else if(chosen){paymentSelect.append(new Option('Selected program unavailable — choose another',''));paymentSelect.value='';paymentConfirmed=false;throw Error('Your selected financing program is no longer eligible. Choose another payment option.');}
+  else if(chosen){paymentSelect.value='';paymentConfirmed=false;preferred='';checkoutPending=false;checkoutRefreshPending=false;return true;}
   else {paymentSelect.value='';paymentConfirmed=false;throw Error('Select a payment option from Select Payment Option.');}
   preferred=paymentSelect.value.startsWith('finance:')?paymentSelect.value.slice(8):'';
+  return false;
  }
  let offersController,offersVersion=0,offersBuildKey='',promoOutput,creditOutput,inLieuOutput,offerJoin,offerPlan=null,offerRebate=0;
  function syncOfferJoin(){}
@@ -570,7 +571,10 @@
    if(id!==generation)return;
    const rows=(result.programs||[]).filter(p=>clean(p.ProgramID)&&clean(p.APR)!==''&&Number.isFinite(number(p.APR))&&number(p.APR)>=0&&Number.isInteger(number(p.TermMonths))&&number(p.TermMonths)>0).sort((a,b)=>number(a.APR)-number(b.APR)||number(b.TermMonths)-number(a.TermMonths));
    const automatic=snapshot.paymentMethod==='finance'&&!preferred&&!snapshot.programId;
-   setPrograms(rows,snapshot);snapshot=state();activeSignature=JSON.stringify(snapshot);
+   const unavailable=setPrograms(rows,snapshot);snapshot=state();activeSignature=JSON.stringify(snapshot);
+   if(unavailable){
+    const message=document.getElementById('options-message');if(message){message.replaceChildren(document.createTextNode('The previous financing plan is not compatible with this program. Your package is unchanged. Choose another payment option. '));const choose=document.createElement('button');choose.type='button';choose.textContent='Choose compatible financing';choose.onclick=()=>openComparison(true,'any');message.append(choose);}
+   }
    const candidates=snapshot.paymentMethod==='finance'?(automatic?rows:rows.filter(p=>clean(p.ProgramID)===snapshot.programId)):[null];
    if(!candidates.length)throw Error('Choose an available payment option.');
    for(const candidate of candidates){

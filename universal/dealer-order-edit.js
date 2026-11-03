@@ -14,6 +14,9 @@
  const draft=structuredClone(seed.draft),brand=String(draft.brandId).toUpperCase(),sku=String(draft.sku),group=brand+':'+sku,lineKey=line=>[line.brandId,line.type||'tool',String(line.sku).toUpperCase()].join(':');
  const checkout=/\/checkout\.html$/i.test(location.pathname);
  draft.brandId=brand;draft.programId=draft.programId||draft.financeProgramIds?.[brand]||'';
+ // Pricing-program entry always requires a fresh payment decision.
+ if(seed.section==='programs'){draft.paymentMethod='standard';draft.paymentConfirmed=false;draft.programId='';draft.financeProgramIds={};draft.financeProgramEndDates={};}
+
  // A staff choice is preselected for review, not saved eligibility confirmation.
  for(const choice of Object.values(draft.dealerPrograms||{}))choice.verified=true;
  const cart=()=>JSON.parse(storage.getItem('wepCart')||'[]');
@@ -21,7 +24,7 @@
  if(storage.getItem('wepCart')===null){
   const editable=draft.items.map(line=>{const tools=draft.items.filter(main=>main.type==='tool'&&main.brandId===line.brandId);return {...line,inventoryId:'',quoteStockChoice:'orderable',packageId:line.packageId||(line.type==='tool'?line.brandId+':'+line.sku:tools.length===1?tools[0].brandId+':'+tools[0].sku:'')};});
   storage.setItem('wepCart',JSON.stringify(editable));
-  for(const main of editable.filter(line=>line.type==='tool')){const packageId=main.packageId;sessionStorage.setItem('wepBuildDraft:'+main.brandId+':'+main.sku,JSON.stringify({...draft,brandId:main.brandId,sku:main.sku,programId:draft.financeProgramIds?.[main.brandId]||'',items:editable.filter(line=>line.packageId===packageId),paymentConfirmed:true,updated:Date.now()}));}
+  for(const main of editable.filter(line=>line.type==='tool')){const packageId=main.packageId;sessionStorage.setItem('wepBuildDraft:'+main.brandId+':'+main.sku,JSON.stringify({...draft,brandId:main.brandId,sku:main.sku,programId:draft.financeProgramIds?.[main.brandId]||'',items:editable.filter(line=>line.packageId===packageId),paymentConfirmed:draft.paymentConfirmed!==false,updated:Date.now()}));}
   saveContext({...draft,items:editable});
  }
  window.WEPBuildStorage=storage;window.WEPDealerOrderEdit={storage,quoteId:seed.quoteId,fullQuote:seed.fullQuote===true};
@@ -66,7 +69,7 @@
   const bar=document.createElement('aside');bar.style.cssText='position:sticky;top:0;z-index:10000;background:#edf4ea;border-bottom:2px solid #287a32;padding:12px 20px;display:flex;gap:15px;align-items:center;flex-wrap:wrap;font:14px Arial,sans-serif';
   const label=document.createElement('strong');label.textContent='Editing '+seed.reference+' · Build & Buy';
   const button=document.createElement('button');button.type='button';button.setAttribute('data-dealer-handoff','');button.textContent='Review Updated Quote';button.onclick=save;
-  const status=document.createElement('span');status.id='dealer-edit-status';status.setAttribute('role','status');status.textContent='Customer details, delivery charges and recorded payments stay on the original quote. Review before saving.';
+  const status=document.createElement('span');status.id='dealer-edit-status';status.setAttribute('role','status');status.textContent=(seed.section==='programs'?'Previous payment choice cleared. Select a new payment option for this program. ':'')+'Customer details, delivery charges and recorded payments stay on the original quote. Review before saving.';
   const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel & Return to Quote / Order';cancel.onclick=()=>{clearTimeout(handoffTimer);pendingRequest='';window.close();};
   bar.append(label,button,cancel,status);document.body.prepend(bar);
   if(!checkout&&['programs','payment'].includes(seed.section)){
