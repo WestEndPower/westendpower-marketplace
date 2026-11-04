@@ -180,3 +180,10 @@ Change a baseline only when John requests or approves that layout change.
 - Non-battery chainsaws show Std. Bar and Light Bar rows under the equipment price, using active published family SKUs and the same first-by-SortOrder size choices as the shopping tags. The incoming exact SKU stays selected.
 - A bar change transfers quantity, delivery, payment preferences and compatible extras through the existing configuration migration, then reloads pricing for the selected SKU. Other cart packages remain intact. In-stock bar choices stay locked until Build to Order is selected.
 
+
+
+## In-stock and orderable card alignment (November 4, 2026)
+
+- Reserve the same 90px card header and 32px SKU/inventory row on every shopping tag, so View In-Stock does not move the image or price below adjacent cards.
+- Stretch card bodies, purchase sections and price areas within each responsive grid row. Non-compact package boxes absorb the remaining space so Inventory/Compare/Add and financing align even when option or contents rows differ. Preserve compact option sizing and natural content growth.
+- Keep this behavior scoped to #market-app and use the same stylesheet version on Marketplace, Shop by Product and Shop by Brand. Generated-page layouts outside #market-app remain unchanged.
