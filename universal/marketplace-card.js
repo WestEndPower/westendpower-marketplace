@@ -17,7 +17,7 @@
  }
  function render(f,context){
   const {selectedPriceVariant,priceChoices,pricePanel,selectedStock,stockHeaderMarkup,sawHeaderBars,cardFinanceMarkup,paymentSelectionUrl,state}=context;
-  const equipment=window.WestEndEquipmentPackages,battery=/battery/i.test(f.power);
+  const equipment=window.WestEndEquipmentPackages,battery=/battery/i.test(f.power)&&!equipment?.isUtilityVehicle?.(f);
   if(battery)equipment?.render(f,context); // Clear any previous fallback context before battery initialization.
   const batteryMarkup=battery?window.WestEndPackagePricing?.render(f,context):null;
   const packageMarkup=batteryMarkup??equipment?.render(f,battery?{...context,emptyBattery:true}:context)??window.WestEndPackagePricing?.render(f,context)??null;
@@ -54,3 +54,4 @@
  }
  window.WestEndMarketplaceCard={render,expiration};
 })();
+
