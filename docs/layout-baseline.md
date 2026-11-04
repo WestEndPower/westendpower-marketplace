@@ -187,3 +187,9 @@ Change a baseline only when John requests or approves that layout change.
 - Reserve the same 90px card header and 32px SKU/inventory row on every shopping tag, so View In-Stock does not move the image or price below adjacent cards.
 - Stretch card bodies, purchase sections and price areas within each responsive grid row. Non-compact package boxes absorb the remaining space so Inventory/Compare/Add and financing align even when option or contents rows differ. Preserve compact option sizing and natural content growth.
 - Keep this behavior scoped to #market-app and use the same stylesheet version on Marketplace, Shop by Product and Shop by Brand. Generated-page layouts outside #market-app remain unchanged.
+
+
+## UTV equipment options (November 4, 2026)
+
+- UTV and Utility Vehicle categories use Attach/Access equipment options regardless of PowerType, including battery-powered vehicles. Do not show handheld battery/charger selectors, sold-separately contents or Run Times on these tags. Preserve the published power type and stock identity.
+- Match category/subcategory metadata rather than fixed models or SKUs; retain compatible option links and aligned card sections across all three shopping routes.

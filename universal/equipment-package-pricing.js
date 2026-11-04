@@ -6,6 +6,9 @@
  const num=v=>{const n=Number(clean(v).replace(/[$,]/g,''));return Number.isFinite(n)?n:0;},round=n=>Math.round((n+Number.EPSILON)*100)/100;
  const usable=r=>r&&clean(r.SKU)&&!['STOP','REFERENCEONLY'].includes(key(r.SKU))&&(!clean(r.Active)||yes(r.Active));
  const states=new Map(),contexts=new Map();
+ // Vehicle power type does not imply removable handheld battery/charger choices.
+ const isUtilityVehicle=f=>[f.category,f.subCategory,f.subcategory,...(f.variants||[]).flatMap(v=>[v.marketplaceRow?.Category,v.marketplaceRow?.SubCategory])].some(v=>/^(UTVS?|UTILITYVEHICLES?)$/.test(key(v)));
+
  function compatibility(row,product){
   const fields=new Map(Object.entries(row).map(([k,v])=>[key(k),clean(v)]));
   const direct=[product.SKU,product.Model],groups=[product.Model,product.Series,product.System,product.Category,product.SubCategory].map(v=>clean(v)?'Group_'+v:'');
@@ -54,7 +57,7 @@
   return text;
  }
  function model(f,c){
-  if((/battery/i.test(f.power)&&!c.emptyBattery)||(key(f.brand)==='YANMAR'&&/^compact tractors?$/i.test(clean(f.category))))return null;
+  if((/battery/i.test(f.power)&&!c.emptyBattery&&!isUtilityVehicle(f))||(key(f.brand)==='YANMAR'&&/^compact tractors?$/i.test(clean(f.category))))return null;
   const saw=!c.emptyBattery&&/^chainsaws?$/i.test(clean(f.category)),stock=c.selectedStock(f),current=c.selectedPriceVariant(f);
   if(!clean(current.sku))return null;
   if(saw){
@@ -161,6 +164,7 @@
   }
   return false;
  }
- window.WestEndEquipmentPackages={render,tool,buildUrl,actions,handle,publishedPrice,compatibility,requirements,requirementSlots,hasModelRequirements,pickerUrl,shortName};
+ window.WestEndEquipmentPackages={isUtilityVehicle,render,tool,buildUrl,actions,handle,publishedPrice,compatibility,requirements,requirementSlots,hasModelRequirements,pickerUrl,shortName};
 })();
+
 
