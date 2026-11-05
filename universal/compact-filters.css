@@ -7,3 +7,9 @@
 
 #market-app .wep-compact-active>h2{display:none}
 @media(max-width:760px){#market-app .wep-compact-active{display:none}}
+
+/* Match the shared Marketplace green background and pill controls. */
+#market-app #market-refine.wep-compact-active{background:#176A14;border:0;border-radius:0;box-shadow:none}
+#market-app #market-refine.wep-compact-active .market-top-panel{background:transparent;border:0;box-shadow:none;padding:0}
+#market-app .wep-filter-top .market-chip,#market-app .wep-filter-options .market-chip{border-radius:999px;background:#fff;color:#000;padding:5px 10px;min-height:34px}
+#market-app .wep-filter-top .market-chip.active,#market-app .wep-filter-options .market-chip.active{background:var(--ink,#1b242b);color:#fff}
