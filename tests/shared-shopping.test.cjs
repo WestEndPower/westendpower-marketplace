@@ -31,6 +31,18 @@ test('generated pages scope by brand and SKU, retain saved order, and preserve s
  assert.equal(rows.length,2);assert.equal(rows[0].SKU,'B');assert.equal(rows[0].Active,'T');assert.equal(rows[0].SellRemainingStockOnly,'T');assert.equal(rows[0].SalePrice,'900');assert.equal(rows[0].RebateToCustomer,'50');assert.equal(rows[0].SaleStartDate,'');
  const p=window.WEPGeneratedCatalog.params('?use=Commercial&spec.B1-Engine=X&spec.B1-Engine=Y');assert.equal(p.get('brand'),'TORO');assert.equal(p.get('use'),'Commercial');assert.equal(p.getAll('spec.B1-Engine').length,2);
 });
+test('preview filtering and Clear retain the saved page slug and selected preview date across reloads',()=>{
+ const window={location:{search:'?slug=toro-zero-turns-residential&date=2026-12-01'}},data={preview:true,query:'brand=TORO&category=Mowers&use=Residential',products:[]};
+ vm.runInNewContext(fs.readFileSync('universal/generated-catalog.js','utf8'),{window,URLSearchParams,document:{getElementById:()=>({textContent:JSON.stringify(data)})}});
+ const api=window.WEPGeneratedCatalog,query=api.preserveContext(new URLSearchParams('brand=TORO&deck=42'));
+ assert.equal(query.get('slug'),'toro-zero-turns-residential');assert.equal(query.get('date'),'2026-12-01');assert.equal(query.get('deck'),'42');
+ const cleared=new URL(api.resetURL('/webpage-builder/preview'),'https://dealer.test');
+ assert.equal(cleared.searchParams.get('slug'),'toro-zero-turns-residential');assert.equal(cleared.searchParams.get('date'),'2026-12-01');assert.equal(cleared.searchParams.has('deck'),false);
+ assert.equal(api.params(cleared.search).get('use'),'Residential');
+ for(const path of ['universal/marketplace.js','shop-by-product.html','shop-by-brand.html']){
+  const source=fs.readFileSync(path,'utf8');assert.match(source,/WEPGeneratedCatalog\?\.preserveContext\(params\)/);assert.match(source,/WEPGeneratedCatalog.resetURL\(location.pathname\)/);
+ }
+});
 function handoff(origin,cart=[],hash=''){
  const window={},storage=new Map([['wepCart',JSON.stringify(cart)]]),location={origin,hash,pathname:'/pages/test',search:''},history={replaceState(_a,_b,url){this.url=url;}},document={baseURI:origin+'/',addEventListener(){}};
  const sandbox={window,document,location,history,localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},URL,URLSearchParams,console,btoa:s=>Buffer.from(s,'binary').toString('base64'),atob:s=>Buffer.from(s,'base64').toString('binary'),unescape,escape,encodeURIComponent,decodeURIComponent};
