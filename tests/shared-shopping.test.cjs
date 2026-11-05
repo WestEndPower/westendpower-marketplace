@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-function compact(){const listeners={},window={},document={addEventListener:(event,fn)=>listeners[event]=fn};vm.runInNewContext(fs.readFileSync('universal/compact-filters.js','utf8'),{window,document});return {api:window.WEPCompactFilters,listeners};}
+function compact(){const listeners={},window={},document={addEventListener:(event,fn)=>listeners[event]=fn,querySelector:()=>true};vm.runInNewContext(fs.readFileSync('universal/compact-filters.js','utf8'),{window,document,queueMicrotask});return {api:window.WEPCompactFilters,listeners};}
 test('compact groups replace the second row without dropping selected Series, Use, deck or power',()=>{
  const {api,listeners}=compact(),state={seriesFilter:'TimeCutter',use:'Residential',deck:'42',power:'Gas'},host={innerHTML:'',contains:()=>true};
  const rows=[{Series:'TimeCutter',Use:'Residential',CuttingWidth:'42',PowerType:'Gas'},{Series:'TITAN',Use:'Residential',CuttingWidth:'48',PowerType:'Gas'}];
@@ -37,6 +37,14 @@ test('direct use buttons stay first and visible while groups retain selections a
  click({compactChoice:'use',value:'Commercial'});assert.equal(state.use,'');assert.match(host.innerHTML,/>Residential<\/button>/);assert.match(host.innerHTML,/>Commercial<\/button>/);
  state.seriesFilter='';state.deck='';state.power='';context.rows=[{Use:'Residential'}];api.render(context);
  assert.match(host.innerHTML,/>Commercial<\/button>/);assert.doesNotMatch(host.innerHTML,/data-compact-group=/);
+});
+test('brand changes refresh the open filter choices after the shopping handler updates state',async()=>{
+ const {api,listeners}=compact(),state={brand:'TORO'},host={innerHTML:'',contains:()=>true};
+ const context={rows:[{BrandID:'TORO',Series:'TimeCutter'},{BrandID:'STIHL',Series:'RZ'}],state,hosts:[host],matches:r=>r.BrandID===state.brand,changed(){}};api.render(context);
+ listeners.click({target:{closest:s=>s==='[data-compact-group]'?{dataset:{compactGroup:'series'}}:null},preventDefault(){}});
+ assert.match(host.innerHTML,/data-value="TimeCutter"/);
+ listeners.change({target:{matches:()=>true}});state.brand='STIHL';await Promise.resolve();
+ assert.match(host.innerHTML,/data-value="RZ"/);assert.doesNotMatch(host.innerHTML,/data-value="TimeCutter"/);
 });
 test('generated pages scope by brand and SKU, retain saved order, and preserve sale-date projections in preview',()=>{
  const window={},data={preview:true,query:'brand=TORO&use=Residential',products:[{brand:'TORO',sku:'B',stock:1,discontinued:true,msrp:1000,price:900,saleActive:true,rebate:50},{brand:'TORO',sku:'A',msrp:2000,price:2000,rebate:0}]};
