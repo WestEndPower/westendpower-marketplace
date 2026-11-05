@@ -24,6 +24,7 @@
     shopMode: 'equipment',
     category: '',
     subcategory: '',
+    use: '',
     power: '',
     seriesOrEngine: '',
     width: '',
@@ -589,7 +590,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     return clean(row['B2-Tires']||row.Tires||v.specs?.Tires);
   }
   function compactFilterKey(){
-    return JSON.stringify([state.shopMode,[...state.packageComponents].sort(),state.promoOnly,[...state.specFilters].map(([k,v])=>[k,[...v].sort()]).sort(),state.seriesFilter,state.modelFilter]);
+    return JSON.stringify([state.shopMode,state.use,[...state.packageComponents].sort(),state.promoOnly,[...state.specFilters].map(([k,v])=>[k,[...v].sort()]).sort(),state.seriesFilter,state.modelFilter]);
   }
   function compactOptionCandidate(f,fieldIndex){
     if(selectedStock(f))return null;
@@ -933,7 +934,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   function marketplaceHasSelection(){
     return state.shopMode!=='equipment' ||
       Boolean(clean(state.search) || state.category || state.subcategory ||
-        state.power || state.seriesOrEngine || state.width ||
+        state.use || state.power || state.seriesOrEngine || state.width ||
         state.seriesFilter || state.modelFilter || state.packageFilter) ||
       state.brand.size>0 || state.availability.size>0 ||
       state.buyOnline || state.promoOnly ||
@@ -980,6 +981,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
             state.packageComponents.size
           ) ||
           state.promoOnly ||
+          state.use ||
           state.specFilters.size ||
           state.seriesOrEngine ||
           state.seriesFilter ||
@@ -1201,6 +1203,8 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     ){
       return false;
     }
+
+    if(!options.ignoreUse && state.use && clean(row.Use)!==state.use) return false;
 
     if(state.seriesOrEngine && !options.ignoreContext){
       const contextGroup=marketplacePowerContextGroup();
@@ -1445,6 +1449,16 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       (!state.power || f.power===state.power)
     );
     const quickSpecs = marketplaceSpecGroups();
+
+    const useValues = distinct(DATA.products
+      .filter(p => marketplaceRowMatches(p,{ignoreUse:true}))
+      .map(p => clean(p.Use)).filter(Boolean));
+    const useHtml = state.category && (useValues.length || state.use)
+      ? '<div class="market-compact-group market-use-nav" style="width:100%;margin-bottom:10px">' +
+          '<div class="market-compact-heading">USE</div><div class="market-compact-buttons">' +
+          button('All Uses','','use',!state.use) +
+          useValues.map(value=>button(value,value,'use',state.use===value)).join('') +
+          '</div></div>' : '';
 
     const seriesValues = distinct(
       DATA.products
@@ -1815,6 +1829,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       '</div>' +
 
       subcategoryHtml +
+      useHtml +
       seriesModelDetailHtml +
 
       narrowSearchHtml;
@@ -1892,6 +1907,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const hasVariantFilters=
       state.packageComponents.size ||
       state.promoOnly ||
+      state.use ||
       state.specFilters.size ||
       state.seriesFilter ||
       state.modelFilter;
@@ -2319,6 +2335,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
     if(state.category) bits.push(state.category);
     if(state.subcategory) bits.push(state.subcategory);
+    if(state.use) bits.push(state.use);
     if(state.power) bits.push(state.power);
     if(state.seriesOrEngine) bits.push(state.seriesOrEngine);
     if(state.width) bits.push(state.width);
@@ -2370,6 +2387,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
     if(state.category) params.set('category',state.category);
     if(state.subcategory) params.set('subcategory',state.subcategory);
+    if(state.use) params.set('use',state.use);
     if(state.power) params.set('power',state.power);
     if(state.seriesOrEngine) params.set('filter',state.seriesOrEngine);
     if(state.seriesFilter) params.set('series',state.seriesFilter);
@@ -2417,6 +2435,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     resetMarketplaceSelection();
     state.category=clean(params.get('category'));
     state.subcategory=clean(params.get('subcategory'));
+    state.use=clean(params.get('use'));
     state.power=clean(params.get('power'));
     state.seriesOrEngine=clean(params.get('filter'));
     state.seriesFilter=clean(params.get('series'));
@@ -2452,7 +2471,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
 
   function resetContext(){
-    state.seriesOrEngine=''; state.width=''; state.specFilters.clear();
+    state.use=''; state.seriesOrEngine=''; state.width=''; state.specFilters.clear();
     state.hpRanges.clear();state.seriesFilter='';state.modelFilter='';
     state.seriesModelOpen=false;state.seriesModelView='';
     state.packageFilter='';state.packageComponents.clear();state.openBFilter='';
@@ -2460,12 +2479,12 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
   function track(name,params={}){
     if(name==='marketplace_add_to_cart')window.WEPSiteTracking?.event('add_to_cart',{sku:String(params.sku||''),quantity:Number(params.quantity)||1});
-    else if(/^marketplace_(?:category|subcategory|power|promos|clear_filters|compare)$/.test(name))window.WEPSiteTracking?.event('catalog_filter',{control:name.replace('marketplace_','')});
+    else if(/^marketplace_(?:category|subcategory|use|power|promos|clear_filters|compare)$/.test(name))window.WEPSiteTracking?.event('catalog_filter',{control:name.replace('marketplace_','')});
   }
 
   function resetMarketplaceSelection(){
     state.shopMode='equipment';
-    state.category='';state.subcategory='';state.power='';
+    state.category='';state.subcategory='';state.use='';state.power='';
     state.seriesOrEngine='';state.width='';
     state.brand.clear();state.availability.clear();
     state.buyOnline=false;state.promoOnly=false;state.promoView='current';state.search='';
@@ -2516,7 +2535,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       const shop=e.target.closest('[data-shop-mode]');
       if(shop){
         state.shopMode=shop.dataset.shopMode||'equipment';
-        state.category='';state.subcategory='';state.power='';state.seriesOrEngine='';state.width='';state.specFilters.clear();state.compare.clear();
+        state.category='';state.subcategory='';state.use='';state.power='';state.seriesOrEngine='';state.width='';state.specFilters.clear();state.compare.clear();
         renderTopFilters();renderSidebar();filterFamilies();return;
       }
       const promo=e.target.closest('[data-promo-only]');
@@ -2532,6 +2551,13 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
         filterFamilies();
         track('marketplace_subcategory',{subcategory:state.subcategory||'all'});
         return;
+      }
+      const useButton=e.target.closest('[data-use]');
+      if(useButton){
+        const value=useButton.dataset.use||'';
+        state.use=state.use===value?'':value;
+        renderTopFilters();renderSidebar();filterFamilies();
+        track('marketplace_use');return;
       }
       const p=e.target.closest('[data-power]');
       if(p){

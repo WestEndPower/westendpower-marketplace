@@ -200,3 +200,8 @@ Change a baseline only when John requests or approves that layout change.
 - UTV and Utility Vehicle categories use Attach/Access equipment options regardless of PowerType, including battery-powered vehicles. Do not show handheld battery/charger selectors, sold-separately contents or Run Times on these tags. Preserve the published power type and stock identity.
 - Match category/subcategory metadata rather than fixed models or SKUs; retain compatible option links and aligned card sections across all three shopping routes.
 
+
+## Product use filters (November 5, 2026)
+
+- John requested a dedicated products-only Use field, leaving Series and System intact. Show compact All Uses / Residential / Commercial pills beneath Subcategories where matching workbook values exist, on all three shopping routes and in the mobile controls.
+- Filter exact SKU variants before choosing displayed pricing or comparison data. Preserve the Use selection as `use` in shared URLs and saved builder pages. Blank Use values stay visible under All Uses.

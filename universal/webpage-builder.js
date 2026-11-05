@@ -31,6 +31,7 @@
  function skuTokens(){return skuInput.value.split(/[,\r\n]+/).map(s=>s.trim()).filter(Boolean);}
  function matches(p){
   if(!manualMatches(p))return false;
+  if(form.elements.use?.value && p.use!==form.elements.use.value)return false;
   const tokens=skuTokens();if(tokens.length&&!tokens.some(t=>t.toUpperCase()===(p.brand+':'+p.sku).toUpperCase()||(!t.includes(':')&&t.toUpperCase()===p.sku.toUpperCase())))return false;
   if(form.elements.stockOnly.checked&&!(p.stock>0))return false;
   if(form.elements.clearanceOnly.checked&&!(p.clearance&&p.stock>0))return false;
@@ -55,7 +56,7 @@
  }
  function suggest(){
   const values=Object.fromEntries(controls.map(c=>[c.name,selected(c)])),matchesNow=products.filter(matches);
-  const parts=[values.brands.map(brandName).join(' & '),values.subcategories.join(' & ')||values.categories.join(' & '),values.seriesValues.join(' & '),form.elements.clearanceOnly.checked?'Clearance':''].filter(Boolean);
+  const parts=[values.brands.map(brandName).join(' & '),values.subcategories.join(' & ')||values.categories.join(' & '),values.seriesValues.join(' & '),form.elements.use?.value,form.elements.clearanceOnly.checked?'Clearance':''].filter(Boolean);
   const title=(skuTokens().length===1&&matchesNow.length===1?matchesNow[0].name:parts.join(' ')||'Equipment').slice(0,120);
   form.elements.title.value=title;form.elements.description.value=('Explore '+title+' at West End Power Equipment in New Milford and Danbury, CT. Compare specifications, current promotions and availability.').slice(0,300);
   form.elements.intro.value='Explore '+title+' and compare equipment for your needs. Review current promotions, configure your equipment, and request a quote or buy through West End Power Equipment.';
@@ -77,7 +78,7 @@
  }
  controls.forEach((c,i)=>c.addEventListener('change',()=>{if([...c.selectedOptions].some(o=>!o.value))for(const o of c.options)o.selected=false;cascade(i);}));
  skuInput.addEventListener('input',update);
- for(const name of ['stockOnly','clearanceOnly','clearImported'])form.elements[name]?.addEventListener('change',update);
+ for(const name of ['stockOnly','clearanceOnly','clearImported','use'])form.elements[name]?.addEventListener('change',update);
  document.querySelector('[data-builder-suggest]').addEventListener('click',()=>{suggest();titleEdited=true;});
  cascade();
 })();
