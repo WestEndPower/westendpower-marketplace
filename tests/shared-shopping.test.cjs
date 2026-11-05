@@ -11,6 +11,19 @@ test('compact groups replace the second row without dropping selected Series, Us
  click({compactGroup:'deck'});assert.doesNotMatch(host.innerHTML,/wep-filter-options/);
  assert.equal(api.deckValue({'SpecLabel4':'Mower Deck',SpecValue4:'42" Stamped'}),'42" Stamped');
 });
+test('compact options hide incompatible choices while keeping selected values available to clear',()=>{
+ const {api,listeners}=compact(),state={use:'Residential',power:'Gas'},host={innerHTML:'',contains:()=>true};
+ const rows=[{Use:'Residential',PowerType:'Gas'},{Use:'Commercial',PowerType:'Battery'},{Use:'Commercial',PowerType:'Diesel'}];
+ const context={rows,state,hosts:[host],matches:(r,o)=>
+  (o.ignoreUse||!state.use||r.Use===state.use)&&(o.ignorePower||!state.power||r.PowerType===state.power),changed:()=>api.render(context)};
+ api.render(context);
+ listeners.click({target:{closest:selector=>selector==='[data-compact-group]'?{dataset:{compactGroup:'power'}}:null},preventDefault(){}});
+ assert.match(host.innerHTML,/data-value="Gas"/);
+ assert.doesNotMatch(host.innerHTML,/data-value="(?:Battery|Diesel)"/);
+ state.use='Commercial';api.render(context);
+ assert.match(host.innerHTML,/data-value="Battery"/);assert.match(host.innerHTML,/data-value="Diesel"/);
+ assert.match(host.innerHTML,/data-value="Gas"/);assert.equal(state.power,'Gas');
+});
 test('generated pages scope by brand and SKU, retain saved order, and preserve sale-date projections in preview',()=>{
  const window={},data={preview:true,query:'brand=TORO&use=Residential',products:[{brand:'TORO',sku:'B',stock:1,discontinued:true,msrp:1000,price:900,saleActive:true,rebate:50},{brand:'TORO',sku:'A',msrp:2000,price:2000,rebate:0}]};
  vm.runInNewContext(fs.readFileSync('universal/generated-catalog.js','utf8'),{window,URLSearchParams,document:{getElementById:()=>({textContent:JSON.stringify(data)})}});
