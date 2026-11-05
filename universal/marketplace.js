@@ -2429,6 +2429,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     if(applyingUrlState) return;
 
     const params=marketplaceUrlParams();
+    window.WEPGeneratedCatalog?.preserveContext(params);
     const query=params.toString();
     const next=location.pathname+(query?'?'+query:'')+location.hash;
     const current=location.pathname+location.search+location.hash;
@@ -2842,7 +2843,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     });
     $('#market-search').addEventListener('input',e=>{ state.search=e.target.value; filterFamilies(); });
     $('#market-clear').addEventListener('click',()=>{
-      if(window.WEPGeneratedCatalog){history.replaceState(null,'',location.pathname);applyMarketplaceUrl();renderTopFilters();renderSidebar();filterFamilies();track('marketplace_clear_filters');return;}
+      if(window.WEPGeneratedCatalog){history.replaceState(null,'',window.WEPGeneratedCatalog.resetURL(location.pathname));applyMarketplaceUrl();renderTopFilters();renderSidebar();filterFamilies();track('marketplace_clear_filters');return;}
       resetMarketplaceSelection();
       $('#market-search').value=''; $('#filter-buy-online').checked=false;
       renderTopFilters();renderSidebar();filterFamilies();
