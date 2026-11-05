@@ -145,7 +145,7 @@
       const a=e.target.closest('a[href]');if(!a)return;
       let url;try{url=new URL(a.href,location.href);}catch{return;}
       if(['tel:','mailto:','sms:'].includes(url.protocol)){event('contact_click',{destination:url.protocol.slice(0,-1)});return;}
-      if(/google\.[^/]+\/(?:maps|url)|maps\.apple\.com/.test(url.href)){event('directions_click');return;}
+      if((/(^|\.)google\.[a-z.]+$/.test(url.hostname)&&(url.pathname.startsWith('/maps')||url.hostname.startsWith('maps.')))||url.hostname==='maps.apple.com'||url.hostname==='maps.app.goo.gl'){event('directions_click');return;}
       if(url.origin===location.origin&&/\/checkout\.html$/.test(url.pathname))event('begin_checkout');
       if(a.closest('nav')){const dest=url.pathname.split('/').pop()||'home';event('navigation_click',{destination:/^(?:marketplace|shop-by-product|shop-by-brand|promotions|cart|checkout|product-options|payment-options|equipment|contact|locations|service)(?:\.html)?$/.test(dest)?dest:'other_public_page'});}
     });
