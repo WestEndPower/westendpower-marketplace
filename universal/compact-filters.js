@@ -14,11 +14,8 @@
  function markup({rows,state,matches}){
   const scope=rows.filter(r=>matches(r,{ignoreSeries:true,ignoreModel:true,ignoreUse:true,ignoreDeck:true,ignorePower:true}));
   const useValues=unique([...scope.map(r=>r.Use),state.use]);
-  const hasUse=useValues.length||rows.some(r=>(!state.category||clean(r.Category)===state.category)&&(!state.subcategory||clean(r.SubCategory)===state.subcategory)&&clean(r.Use));
-  const uses=hasUse?['Residential','Commercial',...useValues.filter(v=>!['Residential','Commercial'].includes(v))].map(v=>'<button type="button" class="market-chip'+(state.use===v?' active':'')+'" data-compact-choice="use" data-value="'+esc(v)+'" aria-pressed="'+(state.use===v)+'">'+esc(v)+'</button>').join(''):'';
-  const top=groups.filter(g=>g[0]!=='use').map(([id,label,key,ignore,value])=>{
-   const hasValues=rows.some(r=>matches(r,{[ignore]:true,ignoreModel:id==='series'})&&value(r));
-   if(!hasValues&&!state[key])return '';
+  const uses=['Residential','Commercial',...useValues.filter(v=>!['Residential','Commercial'].includes(v))].map(v=>'<button type="button" class="market-chip'+(state.use===v?' active':'')+'" data-compact-choice="use" data-value="'+esc(v)+'" aria-pressed="'+(state.use===v)+'">'+esc(v)+'</button>').join('');
+  const top=groups.filter(g=>g[0]!=='use').map(([id,label,key])=>{
    return '<button type="button" class="market-chip wep-filter-group'+(open===id?' active':'')+'" data-compact-group="'+id+'" aria-expanded="'+(open===id)+'">'+esc(label)+(state[key]?': '+esc(state[key]):'')+'</button>';
   });
   const selected=groups.find(g=>g[0]===open);
