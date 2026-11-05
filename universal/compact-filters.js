@@ -20,7 +20,7 @@
   const selected=groups.find(g=>g[0]===open);
   let choices='';
   if(selected){
-   const [id,label,key,ignore,value]=selected,all=unique([...scope.map(value),state[key]]),available=new Set(rows.filter(r=>matches(r,{[ignore]:true,ignoreModel:id==='series'})).map(value));
+   const [id,label,key,ignore,value]=selected,available=new Set(rows.filter(r=>matches(r,{[ignore]:true,ignoreModel:id==='series'})).map(value)),all=unique([...available,state[key]]);
    choices='<div class="wep-filter-options" role="group" aria-label="'+esc(label)+' options"><button type="button" class="market-chip'+(!state[key]?' active':'')+'" data-compact-choice="'+id+'" data-value="">All '+esc(({series:'Series',use:'Uses',deck:'Deck Sizes',power:'Power Types'})[id])+'</button>'+all.map(v=>'<button type="button" class="market-chip'+(state[key]===v?' active':'')+'" data-compact-choice="'+id+'" data-value="'+esc(v)+'"'+(!available.has(v)&&state[key]!==v?' disabled':'')+'>'+esc(v)+'</button>').join('')+'</div>';
   }
   return '<div class="wep-filter-top" aria-label="Equipment filters"><div>'+top.slice(0,2).join('')+'</div><div>'+top.slice(2).join('')+'</div></div>'+choices;
