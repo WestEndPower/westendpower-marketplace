@@ -25,6 +25,7 @@
     category: '',
     subcategory: '',
     use: '',
+    deck: '',
     power: '',
     seriesOrEngine: '',
     width: '',
@@ -590,7 +591,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     return clean(row['B2-Tires']||row.Tires||v.specs?.Tires);
   }
   function compactFilterKey(){
-    return JSON.stringify([state.shopMode,state.use,[...state.packageComponents].sort(),state.promoOnly,[...state.specFilters].map(([k,v])=>[k,[...v].sort()]).sort(),state.seriesFilter,state.modelFilter]);
+    return JSON.stringify([state.shopMode,state.use,state.deck,[...state.packageComponents].sort(),state.promoOnly,[...state.specFilters].map(([k,v])=>[k,[...v].sort()]).sort(),state.seriesFilter,state.modelFilter]);
   }
   function compactOptionCandidate(f,fieldIndex){
     if(selectedStock(f))return null;
@@ -793,7 +794,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
   function selectedPaymentRow(v){return {...(v.marketplaceRow||{}),__packageItems:v.recommendedPackage?v.packageItems||[]:[]};}
   function paymentSelectionUrl(f){
-    const v=selectedPriceVariant(f),params=new URLSearchParams({brand:clean(f.brand).toUpperCase(),sku:clean(v.sku),quantity:String(selectedPriceQuantity(f)),return:location.pathname+location.search+location.hash});
+    const v=selectedPriceVariant(f),params=new URLSearchParams({brand:clean(f.brand).toUpperCase(),sku:clean(v.sku),quantity:String(selectedPriceQuantity(f)),return:(window.WEPGeneratedCatalog?location.origin:'')+location.pathname+location.search+location.hash});
     if(v.recommendedPackage)params.set('package','1');
     const inventoryId=selectedInventoryId(f),stock=selectedStock(f);
     if(stock)params.set('unit',stock.unitRef);else if(inventoryId!==undefined)params.set('inventoryId',inventoryId);
@@ -932,9 +933,9 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
 
   function marketplaceHasSelection(){
-    return state.shopMode!=='equipment' ||
+    return Boolean(typeof window!=='undefined'&&window.WEPGeneratedCatalog) || state.shopMode!=='equipment' ||
       Boolean(clean(state.search) || state.category || state.subcategory ||
-        state.use || state.power || state.seriesOrEngine || state.width ||
+        state.deck || state.use || state.power || state.seriesOrEngine || state.width ||
         state.seriesFilter || state.modelFilter || state.packageFilter) ||
       state.brand.size>0 || state.availability.size>0 ||
       state.buyOnline || state.promoOnly ||
@@ -981,7 +982,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
             state.packageComponents.size
           ) ||
           state.promoOnly ||
-          state.use ||
+          state.deck || state.use ||
           state.specFilters.size ||
           state.seriesOrEngine ||
           state.seriesFilter ||
@@ -1167,7 +1168,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     host.hidden=!state.promoOnly;
     if(!state.promoOnly)return;
     window.WestEndPromotions.renderControls(host,state.promoView,value=>{
-      location.href=new URL('promotions.html?'+new URLSearchParams({promo:value}),location.href).href;
+      location.href=new URL('promotions.html?'+new URLSearchParams({promo:value}),document.baseURI||location.href).href;
     });
     const back=document.createElement('a');back.href='promotions.html?promo='+state.promoView;back.textContent='← Promotion categories';back.className='wep-promo-note';host.append(back);
     if(DATA.promotionProgramsError&&['zero','responders','fleet'].includes(state.promoView)){const note=document.createElement('p');note.textContent='Program availability is temporarily unavailable. Please refresh or see store for details.';note.setAttribute('role','status');host.append(note);}
@@ -1205,6 +1206,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     }
 
     if(!options.ignoreUse && state.use && clean(row.Use)!==state.use) return false;
+    if(!options.ignoreDeck && state.deck && window.WEPCompactFilters.deckValue(row)!==state.deck) return false;
 
     if(state.seriesOrEngine && !options.ignoreContext){
       const contextGroup=marketplacePowerContextGroup();
@@ -1399,6 +1401,16 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const context=$('#market-context');
     const categoryHost=$('#market-categories');
     const widthHost=$('#market-width');
+
+    const compactFilters=state.shopMode==='equipment' && state.category==='Mowers' && state.subcategory && window.WEPCompactFilters;
+    $('#market-refine')?.classList.toggle('wep-compact-active',!!compactFilters);
+    if(compactFilters){
+      powerWrap.hidden=true;categoryPanel.hidden=true;contextPanel.hidden=false;
+      categoryHost.innerHTML='';powerHost.innerHTML='';
+      window.WEPCompactFilters.render({rows:DATA.products,state,matches:(row,options)=>(!state.brand.size||state.brand.has(clean(row.BrandID).toUpperCase()))&&marketplaceRowMatches(row,options),
+        hosts:[context,$('#market-mobile-context')],changed(){renderTopFilters();renderSidebar();filterFamilies();}});
+      widthHost.hidden=true;widthHost.innerHTML='';return;
+    }
 
     if(state.shopMode!=='equipment'){
       powerWrap.hidden=true;
@@ -1907,7 +1919,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const hasVariantFilters=
       state.packageComponents.size ||
       state.promoOnly ||
-      state.use ||
+      state.deck || state.use ||
       state.specFilters.size ||
       state.seriesFilter ||
       state.modelFilter;
@@ -2335,6 +2347,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
     if(state.category) bits.push(state.category);
     if(state.subcategory) bits.push(state.subcategory);
+    if(state.deck) bits.push(state.deck);
     if(state.use) bits.push(state.use);
     if(state.power) bits.push(state.power);
     if(state.seriesOrEngine) bits.push(state.seriesOrEngine);
@@ -2375,6 +2388,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
 
   function updateCartFloat(){
+    try{window.WEPCartHandoff?.changed();}catch{console.warn('Cart handoff is waiting for available browser storage.');}
     let cart=[];
     try{ cart=JSON.parse(localStorage.getItem('wepCart')||'[]'); if(!Array.isArray(cart)) cart=[]; }catch(e){ cart=[]; }
     const n=cart.reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
@@ -2387,6 +2401,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
     if(state.category) params.set('category',state.category);
     if(state.subcategory) params.set('subcategory',state.subcategory);
+    if(state.deck) params.set('deck',state.deck);
     if(state.use) params.set('use',state.use);
     if(state.power) params.set('power',state.power);
     if(state.seriesOrEngine) params.set('filter',state.seriesOrEngine);
@@ -2430,11 +2445,12 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   function applyMarketplaceUrl(){
     applyingUrlState=true;
 
-    const params=new URLSearchParams(location.search);
+    const params=window.WEPGeneratedCatalog?window.WEPGeneratedCatalog.params(location.search):new URLSearchParams(location.search);
 
     resetMarketplaceSelection();
     state.category=clean(params.get('category'));
     state.subcategory=clean(params.get('subcategory'));
+    state.deck=clean(params.get('deck'));
     state.use=clean(params.get('use'));
     state.power=clean(params.get('power'));
     state.seriesOrEngine=clean(params.get('filter'));
@@ -2471,7 +2487,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
 
   function resetContext(){
-    state.use=''; state.seriesOrEngine=''; state.width=''; state.specFilters.clear();
+    state.use='';state.deck=''; state.seriesOrEngine=''; state.width=''; state.specFilters.clear();
     state.hpRanges.clear();state.seriesFilter='';state.modelFilter='';
     state.seriesModelOpen=false;state.seriesModelView='';
     state.packageFilter='';state.packageComponents.clear();state.openBFilter='';
@@ -2484,7 +2500,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
   function resetMarketplaceSelection(){
     state.shopMode='equipment';
-    state.category='';state.subcategory='';state.use='';state.power='';
+    state.category='';state.subcategory='';state.use='';state.deck='';state.power='';
     state.seriesOrEngine='';state.width='';
     state.brand.clear();state.availability.clear();
     state.buyOnline=false;state.promoOnly=false;state.promoView='current';state.search='';
@@ -2495,6 +2511,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
 
   function returnMarketplaceHome(){
+    if(window.WEPGeneratedCatalog){const target=new URL('shop-by-product.html',document.baseURI).href;location.assign(window.WEPCartHandoff?.url(target)||target);return;}
     resetMarketplaceSelection();
     $('#market-search').value='';
     $('#filter-buy-online').checked=false;
@@ -2535,7 +2552,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       const shop=e.target.closest('[data-shop-mode]');
       if(shop){
         state.shopMode=shop.dataset.shopMode||'equipment';
-        state.category='';state.subcategory='';state.use='';state.power='';state.seriesOrEngine='';state.width='';state.specFilters.clear();state.compare.clear();
+        state.category='';state.subcategory='';state.use='';state.deck='';state.power='';state.seriesOrEngine='';state.width='';state.specFilters.clear();state.compare.clear();
         renderTopFilters();renderSidebar();filterFamilies();return;
       }
       const promo=e.target.closest('[data-promo-only]');
@@ -2825,6 +2842,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     });
     $('#market-search').addEventListener('input',e=>{ state.search=e.target.value; filterFamilies(); });
     $('#market-clear').addEventListener('click',()=>{
+      if(window.WEPGeneratedCatalog){history.replaceState(null,'',location.pathname);applyMarketplaceUrl();renderTopFilters();renderSidebar();filterFamilies();track('marketplace_clear_filters');return;}
       resetMarketplaceSelection();
       $('#market-search').value=''; $('#filter-buy-online').checked=false;
       renderTopFilters();renderSidebar();filterFamilies();
@@ -2846,9 +2864,9 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     $('#market-dealer-name').textContent=name;
     const logo=clean(settings.DealerLogoURL);
     // The approved header embeds the dealer logo for reliable display.
-    document.title=(clean(settings.DefaultSEOName)||name)+' | Shop Equipment';
+    if(!window.WEPGeneratedCatalog)document.title=(clean(settings.DefaultSEOName)||name)+' | Shop Equipment';
     const meta=$('meta[name="description"]');
-    if(meta) meta.content='Shop and compare equipment by category, brand, power source, availability and specifications at '+name+'.';
+    if(meta&&!window.WEPGeneratedCatalog) meta.content='Shop and compare equipment by category, brand, power source, availability and specifications at '+name+'.';
     installAnalytics(settings);
   }
 
@@ -2997,13 +3015,16 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     DATA.inventoryByBrand=new Map(results);
   }
   async function init(){
-    if(location.search==='?promo=1'){location.replace(new URL('promotions.html',location.href));return;}
+    if(location.search==='?promo=1'){location.replace(new URL('promotions.html',document.baseURI||location.href));return;}
     try{
+      if(document.getElementById('wep-generated-page')&&(!window.WEPGeneratedCatalog||!window.WEPCartHandoff))throw Error('Shopping controls could not be initialized. Please refresh and retry.');
+      await window.WEPShoppingShellReady;
       const [catalog,locations]=await Promise.all([
         loadMarketplaceCatalog(),
         loadMarketplaceLocations()
       ]);
-      const [products,batteries,chargers,compatibility,financePrograms,settingsRows]=catalog;
+      let [products,batteries,chargers,compatibility,financePrograms,settingsRows]=catalog;
+      if(window.WEPGeneratedCatalog)products=window.WEPGeneratedCatalog.products(products);
       DATA.products=products;
       if(['zero','responders','fleet'].includes(new URLSearchParams(location.search).get('promo')))await ensurePromotionPrograms(new URLSearchParams(location.search).get('promo'));
       DATA.batteries=batteries;
