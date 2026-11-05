@@ -24,6 +24,20 @@ test('compact options hide incompatible choices while keeping selected values av
  assert.match(host.innerHTML,/data-value="Battery"/);assert.match(host.innerHTML,/data-value="Diesel"/);
  assert.match(host.innerHTML,/data-value="Gas"/);assert.equal(state.power,'Gas');
 });
+test('direct use buttons stay first and visible while groups retain selections and hide empty controls',()=>{
+ const {api,listeners}=compact(),state={use:'Residential',seriesFilter:'TimeCutter',deck:'42',power:'Gas'},host={innerHTML:'',contains:()=>true};
+ const rows=[{Use:'Residential',Series:'TimeCutter',CuttingWidth:'42',PowerType:'Gas'},{Use:'Commercial',Series:'TimeCutter',CuttingWidth:'42',PowerType:'Gas'}];
+ const context={rows,state,hosts:[host],matches:(r,o)=>(o.ignoreUse||!state.use||r.Use===state.use),changed:()=>api.render(context)};api.render(context);
+ assert.ok(host.innerHTML.indexOf('>Residential</button>')<host.innerHTML.indexOf('>Commercial</button>'));
+ assert.ok(host.innerHTML.indexOf('>Commercial</button>')<host.innerHTML.indexOf('data-compact-group="series"'));
+ assert.match(host.innerHTML,/Power Type/);assert.doesNotMatch(host.innerHTML,/data-compact-group="use"/);
+ const click=dataset=>listeners.click({target:{closest:s=>s==='[data-compact-group]'&&dataset.compactGroup?{dataset}:s==='[data-compact-choice]'&&dataset.compactChoice?{dataset}:null},preventDefault(){}});
+ click({compactGroup:'series'});click({compactChoice:'use',value:'Commercial'});
+ assert.equal(state.use,'Commercial');assert.equal(state.seriesFilter,'TimeCutter');assert.equal(state.deck,'42');assert.equal(state.power,'Gas');assert.match(host.innerHTML,/Series options/);
+ click({compactChoice:'use',value:'Commercial'});assert.equal(state.use,'');assert.match(host.innerHTML,/>Residential<\/button>/);assert.match(host.innerHTML,/>Commercial<\/button>/);
+ state.seriesFilter='';state.deck='';state.power='';context.rows=[{Use:'Residential'}];api.render(context);
+ assert.match(host.innerHTML,/>Commercial<\/button>/);assert.doesNotMatch(host.innerHTML,/data-compact-group=/);
+});
 test('generated pages scope by brand and SKU, retain saved order, and preserve sale-date projections in preview',()=>{
  const window={},data={preview:true,query:'brand=TORO&use=Residential',products:[{brand:'TORO',sku:'B',stock:1,discontinued:true,msrp:1000,price:900,saleActive:true,rebate:50},{brand:'TORO',sku:'A',msrp:2000,price:2000,rebate:0}]};
  vm.runInNewContext(fs.readFileSync('universal/generated-catalog.js','utf8'),{window,URLSearchParams,document:{getElementById:()=>({textContent:JSON.stringify(data)})}});
@@ -36,6 +50,8 @@ test('preview filtering and Clear retain the saved page slug and selected previe
  vm.runInNewContext(fs.readFileSync('universal/generated-catalog.js','utf8'),{window,URLSearchParams,document:{getElementById:()=>({textContent:JSON.stringify(data)})}});
  const api=window.WEPGeneratedCatalog,query=api.preserveContext(new URLSearchParams('brand=TORO&deck=42'));
  assert.equal(query.get('slug'),'toro-zero-turns-residential');assert.equal(query.get('date'),'2026-12-01');assert.equal(query.get('deck'),'42');
+ assert.equal(query.get('use'),'');assert.equal(api.params('?'+query).get('use'),'');
+ const allBrands=api.preserveContext(new URLSearchParams('use=Commercial'));assert.equal(allBrands.get('brand'),'');assert.equal(api.params('?'+allBrands).get('brand'),'');
  const cleared=new URL(api.resetURL('/webpage-builder/preview'),'https://dealer.test');
  assert.equal(cleared.searchParams.get('slug'),'toro-zero-turns-residential');assert.equal(cleared.searchParams.get('date'),'2026-12-01');assert.equal(cleared.searchParams.has('deck'),false);
  assert.equal(api.params(cleared.search).get('use'),'Residential');
