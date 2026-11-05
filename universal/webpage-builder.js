@@ -25,8 +25,10 @@
  const brandName=b=>({YANMAR:'Yanmar',STIHL:'STIHL',HONDA:'Honda',TORO:'Toro',BILLYGOAT:'Billy Goat',REDMAX:'RedMax',MITM:'Mi-T-M',GREENWORKS:'Greenworks'}[b]||b);
  const element=(tag,value)=>{const el=document.createElement(tag);if(value!==undefined)el.textContent=value;return el;};
  const selected=c=>[...c.selectedOptions].map(o=>o.value).filter(Boolean);
- let titleEdited=data.saved||!!data.definition.sourceUrl;
- for(const key of ['title','description','intro','slug'])form.elements[key].addEventListener('input',()=>{titleEdited=true;});
+ let wordingEdited=!!data.saved,slugEdited=!!data.saved;
+ form.elements.title.addEventListener('input',()=>{if(form.elements.autoName)form.elements.autoName.checked=false;});
+ for(const key of ['description','intro'])form.elements[key].addEventListener('input',()=>{wordingEdited=true;});
+ form.elements.slug.addEventListener('input',()=>{slugEdited=true;const preview=document.querySelector('[data-builder-slug]');if(preview)preview.textContent=form.elements.slug.value;});
  function manualMatches(p,limit=controls.length){return controls.slice(0,limit).every(c=>{const values=selected(c);return !values.length||values.includes(p[dimensions[c.name]]);});}
  function skuTokens(){return skuInput.value.split(/[,\r\n]+/).map(s=>s.trim()).filter(Boolean);}
  function matches(p){
@@ -48,20 +50,42 @@
  }
  function cascade(changed=-1){
   controls.forEach((c,index)=>{
-   const values=selected(c),allowed=[...new Set(products.filter(p=>manualMatches(p,index)).map(p=>p[dimensions[c.name]]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+   const values=selected(c),candidates=products.filter(p=>manualMatches(p,index)),ranks=new Map();
+   for(const p of candidates){const raw=String(p.sortOrder??'').trim(),rank=raw!==''&&Number.isFinite(Number(raw))?Number(raw):Infinity;ranks.set(p.series,Math.min(ranks.get(p.series)??Infinity,rank));}
+   const allowed=[...new Set(candidates.map(p=>p[dimensions[c.name]]).filter(Boolean))].sort((a,b)=>(c.name==='seriesValues'?((ranks.get(a)??Infinity)-(ranks.get(b)??Infinity)):0)||a.localeCompare(b,undefined,{numeric:true}));
    const keep=changed>=0&&index>changed?values.filter(v=>allowed.includes(v)):values;
    const all=element('option','All '+({brands:'brands',categories:'categories',subcategories:'subcategories',seriesValues:'series'}[c.name]));all.value='';
    c.replaceChildren(all,...[...new Set([...allowed,...keep])].map(value=>{const o=element('option',(c.name==='brands'?brandName(value):value)+(allowed.includes(value)?'':' — no longer available'));o.value=value;o.selected=keep.includes(value);return o;}));
   });
   update();
  }
- function suggest(){
+ function suggest({keepWording=false}={}){
   const values=Object.fromEntries(controls.map(c=>[c.name,selected(c)])),matchesNow=products.filter(matches);
   const parts=[values.brands.map(brandName).join(' & '),values.subcategories.join(' & ')||values.categories.join(' & '),values.seriesValues.join(' & '),form.elements.use?.value,form.elements.clearImported?.checked?'':form.elements.deck?.value,form.elements.clearanceOnly.checked?'Clearance':''].filter(Boolean);
   const title=(skuTokens().length===1&&matchesNow.length===1?matchesNow[0].name:parts.join(' ')||'Equipment').slice(0,120);
-  form.elements.title.value=title;form.elements.description.value=('Explore '+title+' at West End Power Equipment in New Milford and Danbury, CT. Compare specifications, current promotions and availability.').slice(0,300);
-  form.elements.intro.value='Explore '+title+' and compare equipment for your needs. Review current promotions, configure your equipment, and request a quote or buy through West End Power Equipment.';
-  if(!data.saved){const base=title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,74)||'equipment';let slug=base,n=2;while((data.existingSlugs||[]).includes(slug))slug=base+'-'+n++;form.elements.slug.value=slug;}
+  form.elements.title.value=title;
+  if(!keepWording){form.elements.description.value=('Explore '+title+' at West End Power Equipment in New Milford and Danbury, CT. Compare specifications, current promotions and availability.').slice(0,300);
+  form.elements.intro.value='Explore '+title+' and compare equipment for your needs. Review current promotions, configure your equipment, and request a quote or buy through West End Power Equipment.';}
+  if(!data.saved&&!slugEdited){const base=title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,74)||'equipment';let slug=base,n=2;while((data.existingSlugs||[]).includes(slug))slug=base+'-'+n++;form.elements.slug.value=slug;}
+  const preview=document.querySelector('[data-builder-slug]');if(preview)preview.textContent=form.elements.slug.value;
+ }
+ function syncMarketplaceURL(){
+  const url=new URL('https://westendpower.github.io/westendpower-marketplace/shop-by-product.html'),p=url.searchParams,d=data.definition;
+  for(const c of controls){const values=selected(c);if(values.length)p.set(({brands:'brand',categories:'category',subcategories:'subcategory',seriesValues:'series'})[c.name],values.join(','));}
+  if(form.elements.use?.value)p.set('use',form.elements.use.value);
+  if(!form.elements.clearImported?.checked){
+   for(const [key,value]of [['deck',d.deck],['power',d.power],['model',d.model],['q',d.search]])if(value)p.set(key,value);
+   if(d.promoOnly)p.set('promo','1');if(d.buyOnline)p.set('online','1');
+   if(d.availability?.length)p.set('availability',d.availability.join(','));
+   for(const f of d.fields||[])for(const value of f.values){if(/^P\d+-/i.test(f.field)&&value==='T')p.append('package',f.field);else p.append('spec.'+f.field,value);}
+  }
+  if(form.elements.stockOnly.checked)p.set('availability','stock');
+  if(form.elements.clearanceOnly.checked)p.set('clearance','1');
+  if(form.elements.sort.value!=='workbook')p.set('sort',form.elements.sort.value);
+  const input=document.querySelector('[data-builder-marketplace-url]');if(input)input.value=url.href;
+  form.elements.sourceUrl.value=url.href;
+  const summary=document.querySelector('[data-builder-selection-summary]');
+  if(summary)summary.textContent=controls.map(c=>{const values=selected(c);return values.length?values.map(v=>c.name==='brands'?brandName(v):v).join(', '):'';}).filter(Boolean).concat(form.elements.use?.value||'All uses').join(' · ');
  }
  function updateSuggestions(){
   const text=skuInput.value,index=Math.max(text.lastIndexOf(','),text.lastIndexOf('\n')),prefix=index>=0?text.slice(0,index+1)+' ':'';
@@ -75,11 +99,11 @@
   const message=document.querySelector('[data-builder-client-message]');message.textContent=issues.length?issues.join(' '):matchesNow.length?'These products match your current selection. Preview the page before publishing.':'No matching products. A saved published page with this selection will hide until eligible equipment is available.';message.classList.toggle('issue',!!issues.length);
   const host=document.querySelector('[data-builder-match-list]'),details=element('details'),summary=element('summary','Review matching SKUs ('+matchesNow.length+')');details.append(summary);
   const list=element('ul');for(const p of matchesNow.slice(0,100))list.append(element('li',p.brand+':'+p.sku+' — '+p.name));if(matchesNow.length>100)list.append(element('li','Showing the first 100 matches. All '+matchesNow.length+' matching SKUs are included.'));details.append(list);host.replaceChildren(details);
-  updateSuggestions();if(!titleEdited&&!data.saved)suggest();
+  updateSuggestions();if(form.elements.autoName?.checked)suggest({keepWording:wordingEdited});syncMarketplaceURL();
  }
  controls.forEach((c,i)=>c.addEventListener('change',()=>{if([...c.selectedOptions].some(o=>!o.value))for(const o of c.options)o.selected=false;cascade(i);}));
  skuInput.addEventListener('input',update);
- for(const name of ['stockOnly','clearanceOnly','clearImported','use'])form.elements[name]?.addEventListener('change',update);
- document.querySelector('[data-builder-suggest]').addEventListener('click',()=>{suggest();titleEdited=true;});
+ for(const name of ['stockOnly','clearanceOnly','clearImported','use','sort','autoName'])form.elements[name]?.addEventListener('change',update);
+ document.querySelector('[data-builder-suggest]').addEventListener('click',()=>{suggest();wordingEdited=false;syncMarketplaceURL();});
  cascade();
 })();
