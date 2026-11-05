@@ -3532,6 +3532,7 @@ root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,
     if(applyingUrlState) return;
 
     const params=marketplaceUrlParams();
+    window.WEPGeneratedCatalog?.preserveContext(params);
     const query=params.toString();
     const next=location.pathname+(query?'?'+query:'')+location.hash;
     const current=location.pathname+location.search+location.hash;
@@ -3939,7 +3940,7 @@ root.WestEndPayments={programExpirationLabel,inventory,selectInventory,programs,
     });
     $('#market-search').addEventListener('input',e=>{ state.search=e.target.value; filterFamilies(); });
     $('#market-clear').addEventListener('click',()=>{
-      if(window.WEPGeneratedCatalog){history.replaceState(null,'',location.pathname);applyMarketplaceUrl();renderTopFilters();renderSidebar();filterFamilies();track('marketplace_clear_filters');return;}
+      if(window.WEPGeneratedCatalog){history.replaceState(null,'',window.WEPGeneratedCatalog.resetURL(location.pathname));applyMarketplaceUrl();renderTopFilters();renderSidebar();filterFamilies();track('marketplace_clear_filters');return;}
       state.shopMode='equipment';state.category='';state.subcategory='';state.use='';state.deck='';state.power='';state.seriesOrEngine='';state.width='';state.brand.clear();state.availability.clear();state.buyOnline=false;state.promoOnly=false;state.promoView='current';state.search='';state.specFilters.clear();state.packageFilter='';
       $('#market-search').value=''; $('#filter-buy-online').checked=false;
       renderTopFilters();renderSidebar();filterFamilies();
