@@ -1168,7 +1168,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     host.hidden=!state.promoOnly;
     if(!state.promoOnly)return;
     window.WestEndPromotions.renderControls(host,state.promoView,value=>{
-      location.href=new URL('promotions.html?'+new URLSearchParams({promo:value}),document.baseURI||location.href).href;
+      const target=new URL('promotions.html?'+new URLSearchParams({promo:value}),document.baseURI||location.href).href;location.href=window.WEPCartHandoff?.url(target)||target;
     });
     const back=document.createElement('a');back.href='promotions.html?promo='+state.promoView;back.textContent='← Promotion categories';back.className='wep-promo-note';host.append(back);
     if(DATA.promotionProgramsError&&['zero','responders','fleet'].includes(state.promoView)){const note=document.createElement('p');note.textContent='Program availability is temporarily unavailable. Please refresh or see store for details.';note.setAttribute('role','status');host.append(note);}
