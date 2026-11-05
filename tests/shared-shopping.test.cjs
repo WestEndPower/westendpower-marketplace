@@ -42,6 +42,14 @@ test('all five top controls remain visible even without matches while retaining 
  for(const id of ['series','deck','power'])assert.match(host.innerHTML,new RegExp('data-compact-group="'+id+'"'));
  click({compactGroup:'power'});assert.match(host.innerHTML,/All Power Types/);assert.doesNotMatch(host.innerHTML,/data-value="(?:Battery|Diesel|Gas)"/);
 });
+test('Series follows the earliest workbook SortOrder per series including generated-page rows',()=>{
+ const {api,listeners}=compact(),host={innerHTML:'',contains:()=>true};
+ const rows=[{Series:'2000 Series',SortOrder:'1',__wepWorkbookSortOrder:'326'},{Series:'TimeCutter',SortOrder:'99',__wepWorkbookSortOrder:'203'},{Series:'TimeCutter',SortOrder:'100',__wepWorkbookSortOrder:'199'},{Series:'TITAN',SortOrder:'2',__wepWorkbookSortOrder:'222'},{Series:'TimeCutter Max',SortOrder:'3',__wepWorkbookSortOrder:'209'},{Series:'Unranked',SortOrder:''}];
+ api.render({rows,state:{},hosts:[host],matches:()=>true,changed(){}});
+ listeners.click({target:{closest:s=>s==='[data-compact-group]'?{dataset:{compactGroup:'series'}}:null},preventDefault(){}});
+ const ordered=[...host.innerHTML.matchAll(/data-compact-choice="series" data-value="([^"]+)"/g)].map(m=>m[1]);
+ assert.deepEqual(ordered,['TimeCutter','TimeCutter Max','TITAN','2000 Series','Unranked']);
+});
 test('brand changes refresh the open filter choices after the shopping handler updates state',async()=>{
  const {api,listeners}=compact(),state={brand:'TORO'},host={innerHTML:'',contains:()=>true};
  const context={rows:[{BrandID:'TORO',Series:'TimeCutter'},{BrandID:'STIHL',Series:'RZ'}],state,hosts:[host],matches:r=>r.BrandID===state.brand,changed(){}};api.render(context);
@@ -53,7 +61,8 @@ test('brand changes refresh the open filter choices after the shopping handler u
 test('generated pages scope by brand and SKU, retain saved order, and preserve sale-date projections in preview',()=>{
  const window={},data={preview:true,query:'brand=TORO&use=Residential',products:[{brand:'TORO',sku:'B',stock:1,discontinued:true,msrp:1000,price:900,saleActive:true,rebate:50},{brand:'TORO',sku:'A',msrp:2000,price:2000,rebate:0}]};
  vm.runInNewContext(fs.readFileSync('universal/generated-catalog.js','utf8'),{window,URLSearchParams,document:{getElementById:()=>({textContent:JSON.stringify(data)})}});
- const rows=window.WEPGeneratedCatalog.products([{BrandID:'TORO',SKU:'A'},{BrandID:'OTHER',SKU:'B'},{BrandID:'TORO',SKU:'B'},{BrandID:'TORO',SKU:'EXCLUDED'}]);
+ const rows=window.WEPGeneratedCatalog.products([{BrandID:'TORO',SKU:'A'},{BrandID:'OTHER',SKU:'B'},{BrandID:'TORO',SKU:'B',SortOrder:'326'},{BrandID:'TORO',SKU:'EXCLUDED'}]);
+ assert.equal(rows[0].__wepWorkbookSortOrder,'326');
  assert.equal(rows.length,2);assert.equal(rows[0].SKU,'B');assert.equal(rows[0].Active,'T');assert.equal(rows[0].SellRemainingStockOnly,'T');assert.equal(rows[0].SalePrice,'900');assert.equal(rows[0].RebateToCustomer,'50');assert.equal(rows[0].SaleStartDate,'');
  const p=window.WEPGeneratedCatalog.params('?use=Commercial&spec.B1-Engine=X&spec.B1-Engine=Y');assert.equal(p.get('brand'),'TORO');assert.equal(p.get('use'),'Commercial');assert.equal(p.getAll('spec.B1-Engine').length,2);
 });
