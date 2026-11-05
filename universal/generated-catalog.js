@@ -5,8 +5,9 @@
  let data;try{data=JSON.parse(seed.textContent);}catch{return;}
  const key=(brand,sku)=>String(brand||'').trim().toUpperCase()+'|'+String(sku||'').trim().toUpperCase();
  const context=new URLSearchParams(window.location?.search||'');
- function preserveContext(params){if(data.preview)for(const name of ['slug','date'])if(context.has(name))params.set(name,context.get(name));return params;}
- function resetURL(pathname){const query=preserveContext(new URLSearchParams()).toString();return pathname+(query?'?'+query:'');}
+ function routeContext(params){if(data.preview)for(const name of ['slug','date'])if(context.has(name))params.set(name,context.get(name));return params;}
+ function preserveContext(params){for(const name of new Set(new URLSearchParams(data.query||'').keys()))if(!params.has(name))params.set(name,'');return routeContext(params);}
+ function resetURL(pathname){const query=routeContext(new URLSearchParams()).toString();return pathname+(query?'?'+query:'');}
  const selected=new Map((data.products||[]).map(p=>[key(p.brand,p.sku),p]));
  const rank=new Map([...selected.keys()].map((id,index)=>[id,index]));
  function products(rows){return rows.filter(r=>selected.has(key(r.BrandID,r.SKU))).sort((a,b)=>rank.get(key(a.BrandID,a.SKU))-rank.get(key(b.BrandID,b.SKU))).map((row,index)=>{
