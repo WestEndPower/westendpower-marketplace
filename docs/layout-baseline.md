@@ -36,13 +36,13 @@ John requested that approved layouts be preserved across later changes (October 
 - Image banners contain only rebate/save amounts and `Expires Oct. 31, 2026` style dates; financing remains in its payment area.
 - Do not replace these controls with the generated-page dropdown toolbar.
 
-## Generated builder pages
+## Generated builder pages (shared shopping layout, November 5, 2026)
 
-- Keep workbook B/P dropdown filters and comparison controls together in the compact results toolbar.
-- Keep a sticky left Filter Products panel with Brand, Availability, Online Purchase when applicable, and workbook F dropdown filters. At phone widths, use a Filters button and closable drawer. This generated-page sidebar was requested by John on November 4, 2026; it supersedes the earlier toolbar-only layout.
-- Keep the generated-page filter markup separate from the Marketplace browse controls; filter model variants before choosing the displayed SKU. The two-column desktop card area sits beside the sidebar.
-- Keep server-rendered brand navigation and stable page URLs.
-- Keep card layout, inventory controls, and financing presentation unchanged by navigation/filter work.
+- John requested that saved builder pages reuse the actual Marketplace shopping shell, cards, navigation and pricing/availability footer. This supersedes the separate generated-card toolbar and sidebar template for customer pages and previews.
+- The Marketplace header/nav/footer markup is canonical. `universal/shopping-shell.js` applies it to Shop by Product and Shop by Brand, with common presentation in `universal/shopping-shell.css`. Builder pages load this same shell server-side and use the same `universal/marketplace.js` and equipment modules.
+- Keep permanent page URLs, server-rendered product metadata and no-script product links. Put each page title/introduction below the shopping results. Preview notices stay private and tracking stays excluded.
+- Prefiltered mower pages use `universal/compact-filters.js`: Series and Use on the left, Deck Size and Power on the right. Open exactly one options row at a time; retain all selected options and disable incompatible choices. On phones these controls remain available in the filter drawer.
+- Clear restores a saved page's base selection. The server's selected brand/SKU scope cannot broaden when customer filters are cleared. Carry only public cart fields when customers follow links between our website origins; never place customer data in a cart handoff.
 
 ## Shared files and validation
 

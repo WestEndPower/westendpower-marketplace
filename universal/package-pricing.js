@@ -189,7 +189,7 @@
    document.body.append(dialog);dialog.querySelector('button').onclick=()=>dialog.close();dialog.addEventListener('close',()=>{dialog.remove();check.focus();},{once:true});dialog.showModal();return true;
   }
   const addButton=event.target.closest('[data-pp-add]');if(addButton){add(f,c,m,s,addButton);return true;}
-  const build=event.target.closest('[data-pp-build]');if(build&&m){event.preventDefault();if(add(f,c,m,s,build,false))location.assign('checkout.html'+(new URLSearchParams(location.search).get('api')==='local'?'?api=local':''));return true;}
+  const build=event.target.closest('[data-pp-build]');if(build&&m){event.preventDefault();if(add(f,c,m,s,build,false)){const target=new URL('checkout.html'+(new URLSearchParams(location.search).get('api')==='local'?'?api=local':''),document.baseURI||location.href).href;location.assign(window.WEPCartHandoff?.url(target)||target);}return true;}
   return false;
  }
  function actions(f,c){contexts.set(f.key,{f,c});return '<button class="pp-add-cart" type="button" data-pp-add title="Add selected tool or package to cart" aria-label="Add selected tool or package to cart"><span aria-hidden="true">🛒</span> Add</button>';}

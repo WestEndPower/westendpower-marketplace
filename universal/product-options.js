@@ -8,7 +8,7 @@ const sku=(qs.get('sku')||'').trim();
 const category=(qs.get('category')||'Equipment').trim();
 const returnUrl=(qs.get('return')||'').trim();
 let safeReturn='';
-try{const url=new URL(returnUrl,location.href);if(returnUrl&&url.origin===location.origin&&/^https?:$/.test(url.protocol))safeReturn=url.href}catch(_){}
+try{const url=new URL(returnUrl,location.href);if(returnUrl&&(url.origin===location.origin||url.origin==='https://westendpower-configurator-api.westendpower-nm.workers.dev'&&/^\/pages\/[a-z0-9-]+$/.test(url.pathname))&&/^https?:$/.test(url.protocol))safeReturn=url.href}catch(_){}
 function updateReturn(product,brand){
  const params=new URLSearchParams();
  if(brand)params.set('brand',brand.toUpperCase());

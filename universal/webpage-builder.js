@@ -37,6 +37,7 @@
   if(form.elements.clearanceOnly.checked&&!(p.clearance&&p.stock>0))return false;
   if(form.elements.clearImported?.checked)return true;
   const d=data.definition;
+  if(d.deck&&p.deck!==d.deck)return false;
   if(d.power&&p.power!==d.power)return false;
   if(d.model&&p.model!==d.model)return false;
   if(d.promoOnly&&!p.rebate&&!p.saleActive)return false;
@@ -56,7 +57,7 @@
  }
  function suggest(){
   const values=Object.fromEntries(controls.map(c=>[c.name,selected(c)])),matchesNow=products.filter(matches);
-  const parts=[values.brands.map(brandName).join(' & '),values.subcategories.join(' & ')||values.categories.join(' & '),values.seriesValues.join(' & '),form.elements.use?.value,form.elements.clearanceOnly.checked?'Clearance':''].filter(Boolean);
+  const parts=[values.brands.map(brandName).join(' & '),values.subcategories.join(' & ')||values.categories.join(' & '),values.seriesValues.join(' & '),form.elements.use?.value,form.elements.clearImported?.checked?'':form.elements.deck?.value,form.elements.clearanceOnly.checked?'Clearance':''].filter(Boolean);
   const title=(skuTokens().length===1&&matchesNow.length===1?matchesNow[0].name:parts.join(' ')||'Equipment').slice(0,120);
   form.elements.title.value=title;form.elements.description.value=('Explore '+title+' at West End Power Equipment in New Milford and Danbury, CT. Compare specifications, current promotions and availability.').slice(0,300);
   form.elements.intro.value='Explore '+title+' and compare equipment for your needs. Review current promotions, configure your equipment, and request a quote or buy through West End Power Equipment.';
