@@ -9,13 +9,17 @@
   for(let i=1;i<=10;i++)if(/^(?:cutting width|deck size|deck width|mower deck)$/i.test(clean(row['SpecLabel'+i])))return clean(row['SpecValue'+i]);
   return '';
  }
- const groups=[['series','Series','seriesFilter','ignoreSeries',r=>clean(r.Series)],['use','Use','use','ignoreUse',r=>clean(r.Use)],['deck','Deck Size','deck','ignoreDeck',deckValue],['power','Power','power','ignorePower',r=>clean(r.PowerType)]];
+ const groups=[['series','Series','seriesFilter','ignoreSeries',r=>clean(r.Series)],['use','Use','use','ignoreUse',r=>clean(r.Use)],['deck','Deck Size','deck','ignoreDeck',deckValue],['power','Power Type','power','ignorePower',r=>clean(r.PowerType)]];
  let open='',current;
  function markup({rows,state,matches}){
   const scope=rows.filter(r=>matches(r,{ignoreSeries:true,ignoreModel:true,ignoreUse:true,ignoreDeck:true,ignorePower:true}));
-  const top=groups.map(([id,label,key,,value])=>{
-   const hasValues=scope.some(r=>value(r));
-   return '<button type="button" class="market-chip wep-filter-group'+(open===id?' active':'')+'" data-compact-group="'+id+'" aria-expanded="'+(open===id)+'"'+(!hasValues&&!state[key]?' disabled':'')+'>'+esc(label)+(state[key]?': '+esc(state[key]):'')+'</button>';
+  const useValues=unique([...scope.map(r=>r.Use),state.use]);
+  const hasUse=useValues.length||rows.some(r=>(!state.category||clean(r.Category)===state.category)&&(!state.subcategory||clean(r.SubCategory)===state.subcategory)&&clean(r.Use));
+  const uses=hasUse?['Residential','Commercial',...useValues.filter(v=>!['Residential','Commercial'].includes(v))].map(v=>'<button type="button" class="market-chip'+(state.use===v?' active':'')+'" data-compact-choice="use" data-value="'+esc(v)+'" aria-pressed="'+(state.use===v)+'">'+esc(v)+'</button>').join(''):'';
+  const top=groups.filter(g=>g[0]!=='use').map(([id,label,key,ignore,value])=>{
+   const hasValues=rows.some(r=>matches(r,{[ignore]:true,ignoreModel:id==='series'})&&value(r));
+   if(!hasValues&&!state[key])return '';
+   return '<button type="button" class="market-chip wep-filter-group'+(open===id?' active':'')+'" data-compact-group="'+id+'" aria-expanded="'+(open===id)+'">'+esc(label)+(state[key]?': '+esc(state[key]):'')+'</button>';
   });
   const selected=groups.find(g=>g[0]===open);
   let choices='';
@@ -23,7 +27,7 @@
    const [id,label,key,ignore,value]=selected,available=new Set(rows.filter(r=>matches(r,{[ignore]:true,ignoreModel:id==='series'})).map(value)),all=unique([...available,state[key]]);
    choices='<div class="wep-filter-options" role="group" aria-label="'+esc(label)+' options"><button type="button" class="market-chip'+(!state[key]?' active':'')+'" data-compact-choice="'+id+'" data-value="">All '+esc(({series:'Series',use:'Uses',deck:'Deck Sizes',power:'Power Types'})[id])+'</button>'+all.map(v=>'<button type="button" class="market-chip'+(state[key]===v?' active':'')+'" data-compact-choice="'+id+'" data-value="'+esc(v)+'"'+(!available.has(v)&&state[key]!==v?' disabled':'')+'>'+esc(v)+'</button>').join('')+'</div>';
   }
-  return '<div class="wep-filter-top" aria-label="Equipment filters"><div>'+top.slice(0,2).join('')+'</div><div>'+top.slice(2).join('')+'</div></div>'+choices;
+  return '<div class="wep-filter-top" aria-label="Equipment filters">'+uses+top.join('')+'</div>'+choices;
  }
  function render(context){current=context;const html=markup(context);for(const host of context.hosts.filter(Boolean))host.innerHTML=html;}
  document.addEventListener('click',event=>{
