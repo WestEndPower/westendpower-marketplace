@@ -24,7 +24,7 @@ test('compact options hide incompatible choices while keeping selected values av
  assert.match(host.innerHTML,/data-value="Battery"/);assert.match(host.innerHTML,/data-value="Diesel"/);
  assert.match(host.innerHTML,/data-value="Gas"/);assert.equal(state.power,'Gas');
 });
-test('direct use buttons stay first and visible while groups retain selections and hide empty controls',()=>{
+test('all five top controls remain visible even without matches while retaining selections',()=>{
  const {api,listeners}=compact(),state={use:'Residential',seriesFilter:'TimeCutter',deck:'42',power:'Gas'},host={innerHTML:'',contains:()=>true};
  const rows=[{Use:'Residential',Series:'TimeCutter',CuttingWidth:'42',PowerType:'Gas'},{Use:'Commercial',Series:'TimeCutter',CuttingWidth:'42',PowerType:'Gas'}];
  const context={rows,state,hosts:[host],matches:(r,o)=>(o.ignoreUse||!state.use||r.Use===state.use),changed:()=>api.render(context)};api.render(context);
@@ -36,7 +36,11 @@ test('direct use buttons stay first and visible while groups retain selections a
  assert.equal(state.use,'Commercial');assert.equal(state.seriesFilter,'TimeCutter');assert.equal(state.deck,'42');assert.equal(state.power,'Gas');assert.match(host.innerHTML,/Series options/);
  click({compactChoice:'use',value:'Commercial'});assert.equal(state.use,'');assert.match(host.innerHTML,/>Residential<\/button>/);assert.match(host.innerHTML,/>Commercial<\/button>/);
  state.seriesFilter='';state.deck='';state.power='';context.rows=[{Use:'Residential'}];api.render(context);
- assert.match(host.innerHTML,/>Commercial<\/button>/);assert.doesNotMatch(host.innerHTML,/data-compact-group=/);
+ assert.match(host.innerHTML,/>Commercial<\/button>/);
+ context.rows=[];api.render(context);
+ assert.match(host.innerHTML,/>Residential<\/button>/);assert.match(host.innerHTML,/>Commercial<\/button>/);
+ for(const id of ['series','deck','power'])assert.match(host.innerHTML,new RegExp('data-compact-group="'+id+'"'));
+ click({compactGroup:'power'});assert.match(host.innerHTML,/All Power Types/);assert.doesNotMatch(host.innerHTML,/data-value="(?:Battery|Diesel|Gas)"/);
 });
 test('brand changes refresh the open filter choices after the shopping handler updates state',async()=>{
  const {api,listeners}=compact(),state={brand:'TORO'},host={innerHTML:'',contains:()=>true};
