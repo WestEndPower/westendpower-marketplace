@@ -41,7 +41,7 @@ John requested that approved layouts be preserved across later changes (October 
 - John requested that saved builder pages reuse the actual Marketplace shopping shell, cards, navigation and pricing/availability footer. This supersedes the separate generated-card toolbar and sidebar template for customer pages and previews.
 - The Marketplace header/nav/footer markup is canonical. `universal/shopping-shell.js` applies it to Shop by Product and Shop by Brand, with common presentation in `universal/shopping-shell.css`. Builder pages load this same shell server-side and use the same `universal/marketplace.js` and equipment modules.
 - Keep permanent page URLs, server-rendered product metadata and no-script product links. Put each page title/introduction below the shopping results. Preview notices stay private and tracking stays excluded.
-- Prefiltered mower pages use `universal/compact-filters.js`: Series and Use on the left, Deck Size and Power on the right. Open exactly one options row at a time; retain all selected options and disable incompatible choices. On phones these controls remain available in the filter drawer.
+- Prefiltered mower pages use `universal/compact-filters.js`: Series, Use, Deck Size and Power together on the left, with consistent spacing. Open exactly one options row at a time; retain all selected options and disable incompatible choices. On phones these controls remain available in the filter drawer.
 - Clear restores a saved page's base selection. The server's selected brand/SKU scope cannot broaden when customer filters are cleared. Carry only public cart fields when customers follow links between our website origins; never place customer data in a cart handoff.
 
 ## Shared files and validation
