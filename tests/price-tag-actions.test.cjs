@@ -44,7 +44,7 @@ test('compact image rebate follows the exact selected factory SKU rather than th
 });
 test('package cards keep bare-tool identity, link the image, and share compact actions',()=>{
  const {window,f,c}=fixture(),html=window.WestEndMarketplaceCard.render(f,c);
- assert.match(html,/SKU: TOOL/);assert.match(html,/title="Bare Blower"/);assert.match(html,/href="https:\/\/manufacturer.example\/blower"/);
+ assert.match(html,/SKU: TOOL/);assert.match(html,/data-wep-view-sku="KIT"/);assert.match(html,/title="Bare Blower"/);assert.match(html,/href="https:\/\/manufacturer.example\/blower"/);
  assert.ok(html.indexOf('3 years')<html.indexOf('market-buy'));
  assert.equal((html.match(/data-pp-inventory/g)||[]).length,1);assert.doesNotMatch(html,/Check Inventory|View Details|wep-card-build|data-pp-build/);
  assert.match(html,/data-pp-add/);assert.match(html,/>Run Times</);

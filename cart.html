@@ -52,7 +52,7 @@ h1 svg{width:30px;height:30px;color:#c8102e}
 @media(max-width:700px){.summary{display:block}.review{width:100%;margin-top:14px}}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261024-portal-auth2" defer></script><script src="universal/package-components.js?v=20261026-kit-lines1"></script></head>
+<script src="universal/dealer-portal-link.js?v=20261024-portal-auth2" defer></script><script src="universal/package-components.js?v=20261026-kit-lines1"></script><script src="universal/site-tracking.js?v=20261105-views1" defer></script></head>
 <body>
 <main class="page">
 
@@ -744,6 +744,7 @@ function isEquipmentPackageRow(row){
 function reviewEquipmentPackage(){
  if(!cart.length)return false;
  // WEP_ALL_BRAND_QUOTE_CART_V1
+ window.WEPSiteTracking?.event('begin_checkout');
  location.assign("checkout.html"+(new URLSearchParams(location.search).get("api")==="local"?"?api=local":""));
  return true;
 }
