@@ -64,5 +64,6 @@
     fetch(api+'/pages/navigation.json',{cache:'no-store',credentials:'omit'}).then(r=>{if(!r.ok)throw Error('Pages unavailable');return r.json();}).then(data=>{published=Array.isArray(data.brands)?data.brands:[];loaded=true;if(!profiles.length)applyProfiles(published.map(b=>({id:b.id,name:b.label})));else refresh();}).catch(()=>{loaded=true;refresh();});
     window.addEventListener('westend:catalog-ready',()=>{if(Array.isArray(window.WESTEND_PUBLISHED_BRANDS))applyProfiles(window.WESTEND_PUBLISHED_BRANDS);});
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  window.addEventListener('wep:shopping-shell-ready',start);
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
