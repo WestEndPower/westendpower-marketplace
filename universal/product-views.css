@@ -1,0 +1,5 @@
+/* Reserve the same image-box footer at zero and nonzero views. No card-height changes. */
+.market-card.wep-blended-card .market-image{padding-bottom:34px!important}
+.market-card.wep-blended-card .market-image img{max-height:100%;min-height:0}
+.market-card.wep-blended-card .wep-view-count{position:absolute;left:3px;right:3px;bottom:3px;display:block;min-height:14px;text-align:center;font:11px/14px Arial,sans-serif;color:#536158;background:#fff;pointer-events:none;white-space:normal;overflow-wrap:anywhere}
+.market-card.wep-blended-card .wep-view-count[hidden]{display:none}

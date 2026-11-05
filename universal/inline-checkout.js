@@ -129,6 +129,7 @@
    try{response=await fetch(s.api+'/marketplace-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:abort.signal});result=await response.json().catch(()=>({}));}finally{clearTimeout(timeout);}
    if(!response.ok||result.ok!==true)throw Error(result.error||'Checkout could not be confirmed. Retry the same checkout or contact a store.');
    if(result.demo===true&&window.WEPManufacturerDemo?.active){if(applicationTab&&!applicationTab.closed)applicationTab.close();$('wep-inline-checkout-review')?.close();message('Demo checkout complete. No order was placed and no payment was collected. Reference '+result.orderNumber+'.');const link=document.createElement('a');link.href=s.api+result.documentUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent=' View Demo Order & Dealer Costs';$('wep-inline-status')?.append(link);$('wep-checkout-agree').checked=false;return;}
+   window.WEPSiteTracking?.event('order_submitted',{brand_id:s.selection.brandId});
    pending={...pending,orderNumber:result.orderNumber,checkoutToken:result.checkoutToken};sessionStorage.setItem('wepInlinePurchase',JSON.stringify(pending));
    if(q.paymentMethod==='credit'){
     sessionStorage.setItem('wepMarketplacePending',JSON.stringify({...pending,api:s.api,cartSnapshot:null}));
@@ -204,6 +205,7 @@
     if(response.status===409||/deliver the quote email/i.test(result.error||'')){pending.status='check';sessionStorage.setItem('wepInlineOrderRequest',JSON.stringify(pending));showReceipt(pending);message('Please contact the store to confirm quote request '+pending.reference+'.');return;}
     throw Error(result.error||'Your quote request could not be confirmed. Retry using the same quote reference or call the store.');
    }
+   window.WEPSiteTracking?.event('quote_requested',{brand_id:s.selection.brandId});
    pending.status='sent';sessionStorage.setItem('wepInlineOrderRequest',JSON.stringify(pending));showReceipt(pending);message('Quote request received: '+pending.reference+'.');
   }catch(error){const pending=savedRequest();if(pending&&pending.status==='sending'){pending.status='retry';try{sessionStorage.setItem('wepInlineOrderRequest',JSON.stringify(pending));}catch(_){}}message(error.name==='AbortError'?'The quote request timed out. Retry to check this quote request or call the store with your quote reference.':error.message);}finally{busy=false;update();}
  }

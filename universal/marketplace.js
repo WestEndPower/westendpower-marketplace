@@ -2459,11 +2459,8 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
 
   function track(name,params={}){
-    try{
-      if(typeof window.gtag==='function') window.gtag('event',name,Object.assign({device_type:matchMedia('(max-width: 800px)').matches?'mobile':'desktop'},params));
-      window.dataLayer=window.dataLayer||[];
-      window.dataLayer.push(Object.assign({event:name},params));
-    }catch(e){}
+    if(name==='marketplace_add_to_cart')window.WEPSiteTracking?.event('add_to_cart',{sku:String(params.sku||''),quantity:Number(params.quantity)||1});
+    else if(/^marketplace_(?:category|subcategory|power|promos|clear_filters|compare)$/.test(name))window.WEPSiteTracking?.event('catalog_filter',{control:name.replace('marketplace_','')});
   }
 
   function resetMarketplaceSelection(){
@@ -2816,23 +2813,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     $('#market-compare-close').addEventListener('click',()=>$('#market-compare-dialog').close());
   }
 
-  function installAnalytics(settings){
-    const ga=clean(settings.GA4MeasurementID), gtm=clean(settings.GoogleTagManagerID);
-    if(gtm){
-      window.dataLayer=window.dataLayer||[];
-      const s=document.createElement('script');
-      s.async=true;s.src='https://www.googletagmanager.com/gtm.js?id='+encodeURIComponent(gtm);
-      document.head.appendChild(s);
-    }
-    if(ga){
-      const s=document.createElement('script');
-      s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+encodeURIComponent(ga);
-      document.head.appendChild(s);
-      window.dataLayer=window.dataLayer||[];
-      window.gtag=window.gtag||function(){dataLayer.push(arguments);};
-      gtag('js',new Date());gtag('config',ga);
-    }
-  }
+  function installAnalytics(settings){ window.WEPSiteTracking?.configure(settings); }
 
   function applyDealer(settings){
     const name=clean(settings.DealerName)||clean(settings.DefaultSEOName)||'Equipment Dealer';

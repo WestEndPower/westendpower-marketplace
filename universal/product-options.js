@@ -445,6 +445,7 @@ function packageSpec(){
 function reviewPackage(){
  addPackageToCart();
  // WEP_RETURN_TO_QUOTE_V1
+ window.WEPSiteTracking?.event('begin_checkout');
  location.assign(window.WEPBuildSession?.url("checkout.html"+(qs.get('api')==='local'?'?api=local':''))||("checkout.html"+(qs.get('api')==='local'?'?api=local':'')));
 }
 function addPackageToCart(){
@@ -809,6 +810,8 @@ async function init(){
     if(saved?.configurationNotice){const notice=document.createElement('p');notice.className='wep-configuration-notice';notice.setAttribute('role','status');notice.textContent=saved.configurationNotice+'. Pricing is being updated for this configuration; select a payment option when ready.';document.querySelector('.hero').after(notice);}
    }catch(_){}
   }
+
+  window.WEPViewedProduct={brandId:selectedBrand,sku,kind:'builder'};window.dispatchEvent(new CustomEvent('wep:product-opened',{detail:window.WEPViewedProduct}));
 
  }catch(e){$('app').innerHTML='<section class="section"><h2>Unable to load options</h2><p>'+esc(e.message)+'</p></section>'}
 }

@@ -710,7 +710,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-recommended-series1"></script><script src="universal/package-pricing.js?v=20261102-inclusion1"></script><script src="universal/equipment-package-pricing.js?v=20261104-utv-options1"></script><script src="universal/marketplace-card.js?v=20261104-utv-options1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261104-card-alignment1"><link rel="stylesheet" href="universal/promotions.css?v=20261031-promo1"><script src="universal/promotions.js?v=20261031-verified-finance5"></script></head>
+<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-recommended-series1"></script><script src="universal/package-pricing.js?v=20261102-inclusion1"></script><script src="universal/equipment-package-pricing.js?v=20261104-utv-options1"></script><script src="universal/marketplace-card.js?v=20261105-views1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261104-card-alignment1"><link rel="stylesheet" href="universal/promotions.css?v=20261031-promo1"><script src="universal/promotions.js?v=20261031-verified-finance5"></script><script src="universal/site-tracking.js?v=20261105-views1" defer></script><link rel="stylesheet" href="universal/product-views.css?v=20261105-views1"></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -3574,11 +3574,8 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
   }
 
   function track(name,params={}){
-    try{
-      if(typeof window.gtag==='function') window.gtag('event',name,Object.assign({device_type:matchMedia('(max-width: 800px)').matches?'mobile':'desktop'},params));
-      window.dataLayer=window.dataLayer||[];
-      window.dataLayer.push(Object.assign({event:name},params));
-    }catch(e){}
+    if(name==='marketplace_add_to_cart')window.WEPSiteTracking?.event('add_to_cart',{sku:String(params.sku||''),quantity:Number(params.quantity)||1});
+    else if(/^marketplace_(?:category|subcategory|power|promos|clear_filters|compare)$/.test(name))window.WEPSiteTracking?.event('catalog_filter',{control:name.replace('marketplace_','')});
   }
 
   function returnMarketplaceHome(){
@@ -3933,23 +3930,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     $('#market-compare-close').addEventListener('click',()=>$('#market-compare-dialog').close());
   }
 
-  function installAnalytics(settings){
-    const ga=clean(settings.GA4MeasurementID), gtm=clean(settings.GoogleTagManagerID);
-    if(gtm){
-      window.dataLayer=window.dataLayer||[];
-      const s=document.createElement('script');
-      s.async=true;s.src='https://www.googletagmanager.com/gtm.js?id='+encodeURIComponent(gtm);
-      document.head.appendChild(s);
-    }
-    if(ga){
-      const s=document.createElement('script');
-      s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+encodeURIComponent(ga);
-      document.head.appendChild(s);
-      window.dataLayer=window.dataLayer||[];
-      window.gtag=window.gtag||function(){dataLayer.push(arguments);};
-      gtag('js',new Date());gtag('config',ga);
-    }
-  }
+  function installAnalytics(settings){ window.WEPSiteTracking?.configure(settings); }
 
   function applyDealer(settings){
     const name=clean(settings.DealerName)||clean(settings.DefaultSEOName)||'Equipment Dealer';
@@ -3959,7 +3940,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     document.title=(clean(settings.DefaultSEOName)||name)+' | Shop by Brand';
     const meta=$('meta[name="description"]');
     if(meta) meta.content='Shop and compare equipment by category, brand, power source, availability and specifications at '+name+'.';
-    // Preview uses no analytics. Activate production analytics in the installed page.
+    installAnalytics(settings);
   }
 
   function activeBrand(){

@@ -1,5 +1,10 @@
 # Marketplace and generated-page layouts
 
+## Recorded SKU views (November 5, 2026)
+
+- John approved a centered view count inside the bottom of each product image box. Reserve its footer even at zero so counts do not move the image, specifications, or purchase area or change existing card/image-box heights.
+- Show actual rolling seven-day recorded views, including one; hide zero and unavailable totals. Follow the selected purchase SKU, including kit/factory choices. Local tests and builder previews never record live views. Preserve the distinct shopping and generated-page controls described below.
+
 ## Battery package contents alignment (November 2, 2026)
 
 - Every battery equipment price tag shows a contents line below the charger choices, including one-battery packages and bare tools. Counts follow the selected configuration; absent components say Batteries sold separately, Charger sold separately, or Batteries and chargers sold separately.

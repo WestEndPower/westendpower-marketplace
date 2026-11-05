@@ -35,6 +35,10 @@
     if(!card)return;
     const previous=card.dataset.currentSku;
     card.dataset.currentSku=variant.sku;
+    const views=card.querySelector('[data-wep-view-sku]');
+    if(views&&(views.dataset.wepViewSku!==variant.sku||views.dataset.wepViewBrand!==variant.brand)){
+      views.hidden=true;views.textContent='';views.dataset.wepViewSku=variant.sku;views.dataset.wepViewBrand=variant.brand;
+    }
     text(card.querySelector('[data-catalog-sku]'),'SKU: '+variant.sku);
     text(card.querySelector('[data-catalog-price-label]'),variant.saleActive?'Sale price':count>1?'Starting MSRP':'MSRP');
     text(card.querySelector('[data-catalog-price]'),variant.price?money(variant.price):'Contact Us');
