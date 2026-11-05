@@ -3,6 +3,15 @@
  'use strict';
  const clean=v=>String(v??'').trim(),esc=v=>clean(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const unique=values=>[...new Set(values.map(clean).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+ function seriesOrder(rows,values){
+  const ranks=new Map(),positions=new Map();
+  rows.forEach((row,index)=>{
+   const series=clean(row.Series),raw=clean(row.__wepWorkbookSortOrder??row.SortOrder),rank=raw!==''&&Number.isFinite(Number(raw))?Number(raw):Infinity;
+   if(!positions.has(series))positions.set(series,index);
+   ranks.set(series,Math.min(ranks.get(series)??Infinity,rank));
+  });
+  return values.sort((a,b)=>((ranks.get(a)??Infinity)-(ranks.get(b)??Infinity))||((positions.get(a)??Infinity)-(positions.get(b)??Infinity))||a.localeCompare(b,undefined,{numeric:true}));
+ }
  function deckValue(row){
   if(clean(row.CuttingWidth))return clean(row.CuttingWidth);
   for(const [field,value] of Object.entries(row))if(/^[BF]\d+-(?:cutting width|deck size|deck width|mower deck)$/i.test(field)&&clean(value))return clean(value);
@@ -22,6 +31,7 @@
   let choices='';
   if(selected){
    const [id,label,key,ignore,value]=selected,available=new Set(rows.filter(r=>matches(r,{[ignore]:true,ignoreModel:id==='series'})).map(value)),all=unique([...available,state[key]]);
+   if(id==='series')seriesOrder(scope,all);
    choices='<div class="wep-filter-options" role="group" aria-label="'+esc(label)+' options"><button type="button" class="market-chip'+(!state[key]?' active':'')+'" data-compact-choice="'+id+'" data-value="">All '+esc(({series:'Series',use:'Uses',deck:'Deck Sizes',power:'Power Types'})[id])+'</button>'+all.map(v=>'<button type="button" class="market-chip'+(state[key]===v?' active':'')+'" data-compact-choice="'+id+'" data-value="'+esc(v)+'"'+(!available.has(v)&&state[key]!==v?' disabled':'')+'>'+esc(v)+'</button>').join('')+'</div>';
   }
   return '<div class="wep-filter-top" aria-label="Equipment filters">'+uses+top.join('')+'</div>'+choices;
