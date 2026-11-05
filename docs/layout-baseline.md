@@ -33,8 +33,9 @@ John requested that approved layouts be preserved across later changes (October 
 
 ## Generated builder pages
 
-- Keep applicable dropdown filters and comparison controls together in the compact results toolbar.
-- Do not add the marketplace sidebar or its full browse controls here.
+- Keep workbook B/P dropdown filters and comparison controls together in the compact results toolbar.
+- Keep a sticky left Filter Products panel with Brand, Availability, Online Purchase when applicable, and workbook F dropdown filters. At phone widths, use a Filters button and closable drawer. This generated-page sidebar was requested by John on November 4, 2026; it supersedes the earlier toolbar-only layout.
+- Keep the generated-page filter markup separate from the Marketplace browse controls; filter model variants before choosing the displayed SKU. The two-column desktop card area sits beside the sidebar.
 - Keep server-rendered brand navigation and stable page URLs.
 - Keep card layout, inventory controls, and financing presentation unchanged by navigation/filter work.
 
@@ -193,3 +194,4 @@ Change a baseline only when John requests or approves that layout change.
 
 - UTV and Utility Vehicle categories use Attach/Access equipment options regardless of PowerType, including battery-powered vehicles. Do not show handheld battery/charger selectors, sold-separately contents or Run Times on these tags. Preserve the published power type and stock identity.
 - Match category/subcategory metadata rather than fixed models or SKUs; retain compatible option links and aligned card sections across all three shopping routes.
+

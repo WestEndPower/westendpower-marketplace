@@ -8,6 +8,18 @@
   const models=Array.isArray(data.models)?data.models:[];
   const controls=[...document.querySelectorAll('[data-catalog-filter]')];
   const availability=document.querySelector('[data-catalog-availability]');
+  const brand=document.querySelector('[data-catalog-brand]'),purchase=document.querySelector('[data-catalog-purchase]');
+  const filterToggle=document.querySelector('[data-catalog-filters-toggle]'),sidebar=document.querySelector('.wep-catalog-sidebar');
+  function toggleFilters(open){
+    document.body.classList.toggle('wep-filters-open',open);
+    filterToggle?.setAttribute('aria-expanded',String(open));
+    if(open)sidebar?.focus();else filterToggle?.focus();
+  }
+  filterToggle?.addEventListener('click',()=>toggleFilters(filterToggle.getAttribute('aria-expanded')!=='true'));
+  for(const close of document.querySelectorAll('[data-catalog-filters-close],[data-catalog-filters-backdrop]'))close.addEventListener('click',()=>toggleFilters(false));
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.body.classList.contains('wep-filters-open'))toggleFilters(false);});
+  const narrow=window.matchMedia('(max-width:850px)');
+  narrow.addEventListener('change',()=>{if(!narrow.matches){document.body.classList.remove('wep-filters-open');filterToggle?.setAttribute('aria-expanded','false');}});
   const cards=new Map([...document.querySelectorAll('[data-model-key]')].map(el=>[el.dataset.modelKey,el]));
   const displayed=new Map(),chosen=new Set(),financeCache=new Map();
   const money=value=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(Number(value)||0);
@@ -15,7 +27,7 @@
   const element=(tag,value)=>{const el=document.createElement(tag);if(value!==undefined)text(el,value);return el;};
   const fieldValue=(variant,field)=>(variant.filters||[]).find(f=>f.field===field)?.value||'';
   function matches(variant,ignore=''){
-    return (!availability?.value||Number(variant.stock)>0)&&controls.every(c=>c.dataset.catalogFilter===ignore||!c.value||fieldValue(variant,c.dataset.catalogFilter)===c.value);
+    return (!brand?.value||variant.brand===brand.value)&&(!purchase?.value||variant.buyOnline)&&(!availability?.value||Number(variant.stock)>0)&&controls.every(c=>c.dataset.catalogFilter===ignore||!c.value||fieldValue(variant,c.dataset.catalogFilter)===c.value);
   }
   const matching=model=>model.variants.filter(v=>matches(v)).sort((a,b)=>(a.price||Infinity)-(b.price||Infinity)||a.sku.localeCompare(b.sku));
   function updateCard(model,variant,count){
@@ -170,13 +182,14 @@
   document.addEventListener('click',event=>{if(!event.target.closest('.market-inventory-wrap'))closeInventory();});
   document.addEventListener('keydown',event=>{if(event.key==='Escape')closeInventory();});
 
-  for(const control of [...controls,availability].filter(Boolean))control.addEventListener('change',refresh);
-  document.querySelector('[data-catalog-clear]').addEventListener('click',()=>{for(const c of controls)c.value='';if(availability)availability.value='';refresh();});
+  for(const control of [...controls,availability,brand,purchase].filter(Boolean))control.addEventListener('change',refresh);
+  document.querySelector('[data-catalog-clear]').addEventListener('click',()=>{for(const c of [...controls,availability,brand,purchase].filter(Boolean))c.value='';refresh();});
   for(const checkbox of document.querySelectorAll('[data-catalog-compare]'))checkbox.addEventListener('change',()=>{if(checkbox.checked)chosen.add(checkbox.dataset.catalogCompare);else chosen.delete(checkbox.dataset.catalogCompare);updateComparisonButtons();});
   document.querySelector('[data-catalog-selected]').addEventListener('click',()=>compare([...chosen].filter(k=>displayed.has(k))));
   document.querySelector('[data-catalog-all]').addEventListener('click',()=>compare([...displayed.keys()]));
   document.querySelector('[data-catalog-close]').addEventListener('click',()=>document.querySelector('[data-catalog-dialog]').close());
   refresh();
 })();
+
 
 
