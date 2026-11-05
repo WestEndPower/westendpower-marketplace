@@ -144,6 +144,13 @@
     document.addEventListener('click',e=>{
       const a=e.target.closest('a[href]');if(!a)return;
       let url;try{url=new URL(a.href,location.href);}catch{return;}
+      // External detail pages cannot run our counter. Record their originating SKU open,
+      // while our own detail/builder destinations record only after a successful load.
+      if(a.matches('.market-image,[data-catalog-details]')){
+        const ours=(url.origin===root.origin||url.origin===location.origin)&&/\/(?:product|product-options)\.html$/.test(url.pathname);
+        const label=a.closest('.market-card')?.querySelector('[data-wep-view-sku][data-wep-view-brand]');
+        if(!ours&&label&&['https:','http:'].includes(url.protocol))productOpened(label.dataset.wepViewBrand,label.dataset.wepViewSku,'details');
+      }
       if(['tel:','mailto:','sms:'].includes(url.protocol)){event('contact_click',{destination:url.protocol.slice(0,-1)});return;}
       if((/(^|\.)google\.[a-z.]+$/.test(url.hostname)&&(url.pathname.startsWith('/maps')||url.hostname.startsWith('maps.')))||url.hostname==='maps.apple.com'||url.hostname==='maps.app.goo.gl'){event('directions_click');return;}
       if(url.origin===location.origin&&/\/checkout\.html$/.test(url.pathname))event('begin_checkout');

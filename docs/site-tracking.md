@@ -2,7 +2,7 @@
 
 ## What counts
 
-- Successful product details or Build & Buy loads qualify. Rendering a catalog card is not a view.
+- Successful product details or Build & Buy loads qualify. When a tag opens an external detail page (including Dealer Spike), its originating SKU open is recorded on the tag; we cannot confirm rendering on that external site. Our own details/Build & Buy pages record after a successful product load. Rendering a catalog card alone is not a view.
 - Count an exact manufacturer/SKU once per browser storage context per New York calendar day. Counter receipts are deduplicated by the API, including reloads and the details-to-builder transition. Browsers with Web Locks also serialize simultaneous tabs.
 - Dealer use counts. No customer/staff identity is recorded or used to exclude a view.
 - The badge shows recorded views over the last 168 hours, not unique people. Browser storage clearing, another browser profile, or a different device is a different context. Do not describe these as unique customers or verified human visitors.

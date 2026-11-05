@@ -48,3 +48,10 @@ test('all shopping entry pages load exactly one shared tag and no standalone GA 
 test('a background product tab counts only after it becomes visible',async()=>{
  const b=browser();b.document.visibilityState='hidden';b.window.WEPViewedProduct={brandId:'TORO',sku:'88920',kind:'builder'};await b.start();assert.equal(b.calls.some(c=>c.url.endsWith('/product-view')),false);b.document.visibilityState='visible';b.handlers.visibilitychange();await new Promise(resolve=>setImmediate(resolve));assert.equal(b.calls.filter(c=>c.url.endsWith('/product-view')).length,1);
 });
+
+test('external details opens record the originating SKU once; own details wait for a successful load',async()=>{
+ const b=browser();await b.start();const label={dataset:{wepViewBrand:'YANMAR',wepViewSku:'SA223BI-L'}};const card={querySelector:()=>label};
+ const click=href=>{const a={href,matches:()=>true,closest:selector=>selector==='.market-card'?card:null};b.handlers.click({target:{closest:()=>a}});};
+ click('https://westendpower.github.io/westendpower-marketplace/product.html?brand=YANMAR&sku=SA223BI-L');await new Promise(resolve=>setImmediate(resolve));assert.equal(b.calls.some(c=>c.url.endsWith('/product-view')),false);
+ click('https://www.westendpower.com/new-models/yanmar?private=SECRET');click('https://www.westendpower.com/new-models/yanmar?private=SECRET');await new Promise(resolve=>setImmediate(resolve));const writes=b.calls.filter(c=>c.url.endsWith('/product-view'));assert.equal(writes.length,1);assert.equal(JSON.parse(writes[0].options.body).sku,'SA223BI-L');assert.equal(writes[0].options.body.includes('SECRET'),false);
+});
