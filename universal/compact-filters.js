@@ -30,6 +30,11 @@
   return '<div class="wep-filter-top" aria-label="Equipment filters">'+uses+top.join('')+'</div>'+choices;
  }
  function render(context){current=context;const html=markup(context);for(const host of context.hosts.filter(Boolean))host.innerHTML=html;}
+ document.addEventListener('change',event=>{
+  if(!current||!event.target.matches?.('[data-brand]')||!document.querySelector('#market-refine.wep-compact-active'))return;
+  // Run after the shopping handler has applied the customer's brand selection.
+  queueMicrotask(()=>{if(current)render(current);});
+ });
  document.addEventListener('click',event=>{
   const group=event.target.closest('[data-compact-group]'),choice=event.target.closest('[data-compact-choice]');
   if(!current||(!group&&!choice)||!current.hosts.some(host=>host?.contains(group||choice)))return;
