@@ -1,0 +1,58 @@
+/* Canonical shopping header, navigation and footer styles. */
+.market-header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 18px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.05)}
+.market-branding{display:flex;align-items:center;gap:14px;min-width:0}
+.market-home-link{display:flex;align-items:center;text-decoration:none}
+.market-branding img{max-width:210px;max-height:58px;object-fit:contain}
+.market-branding h1{margin:0;font-size:clamp(22px,3vw,34px)}
+.market-branding p{margin:3px 0 0;color:var(--muted)}
+.market-searchbox{display:flex;align-items:center;gap:8px;min-width:min(420px,38vw)}
+.market-searchbox input{width:100%;min-height:44px;padding:11px 13px;border:1px solid #aeb6bf;border-radius:9px}
+.market-clear{min-height:44px;border:1px solid #333;border-radius:8px;background:#fff;padding:10px 12px;font-weight:800}
+@media(max-width:1120px){.market-searchbox{min-width:300px}}
+@media(max-width:760px){.market-header{align-items:stretch;flex-direction:column}
+.market-searchbox{min-width:0;width:100%}
+.market-branding img{max-width:160px}}
+.market-brand-text{min-width:0}
+
+
+
+
+
+
+
+
+.market-header{display:grid;grid-template-columns:minmax(150px,230px) minmax(0,1fr) minmax(300px,420px);align-items:center;gap:20px;background:#d0d6d9;padding:18px 150px 18px 20px}
+.market-branding{display:contents}
+.market-home-link{grid-column:1;justify-self:start}
+.market-brand-text{grid-column:2;text-align:center;min-width:0}
+.market-brand-text h1{margin:0;text-align:center;font-size:clamp(20px,1.75vw,30px);line-height:1.2;font-weight:900;color:#176A14;text-wrap:balance}
+.market-brand-text .shop-header-slogan{margin:8px 0 0;color:#333936;font-size:clamp(13px,1.1vw,17px);line-height:1.35;font-weight:700;text-wrap:balance}
+.market-searchbox{grid-column:3;min-width:0;width:100%}
+.wep-nav{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:0 0 16px;border-bottom:1px solid #ffffff30;margin-bottom:0}
+.wep-nav>a,.wep-nav summary{display:block;padding:12px 14px;background:transparent;color:#fff;font-size:16px;font-weight:700;line-height:1.3;border-radius:7px;cursor:pointer;text-decoration:none}
+.wep-nav>a:hover,.wep-nav summary:hover{background:#ffffff14}
+.wep-nav>[aria-current=page]{background:#ffffff20;box-shadow:inset 0 -3px #fff}
+.wep-nav .wep-cart{border:1px solid #ffffff65}
+.wep-nav details{position:relative}
+.wep-nav summary{list-style:none}
+.wep-nav summary::-webkit-details-marker{display:none}
+.wep-nav summary::after{content:'';display:inline-block;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor;margin-left:7px;vertical-align:middle}
+.wep-nav details[open] summary::after{border-top:0;border-bottom:5px solid currentColor}
+.wep-menu{position:absolute;z-index:100;top:100%;left:0;min-width:180px;padding:5px;background:#333936;border:1px solid #ffffff35;border-radius:7px;box-shadow:0 5px 18px #0003}
+.wep-menu a{display:block;padding:10px 14px;color:#fff!important;text-decoration:none;font-size:15px}
+.wep-menu a:hover{background:#ffffff20}
+.wep-nav a:focus-visible,.wep-nav summary:focus-visible{outline:3px solid #f0cf69;outline-offset:3px}
+.shop-notice{margin:24px 0 10px;padding:18px 20px;border:1px solid #ffffff40;border-radius:9px;background:#ffffff10;color:#fff;font-size:14px;line-height:1.6}
+.shop-notice p{margin:0 0 7px}
+.shop-notice p:last-child{margin-bottom:0}
+.shop-notice strong{font-size:15px}
+@media(max-width:1100px){.market-header{grid-template-columns:170px minmax(0,1fr);padding-right:145px;gap:12px}
+.market-searchbox{grid-column:1/-1;max-width:620px;justify-self:center}
+.market-branding img{max-width:170px}}
+@media(max-width:760px){.wep-nav{justify-content:flex-start}
+.wep-nav>a,.wep-nav summary{padding:10px;font-size:14px}
+.wep-menu{max-width:80vw}}
+@media(max-width:600px){.market-header{grid-template-columns:115px minmax(0,1fr);padding:65px 14px 16px;gap:12px}
+.market-branding img{max-width:115px}
+.market-brand-text h1{font-size:20px}
+.market-brand-text .shop-header-slogan{font-size:13px}}
