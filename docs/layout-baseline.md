@@ -205,3 +205,9 @@ Change a baseline only when John requests or approves that layout change.
 
 - John requested a dedicated products-only Use field, leaving Series and System intact. Show compact All Uses / Residential / Commercial pills beneath Subcategories where matching workbook values exist, on all three shopping routes and in the mobile controls.
 - Filter exact SKU variants before choosing displayed pricing or comparison data. Preserve the Use selection as `use` in shared URLs and saved builder pages. Blank Use values stay visible under All Uses.
+
+## Equipment image fit (November 6, 2026)
+
+- John requested larger visible equipment inside the existing image boxes. Fit the image to the available area, reserving banner space only when present and retaining the view-count footer.
+- Same-origin card images remove unused white/transparent outer margins for display, with a safety margin around the equipment. Keep the source files, full equipment proportions, card heights, specifications, and purchase layout intact. Preserve full-frame photos and external images.
+- Apply the shared display fitting to Marketplace, Shop by Product, and Shop by Brand, including cards updated after selection changes.
