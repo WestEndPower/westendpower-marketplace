@@ -211,3 +211,7 @@ Change a baseline only when John requests or approves that layout change.
 - John requested larger visible equipment inside the existing image boxes. Fit the image to the available area, reserving banner space only when present and retaining the view-count footer.
 - Same-origin card images remove unused white/transparent outer margins for display, with a safety margin around the equipment. Keep the source files, full equipment proportions, card heights, specifications, and purchase layout intact. Preserve full-frame photos and external images.
 - Apply the shared display fitting to Marketplace, Shop by Product, and Shop by Brand, including cards updated after selection changes.
+
+## Published brand menu contrast (November 6, 2026)
+
+- Published brand dropdowns use dark green links on their white panel, overriding the shared dark-menu white-link rule. Keep the top-level brand names white on green and preserve all menu destinations, page ordering, and keyboard behavior.
