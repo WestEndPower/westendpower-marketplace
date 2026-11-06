@@ -711,7 +711,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-recommended-series1"></script><script src="universal/package-pricing.js?v=20261105-shared1"></script><script src="universal/equipment-package-pricing.js?v=20261104-utv-options1"></script><script src="universal/marketplace-card.js?v=20261105-views1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261104-card-alignment1"><link rel="stylesheet" href="universal/promotions.css?v=20261031-promo1"><script src="universal/promotions.js?v=20261031-verified-finance5"></script><script src="universal/site-tracking.js?v=20261105-views1" defer></script><link rel="stylesheet" href="universal/product-views.css?v=20261106-image-fit1"><meta name="wep-shopping-template" content="2"><link rel="stylesheet" href="universal/compact-filters.css?v=20261105-shared1"><script src="universal/compact-filters.js?v=20261105-shared1"></script><link rel="stylesheet" href="universal/shopping-shell.css?v=20261105-shared1"><script src="universal/shopping-shell.js?v=20261105-shared1"></script><script src="universal/card-image-fit.js?v=20261106-image-fit1" defer></script></head>
+<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-recommended-series1"></script><script src="universal/package-pricing.js?v=20261105-shared1"></script><script src="universal/equipment-package-pricing.js?v=20261104-utv-options1"></script><script src="universal/marketplace-card.js?v=20261105-views1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261104-card-alignment1"><link rel="stylesheet" href="universal/promotions.css?v=20261031-promo1"><script src="universal/promotions.js?v=20261031-verified-finance5"></script><script src="universal/site-tracking.js?v=20261105-views1" defer></script><link rel="stylesheet" href="universal/product-views.css?v=20261106-image-fit1"><meta name="wep-shopping-template" content="2"><link rel="stylesheet" href="universal/compact-filters.css?v=20261106-builder-standard1"><script src="universal/compact-filters.js?v=20261106-builder-standard1"></script><link rel="stylesheet" href="universal/shopping-shell.css?v=20261105-shared1"><script src="universal/shopping-shell.js?v=20261105-shared1"></script><script src="universal/card-image-fit.js?v=20261106-image-fit1" defer></script></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -2356,7 +2356,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
 
     for(const [field,values] of state.specFilters){
       if(
-        field===options.ignoreField ||
+        options.ignoreSpecifications || field===options.ignoreField ||
         !values ||
         !values.size
       ){
@@ -2503,13 +2503,13 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     const categoryHost=$('#market-categories');
     const widthHost=$('#market-width');
 
-    const compactFilters=state.shopMode==='equipment' && state.category==='Mowers' && state.subcategory && window.WEPCompactFilters;
+    const compactFilters=state.shopMode==='equipment' && (window.WEPGeneratedCatalog || (state.category==='Mowers' && state.subcategory)) && window.WEPCompactFilters;
     $('#market-refine')?.classList.toggle('wep-compact-active',!!compactFilters);
     if(compactFilters){
       powerWrap.hidden=true;categoryPanel.hidden=true;contextPanel.hidden=false;
       categoryHost.innerHTML='';powerHost.innerHTML='';
-      window.WEPCompactFilters.render({rows:DATA.products,state,matches:(row,options)=>(!state.brand.size||state.brand.has(clean(row.BrandID).toUpperCase()))&&marketplaceRowMatches(row,options),
-        hosts:[context,$('#market-mobile-context')],changed(){renderTopFilters();renderSidebar();filterFamilies();}});
+      window.WEPCompactFilters.render({rows:DATA.products,state,generated:!!window.WEPGeneratedCatalog,specGroups:marketplaceSpecGroups(),packageGroups:marketplaceGroups('P'),powerContext:marketplacePowerContextGroup(),promoAvailable:marketplacePromoAvailable(),matches:(row,options)=>(!state.brand.size||state.brand.has(clean(row.BrandID).toUpperCase()))&&marketplaceRowMatches(row,options),
+        hosts:[context,$('#market-mobile-context')],changed(action){renderTopFilters();renderSidebar();filterFamilies();if(action==='promos')track('marketplace_promos',{active:state.promoOnly});}});
       widthHost.hidden=true;widthHost.innerHTML='';return;
     }
 

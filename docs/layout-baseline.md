@@ -219,3 +219,9 @@ Change a baseline only when John requests or approves that layout change.
 ## Generated-page URL cleanup (November 6, 2026)
 
 - Cart handoff cleanup and Clear must resolve history URLs against the actual page origin, even when the shared shopping template has a Marketplace base URL. Preserve the cart, saved page path, filters and optional anchor; remove only the transfer payload.
+
+## Standard builder filter format (November 6, 2026)
+
+- All generated equipment pages use centered top filter buttons with exactly one centered options row open at a time. Opening another group preserves selected filters; selected values remain available to clear even when combinations have no matches.
+- Non-mower pages show controls backed by their published products: model, series, power, use, deck size, workbook B specifications and P package filters where applicable. Category/type controls appear only when the saved scope has multiple choices. All Models clears only model and series; Promos preserves other choices. Do not add mower-specific Residential/Commercial or deck controls to blowers without published values.
+- Preserve the existing five-button mower row and normal Marketplace/Shop browse controls. Use the same builder behavior on Marketplace, Shop by Product and Shop by Brand templates; mobile puts these controls in the Filters drawer.
