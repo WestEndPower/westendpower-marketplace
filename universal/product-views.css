@@ -1,5 +1,8 @@
 /* Reserve the same image-box footer at zero and nonzero views. No card-height changes. */
-.market-card.wep-blended-card .market-image{padding-bottom:34px!important}
-.market-card.wep-blended-card .market-image img{max-height:100%;min-height:0}
+.market-card.wep-blended-card .market-image{padding:6px 4px 34px!important}
+.market-card.wep-blended-card .market-image img{height:100%!important;max-height:100%;min-height:0}
 .market-card.wep-blended-card .wep-view-count{position:absolute;left:3px;right:3px;bottom:3px;display:block;min-height:14px;text-align:center;font:700 11px/14px Arial,sans-serif;color:#263b2d;background:#fff;pointer-events:none;white-space:normal;overflow-wrap:anywhere}
 .market-card.wep-blended-card .wep-view-count[hidden]{display:none}
+
+/* Reserve banner space only when a savings banner exists. */
+.market-card.wep-blended-card .market-image-wrap:has(.market-offer-row) .market-image{padding-top:40px!important}
