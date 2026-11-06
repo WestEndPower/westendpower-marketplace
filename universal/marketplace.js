@@ -1255,7 +1255,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
     for(const [field,values] of state.specFilters){
       if(
-        field===options.ignoreField ||
+        options.ignoreSpecifications || field===options.ignoreField ||
         !values ||
         !values.size
       ){
@@ -1402,13 +1402,13 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const categoryHost=$('#market-categories');
     const widthHost=$('#market-width');
 
-    const compactFilters=state.shopMode==='equipment' && state.category==='Mowers' && state.subcategory && window.WEPCompactFilters;
+    const compactFilters=state.shopMode==='equipment' && (window.WEPGeneratedCatalog || (state.category==='Mowers' && state.subcategory)) && window.WEPCompactFilters;
     $('#market-refine')?.classList.toggle('wep-compact-active',!!compactFilters);
     if(compactFilters){
       powerWrap.hidden=true;categoryPanel.hidden=true;contextPanel.hidden=false;
       categoryHost.innerHTML='';powerHost.innerHTML='';
-      window.WEPCompactFilters.render({rows:DATA.products,state,matches:(row,options)=>(!state.brand.size||state.brand.has(clean(row.BrandID).toUpperCase()))&&marketplaceRowMatches(row,options),
-        hosts:[context,$('#market-mobile-context')],changed(){renderTopFilters();renderSidebar();filterFamilies();}});
+      window.WEPCompactFilters.render({rows:DATA.products,state,generated:!!window.WEPGeneratedCatalog,specGroups:marketplaceSpecGroups(),packageGroups:marketplaceGroups('P'),powerContext:marketplacePowerContextGroup(),promoAvailable:marketplacePromoAvailable(),matches:(row,options)=>(!state.brand.size||state.brand.has(clean(row.BrandID).toUpperCase()))&&marketplaceRowMatches(row,options),
+        hosts:[context,$('#market-mobile-context')],changed(action){renderTopFilters();renderSidebar();filterFamilies();if(action==='promos')track('marketplace_promos',{active:state.promoOnly});}});
       widthHost.hidden=true;widthHost.innerHTML='';return;
     }
 

@@ -118,3 +118,35 @@ test('generated page cart cleanup stays on its own origin with a Marketplace bas
  const search=source.api.url(pages+'/pages/stihl-backpack');
  assert.equal(handoff(pages,[],new URL(search).hash,market).history.url,pages+'/pages/test');
 });
+
+function builderCompact(){
+ const {api,listeners}=compact(),state={category:'Blowers',subcategory:'Backpack',seriesFilter:'',modelFilter:'',power:'',use:'',deck:'',specFilters:new Map(),packageComponents:new Set(),promoOnly:false},host={innerHTML:'',contains:()=>true};
+ const rows=[{Category:'Blowers',SubCategory:'Backpack',Series:'BR',Model:'BR600',PowerType:'Gas',SortOrder:'5','B1-Engine':'2-MIX','P1-Kit':'T'},{Category:'Blowers',SubCategory:'Backpack',Series:'BR',Model:'BR800',PowerType:'Gas',SortOrder:'6','B1-Engine':'4-MIX'},{Category:'Blowers',SubCategory:'Backpack',Series:'AP',Model:'BGA300',PowerType:'Battery',SortOrder:'2','B1-Engine':'Electric'}];
+ const matches=(r,o)=>[['category','Category','ignoreCategory'],['subcategory','SubCategory','ignoreSubcategory'],['seriesFilter','Series','ignoreSeries'],['modelFilter','Model','ignoreModel'],['power','PowerType','ignorePower'],['use','Use','ignoreUse']].every(([key,field,ignore])=>o[ignore]||!state[key]||r[field]===state[key])&&[...state.specFilters].every(([field,values])=>o.ignoreSpecifications||o.ignoreField===field||values.has(r[field]))&&(o.ignorePackage||[...state.packageComponents].every(field=>r[field]==='T'));
+ const context={generated:true,rows,state,hosts:[host],matches,specGroups:[{field:'B1-Engine',label:'Engine'}],packageGroups:[{field:'P1-Kit',label:'Kit'}],promoAvailable:true,changed(){api.render(context);}};
+ api.render(context);
+ const click=dataset=>listeners.click({target:{closest:s=>s==='[data-compact-group]'&&dataset.compactGroup?{dataset}:s==='[data-compact-choice]'&&dataset.compactChoice?{dataset}:s==='[data-compact-action]'&&dataset.compactAction?{dataset}:null},preventDefault(){}});
+ return {api,state,host,context,click};
+}
+test('builder backpack pages use one options row with relevant model/series/power controls',()=>{
+ const b=builderCompact();assert.match(b.host.innerHTML,/data-compact-group="model"/);assert.match(b.host.innerHTML,/data-compact-group="power"/);assert.doesNotMatch(b.host.innerHTML,/Residential|Commercial|Deck Size|data-compact-group="subcategory"/);
+ b.click({compactGroup:'series'});assert.match(b.host.innerHTML,/Series options/);
+ const choices=[...b.host.innerHTML.matchAll(/data-compact-choice="series" data-value="([^"]+)"/g)].map(m=>m[1]);assert.deepEqual(choices,['AP','BR']);
+ b.click({compactChoice:'series',value:'BR'});b.click({compactGroup:'model'});assert.doesNotMatch(b.host.innerHTML,/Series options/);assert.match(b.host.innerHTML,/Model options/);assert.match(b.host.innerHTML,/BR600/);assert.doesNotMatch(b.host.innerHTML,/data-value="BGA300"/);
+ b.click({compactChoice:'model',value:'BR800'});b.click({compactGroup:'power'});assert.equal(b.state.seriesFilter,'BR');assert.equal(b.state.modelFilter,'BR800');assert.match(b.host.innerHTML,/Power Type options/);assert.doesNotMatch(b.host.innerHTML,/data-value="Battery"/);
+});
+test('builder workbook specification and package choices remain usable and retain other selections',()=>{
+ const b=builderCompact();b.state.power='Gas';b.api.render(b.context);
+ b.click({compactGroup:'spec:B1-Engine'});assert.match(b.host.innerHTML,/All Engine/);assert.doesNotMatch(b.host.innerHTML,/All undefined/);
+ b.click({compactChoice:'spec:B1-Engine',value:'2-MIX'});b.click({compactChoice:'spec:B1-Engine',value:'4-MIX'});assert.equal(b.state.specFilters.get('B1-Engine').size,2);
+ b.click({compactGroup:'packages'});assert.doesNotMatch(b.host.innerHTML,/Engine options/);b.click({compactChoice:'packages',value:'P1-Kit'});assert.equal(b.state.packageComponents.has('P1-Kit'),true);assert.equal(b.state.power,'Gas');assert.equal(b.state.specFilters.get('B1-Engine').size,2);
+ b.click({compactChoice:'packages',value:''});assert.equal(b.state.packageComponents.size,0);
+ b.click({compactGroup:'spec:B1-Engine'});b.click({compactChoice:'spec:B1-Engine',value:''});assert.equal(b.state.specFilters.size,0);
+});
+test('builder controls retain incompatible selected values for clearing, without clearing other filters',()=>{
+ const b=builderCompact();b.state.power='Gas';b.state.modelFilter='BGA300';b.api.render(b.context);
+ b.click({compactGroup:'power'});assert.match(b.host.innerHTML,/data-value="Gas"/);assert.match(b.host.innerHTML,/data-value="Battery"/);
+ b.click({compactChoice:'power',value:''});assert.equal(b.state.power,'');assert.equal(b.state.modelFilter,'BGA300');
+ b.click({compactAction:'promos'});assert.equal(b.state.promoOnly,true);assert.equal(b.state.modelFilter,'BGA300');
+ b.click({compactAction:'models'});assert.equal(b.state.modelFilter,'');assert.equal(b.state.promoOnly,true);
+});
