@@ -6,7 +6,7 @@
   const market='https://westendpower.github.io/westendpower-marketplace/';
   const api='https://westendpower-configurator-api.westendpower-nm.workers.dev';
   const names={BILLYGOAT:'Billy Goat',GREENWORKS:'Greenworks',HONDA:'Honda',MITM:'Mi-T-M',REDMAX:'RedMax',STIHL:'STIHL',TORO:'Toro',YANMAR:'Yanmar'};
-  const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=market+'universal/brand-navigation.css?v=20261025-brandnav1';document.head.append(stylesheet);
+  const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=market+'universal/brand-navigation.css?v=20261106-menu-contrast1';document.head.append(stylesheet);
   const text=(tag,value)=>{const el=document.createElement(tag);el.textContent=value;return el;};
   const controllers=[];
   let profiles=[],published=[],loaded=false;
