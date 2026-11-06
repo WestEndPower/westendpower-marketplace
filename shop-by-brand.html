@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head>
-<script src="universal/cart-handoff.js?v=20261105-shared1"></script><meta charset="utf-8">
+<script src="universal/cart-handoff.js?v=20261106-page-origin1"></script><meta charset="utf-8">
 <base href="./"><link rel="preload" href="data/marketplace-catalog.json" as="fetch" crossorigin="anonymous" data-marketplace-catalog="">
 
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -3961,7 +3961,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     });
     $('#market-search').addEventListener('input',e=>{ state.search=e.target.value; filterFamilies(); });
     $('#market-clear').addEventListener('click',()=>{
-      if(window.WEPGeneratedCatalog){history.replaceState(null,'',window.WEPGeneratedCatalog.resetURL(location.pathname));applyMarketplaceUrl();renderTopFilters();renderSidebar();filterFamilies();track('marketplace_clear_filters');return;}
+      if(window.WEPGeneratedCatalog){history.replaceState(null,'',new URL(window.WEPGeneratedCatalog.resetURL(location.pathname),location.href).href);applyMarketplaceUrl();renderTopFilters();renderSidebar();filterFamilies();track('marketplace_clear_filters');return;}
       state.shopMode='equipment';state.category='';state.subcategory='';state.use='';state.deck='';state.power='';state.seriesOrEngine='';state.width='';state.brand.clear();state.availability.clear();state.buyOnline=false;state.promoOnly=false;state.promoView='current';state.search='';state.specFilters.clear();state.packageFilter='';
       $('#market-search').value=''; $('#filter-buy-online').checked=false;
       renderTopFilters();renderSidebar();filterFamilies();

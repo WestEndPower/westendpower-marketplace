@@ -215,3 +215,7 @@ Change a baseline only when John requests or approves that layout change.
 ## Published brand menu contrast (November 6, 2026)
 
 - Published brand dropdowns use dark green links on their white panel, overriding the shared dark-menu white-link rule. Keep the top-level brand names white on green and preserve all menu destinations, page ordering, and keyboard behavior.
+
+## Generated-page URL cleanup (November 6, 2026)
+
+- Cart handoff cleanup and Clear must resolve history URLs against the actual page origin, even when the shared shopping template has a Marketplace base URL. Preserve the cart, saved page path, filters and optional anchor; remove only the transfer payload.

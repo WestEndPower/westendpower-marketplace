@@ -80,8 +80,8 @@ test('preview filtering and Clear retain the saved page slug and selected previe
   const source=fs.readFileSync(path,'utf8');assert.match(source,/WEPGeneratedCatalog\?\.preserveContext\(params\)/);assert.match(source,/WEPGeneratedCatalog.resetURL\(location.pathname\)/);
  }
 });
-function handoff(origin,cart=[],hash=''){
- const window={},storage=new Map([['wepCart',JSON.stringify(cart)]]),location={origin,hash,pathname:'/pages/test',search:''},history={replaceState(_a,_b,url){this.url=url;}},document={baseURI:origin+'/',addEventListener(){}};
+function handoff(origin,cart=[],hash='',baseURI=origin+'/'){
+ const window={},storage=new Map([['wepCart',JSON.stringify(cart)]]),location={origin,hash,pathname:'/pages/test',search:''},history={replaceState(_a,_b,url){const resolved=new URL(url,baseURI);if(resolved.origin!==origin)throw new Error('SecurityError: cross-origin history URL');this.url=resolved.href;}},document={baseURI,addEventListener(){}};
  const sandbox={window,document,location,history,localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},URL,URLSearchParams,console,btoa:s=>Buffer.from(s,'binary').toString('base64'),atob:s=>Buffer.from(s,'base64').toString('binary'),unescape,escape,encodeURIComponent,decodeURIComponent};
  vm.runInNewContext(fs.readFileSync('universal/cart-handoff.js','utf8'),sandbox);return {api:window.WEPCartHandoff,storage,history};
 }
@@ -89,8 +89,8 @@ test('cart handoff preserves exact quantities and kit pricing, excludes customer
  const source=handoff('https://westendpower.github.io',[{sku:'KIT',brandId:'STIHL',quantity:2,customerEmail:'PRIVATE',itemPrice:500,kitComponents:[{sku:'TOOL',quantity:2,itemTotal:600,regularUnitPrice:350,locked:true,parentSku:'KIT',customerName:'PRIVATE'}]}]);
  const target=new URL(source.api.url('https://westendpower-configurator-api.westendpower-nm.workers.dev/pages/stihl'));
  const received=handoff(target.origin,[],target.hash),cart=JSON.parse(received.storage.get('wepCart'));assert.equal(cart[0].quantity,2);assert.equal(cart[0].kitComponents[0].itemTotal,600);assert.equal(cart[0].kitComponents[0].regularUnitPrice,350);assert.equal(cart[0].kitComponents[0].locked,true);
- assert.doesNotMatch(received.storage.get('wepCart'),/PRIVATE|customer/);assert.equal(received.history.url,'/pages/test');
- const anchored=new URL(source.api.url('https://westendpower-configurator-api.westendpower-nm.workers.dev/pages/stihl#wep-itemized-quote'));assert.equal(handoff(anchored.origin,[],anchored.hash).history.url,'/pages/test#wep-itemized-quote');
+ assert.doesNotMatch(received.storage.get('wepCart'),/PRIVATE|customer/);assert.equal(received.history.url,target.origin+'/pages/test');
+ const anchored=new URL(source.api.url('https://westendpower-configurator-api.westendpower-nm.workers.dev/pages/stihl#wep-itemized-quote'));assert.equal(handoff(anchored.origin,[],anchored.hash).history.url,anchored.origin+'/pages/test#wep-itemized-quote');
  assert.equal(source.api.url('https://unrelated.example/cart.html'),'https://unrelated.example/cart.html');
  const empty=handoff('https://westendpower.github.io',[]);assert.match(empty.api.url(target.origin+'/pages/test'),/wep-cart=/);
 });
@@ -105,4 +105,16 @@ test('direct builder visits preserve an existing Marketplace basket and addition
  const sandbox={window,document,location:{origin:market,pathname:'/cart.html',search:'',hash:first.hash},history:{replaceState(){}},localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)},URL,URLSearchParams,console,btoa:s=>Buffer.from(s,'binary').toString('base64'),atob:s=>Buffer.from(s,'base64').toString('binary'),unescape,escape,encodeURIComponent,decodeURIComponent};
  vm.runInNewContext(fs.readFileSync('universal/cart-handoff.js','utf8'),sandbox);cart=JSON.parse(storage.get('wepCart'));assert.equal(cart.find(r=>r.sku==='MOWER').quantity,10);
  const empty=handoff(pages,[]),noAdds=new URL(empty.api.url(market+'/westendpower-marketplace/cart.html'));const kept=handoff(market,cart,noAdds.hash);assert.equal(JSON.parse(kept.storage.get('wepCart')).length,2);
+});
+
+test('generated page cart cleanup stays on its own origin with a Marketplace base URI',()=>{
+ const pages='https://westendpower-configurator-api.westendpower-nm.workers.dev',market='https://westendpower.github.io/westendpower-marketplace/';
+ const source=handoff('https://westendpower.github.io',[{brandId:'STIHL',sku:'4283 011 1610 US',quantity:1}]);
+ const target=new URL(source.api.url(pages+'/pages/stihl-backpack#equipment'));
+ const received=handoff(pages,[],target.hash,market);
+ assert.ok(received.api,'initialization reaches the cart API export');
+ assert.equal(received.history.url,pages+'/pages/test#equipment');
+ assert.equal(JSON.parse(received.storage.get('wepCart'))[0].sku,'4283 011 1610 US');
+ const search=source.api.url(pages+'/pages/stihl-backpack');
+ assert.equal(handoff(pages,[],new URL(search).hash,market).history.url,pages+'/pages/test');
 });
