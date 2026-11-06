@@ -38,7 +38,7 @@
     catch(error){localStorage.setItem('wepCart',before);localStorage.setItem(receiptsKey,saved);throw error;}
    }else throw Error('Invalid cart direction.');
   }catch(error){console.warn('Cart transfer was not accepted.',error);if(typeof alert==='function')alert('Your cart additions could not be transferred. Please review your cart before continuing.');}
-  const anchor=hash.get('wep-cart-anchor')||'';history.replaceState(null,'',location.pathname+location.search+(anchor?'#'+anchor:''));
+  const anchor=hash.get('wep-cart-anchor')||'';history.replaceState(null,'',location.origin+location.pathname+location.search+(anchor?'#'+anchor:''));
  }
  let previous;
  try{previous=readCart();}catch{previous=[];}

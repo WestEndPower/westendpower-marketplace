@@ -2843,7 +2843,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     });
     $('#market-search').addEventListener('input',e=>{ state.search=e.target.value; filterFamilies(); });
     $('#market-clear').addEventListener('click',()=>{
-      if(window.WEPGeneratedCatalog){history.replaceState(null,'',window.WEPGeneratedCatalog.resetURL(location.pathname));applyMarketplaceUrl();renderTopFilters();renderSidebar();filterFamilies();track('marketplace_clear_filters');return;}
+      if(window.WEPGeneratedCatalog){history.replaceState(null,'',new URL(window.WEPGeneratedCatalog.resetURL(location.pathname),location.href).href);applyMarketplaceUrl();renderTopFilters();renderSidebar();filterFamilies();track('marketplace_clear_filters');return;}
       resetMarketplaceSelection();
       $('#market-search').value=''; $('#filter-buy-online').checked=false;
       renderTopFilters();renderSidebar();filterFamilies();
