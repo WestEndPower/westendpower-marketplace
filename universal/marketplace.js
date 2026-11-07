@@ -2341,15 +2341,17 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const grid=$('#market-grid');
     const families=DATA.filtered.slice();
     const batchSize=6;
+    // A narrow screen only needs its first card for the initial paint.
+    const initialSize=typeof matchMedia==='function'&&matchMedia('(max-width:760px)').matches?1:batchSize;
     let offset=0;
-    grid.setAttribute('aria-busy',families.length>batchSize ? 'true' : 'false');
+    grid.setAttribute('aria-busy',families.length>initialSize ? 'true' : 'false');
     if(!families.length){
       grid.innerHTML='<div class="market-empty"><h2>No products match those filters.</h2><p>Clear one or more filters to see additional options.</p></div>';
       return;
     }
-    grid.innerHTML=families.slice(0,batchSize).map(card).join('');
+    grid.innerHTML=families.slice(0,initialSize).map(card).join('');
     fitPriceDescriptions();observeCardFinance();
-    offset=batchSize;
+    offset=initialSize;
     function appendBatch(){
       // A changed filter invalidates any pending cards from the previous results.
       if(version!==cardRenderVersion) return;
@@ -3085,6 +3087,11 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     try{
       if(document.getElementById('wep-generated-page')&&(!window.WEPGeneratedCatalog||!window.WEPCartHandoff))throw Error('Shopping controls could not be initialized. Please refresh and retry.');
       await window.WEPShoppingShellReady;
+      // Stock does not depend on catalog rows. Start it before catalog decoding.
+      // Still await inventoryReady before exposing any shopping controls.
+      const inventoryReady=loadInventoryAvailability(
+        marketplaceBrandProfiles().map(profile=>clean(profile.id).toUpperCase())
+      );
       const [catalog,locations]=await Promise.all([
         loadMarketplaceCatalog(),
         loadMarketplaceLocations()
@@ -3092,11 +3099,6 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       let [products,batteries,chargers,compatibility,financePrograms,settingsRows]=catalog;
       if(window.WEPGeneratedCatalog)products=window.WEPGeneratedCatalog.products(products);
       DATA.products=products;
-      // Start stock requests while independent component/finance setup runs.
-      // Keep the await below: never expose interactive cards before stock resolves.
-      const inventoryReady=loadInventoryAvailability(
-        marketplaceBrandProfiles().map(profile=>clean(profile.id).toUpperCase())
-      );
       if(['zero','responders','fleet'].includes(new URLSearchParams(location.search).get('promo')))await ensurePromotionPrograms(new URLSearchParams(location.search).get('promo'));
       DATA.batteries=batteries;
       DATA.chargers=chargers;

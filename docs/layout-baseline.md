@@ -298,3 +298,8 @@ Change a baseline only when John requests or approves that layout change.
 
 - Render the Dealer Portal link and its desktop/mobile positioning before scripts execute. The standalone installer remains a fallback for other pages. Shared-shell replacement retains one portal node.
 - Include the approved compact navigation spacing in the initial styles; its asynchronous enhancement stylesheet must not change navigation geometry. Reserve the scrollbar gutter so results appearing cannot change line wrapping on browsers with classic scrollbars.
+
+## Mobile card startup (November 7, 2026)
+
+- Begin all configured brand stock requests before waiting for the combined catalog or location rows. Keep the inventory readiness gate and existing failure handling before interactive cards appear.
+- At widths up to 760px render one card initially, then append remaining cards in batches of six with the existing yield and stale-render guard. Full counts and comparison scope are unchanged. Keep aria-busy true until all batches finish, including result sets smaller than six.
