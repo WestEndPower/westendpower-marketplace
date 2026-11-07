@@ -233,3 +233,10 @@ Change a baseline only when John requests or approves that layout change.
 - Apply identically to Marketplace, Shop by Product, Shop by Brand and generated pages using the shared template.
 
 - Brand is the first sidebar section and Availability is second; both are non-collapsible and always show their choices, including in the mobile drawer. Online Purchase and workbook specification sections keep their existing expandable behavior.
+
+## Selected stock and component browsing (November 7, 2026)
+
+- Check Stock and Inventory show the current tool and selected battery/charger quantities only. Bare-tool selection omits battery/charger columns. One name line sits above a compact location table, with one text link per store. Keep the exact selected package/stock identity and existing text-confirmation workflow. Do not list all compatible alternatives in this dialog.
+- Battery and Charger browse buttons are separate from the equipment Power Type filter. They switch to standalone component products, with the relevant series row immediately underneath, and Tools returns to the previous equipment filters. Preserve component browse mode and series in shared URLs. Multi-system chargers can appear under each published compatible system.
+- Tool Series follows workbook Series; battery tools without Series use their published System field. Choosing Battery power opens those tool series without switching to component shopping. Component sources come from all published brands, and standalone cart entries retain battery/charger item types. Missing series or component data is not invented.
+- Runtime sidebar initialization upgrades older template details into the always-open Brand/Availability sections. This also covers generated pages temporarily using an older cached shopping template.

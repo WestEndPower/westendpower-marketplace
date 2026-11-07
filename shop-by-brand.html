@@ -711,7 +711,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-recommended-series1"></script><script src="universal/package-pricing.js?v=20261105-shared1"></script><script src="universal/equipment-package-pricing.js?v=20261104-utv-options1"></script><script src="universal/marketplace-card.js?v=20261105-views1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261107-stock-availability1"><link rel="stylesheet" href="universal/promotions.css?v=20261031-promo1"><script src="universal/promotions.js?v=20261031-verified-finance5"></script><script src="universal/site-tracking.js?v=20261105-views1" defer></script><link rel="stylesheet" href="universal/product-views.css?v=20261106-image-fit1"><meta name="wep-shopping-template" content="2"><link rel="stylesheet" href="universal/compact-filters.css?v=20261107-stock-availability1"><script src="universal/compact-filters.js?v=20261107-stock-availability1"></script><link rel="stylesheet" href="universal/shopping-shell.css?v=20261105-shared1"><script src="universal/shopping-shell.js?v=20261105-shared1"></script><script src="universal/card-image-fit.js?v=20261106-image-fit1" defer></script></head>
+<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-recommended-series1"></script><script src="universal/package-pricing.js?v=20261107-selected-stock1"></script><script src="universal/equipment-package-pricing.js?v=20261107-selected-stock1"></script><script src="universal/marketplace-card.js?v=20261107-selected-stock1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261107-selected-stock1"><link rel="stylesheet" href="universal/promotions.css?v=20261031-promo1"><script src="universal/promotions.js?v=20261031-verified-finance5"></script><script src="universal/site-tracking.js?v=20261105-views1" defer></script><link rel="stylesheet" href="universal/product-views.css?v=20261106-image-fit1"><meta name="wep-shopping-template" content="2"><link rel="stylesheet" href="universal/compact-filters.css?v=20261107-selected-stock1"><script src="universal/compact-filters.js?v=20261107-selected-stock1"></script><link rel="stylesheet" href="universal/shopping-shell.css?v=20261105-shared1"><script src="universal/shopping-shell.js?v=20261105-shared1"></script><script src="universal/card-image-fit.js?v=20261106-image-fit1" defer></script></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -1202,7 +1202,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
           category:category||'Other',
           subcategory:clean(p.SubCategory),
           power:clean(p.PowerType),
-          series:clean(p.Series),
+          series:productSeries(p),
           system:clean(p.System),
           image:clean(p.ImageURL),
           productUrl:clean(p.ProductURL),
@@ -1271,7 +1271,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
         workbookSort:clean(p.SortOrder)==='' || !Number.isFinite(Number(p.SortOrder)) ? Infinity : Number(p.SortOrder),
         sku:clean(p.SKU),
         description:clean(p.Description),
-        series:clean(p.Series),
+        series:productSeries(p),
         model:clean(p.Model),
         marketplaceRow:p,
         specs:variantSpecs,
@@ -1386,6 +1386,36 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
       );
     });
   }
+  function productSeries(row){return clean(row.Series)||(/battery/i.test(clean(row.PowerType))?clean(row.System):'');}
+  function componentSeries(row,kind){
+    const explicit=clean(row.BatterySeries||row.Series);if(explicit)return explicit;
+    const system=clean(row.System);if(system&&!/^battery$/i.test(system))return system;
+    if(kind==='battery'&&clean(row.BrandID).toUpperCase()==='STIHL')return /^AP(?:\d+\.\d|\d+P)/i.test(clean(row.BatteryID||row.Model))?'Pro AP':(clean(row.BatteryID||row.Model).match(/^(AS|AK|AP|AR)/i)||[])[1]||'';
+    return clean(row.Voltage||row.MaxVoltage)?clean(row.Voltage||row.MaxVoltage)+'V':'';
+  }
+  function componentNavigation(){
+    const battery=DATA.batteryFamilies?.length,charger=DATA.chargerFamilies?.length;
+    const available=state.shopMode!=='equipment'||DATA.products.some(p=>truthy(p.Active)&&/battery/i.test(clean(p.PowerType))&&(!state.category||clean(p.Category)===state.category)&&(!state.subcategory||clean(p.SubCategory)===state.subcategory)&&(!state.brand.size||state.brand.has(clean(p.BrandID).toUpperCase())));
+    if(!available)return '';
+    return '<div class="wep-component-nav" role="group" aria-label="Shop equipment, batteries or chargers">'+(state.shopMode!=='equipment'?button('Tools','equipment','shop-mode',false):'')+(battery?button('Battery','batteries','shop-mode',state.shopMode==='batteries'):'')+(charger?button('Charger','chargers','shop-mode',state.shopMode==='chargers'):'')+'</div>';
+  }
+  function renderComponentNavigation(){
+    for(const host of [$('#market-context'),$('#market-mobile-context')].filter(Boolean)){
+      host.querySelector('.wep-component-nav')?.remove();
+      const html=componentNavigation();if(html)(host.querySelector('.wep-filter-top')||host).insertAdjacentHTML('beforeend',html);
+    }
+  }
+  let equipmentBrowseState=null;
+  function switchComponentBrowse(mode){
+    if(!['equipment','batteries','chargers'].includes(mode))return;
+    if(state.shopMode==='equipment'&&mode!=='equipment')equipmentBrowseState=Object.fromEntries(Object.entries(state).map(([k,v])=>[k,v instanceof Set?new Set(v):v instanceof Map?new Map([...v].map(([a,b])=>[a,b instanceof Set?new Set(b):b])):v]));
+    if(mode==='equipment'&&equipmentBrowseState){Object.assign(state,equipmentBrowseState);equipmentBrowseState=null;}
+    else{
+      state.category='';state.subcategory='';state.use='';state.deck='';state.power='';state.seriesOrEngine='';state.width='';state.seriesFilter='';state.modelFilter='';state.search='';state.promoOnly=false;
+      state.specFilters=new Map();state.packageComponents=new Set();state.hpRanges=new Map();state.compare=new Set();state.availability=new Set();
+    }
+    state.shopMode=mode;renderTopFilters();renderSidebar();filterFamilies();
+  }
   function groupComponents(rows,kind){
     return rows.filter(x=>truthy(x.Active)).map((p,index)=>{
       const brand=clean(p.BrandID)||'STIHL';
@@ -1403,9 +1433,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
         category:kind==='battery'?'Batteries':'Chargers',
         subcategory:kind==='battery'?'Battery':'Charger',
         power:'Battery',
-        series:kind==='battery'
-          ? ((clean(p.BatteryID).match(/^(AS|AK|AP|AR)/i)||[])[1]||'').toUpperCase()
-          : '',
+        series:componentSeries(p,kind),
         system:clean(p.System),
         image:clean(p.ImageURL),
         productUrl:clean(p.ProductURL),
@@ -1413,7 +1441,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
         variants:[{
           sku:clean(p.SKU),description:clean(p.Description)||model,type:kind==='battery'?'Battery':'Charger',
           msrp:num(p.MSRP),sale:num(p.SalePrice),price,
-          qtyDanbury:num(p.QtyDanbury),qtyNewMilford:num(p.QtyNewMilford),
+          series:componentSeries(p,kind),model,marketplaceRow:p,qtyDanbury:num(p.QtyDanbury),qtyNewMilford:num(p.QtyNewMilford),
           buyOnline:price>0,localDelivery:false,assembly:0,productUrl:clean(p.ProductURL)
         }],
         specs,
@@ -2054,7 +2082,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
 
       if(state.seriesFilter || state.modelFilter){
         const variantMatch=(f.variants||[]).some(v=>
-          (!state.seriesFilter || clean(v.series)===state.seriesFilter) &&
+          (!state.seriesFilter || clean(v.series)===state.seriesFilter || (state.shopMode!=='equipment'&&clean(v.series).split(/[|,]/).map(clean).includes(state.seriesFilter))) &&
           (!state.modelFilter || clean(v.model)===state.modelFilter)
         );
 
@@ -2327,7 +2355,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     if(
       !options.ignoreSeries &&
       state.seriesFilter &&
-      clean(row.Series)!==state.seriesFilter
+      productSeries(row)!==state.seriesFilter
     ){
       return false;
     }
@@ -2513,17 +2541,16 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     if(compactFilters){
       powerWrap.hidden=true;categoryPanel.hidden=true;contextPanel.hidden=false;
       categoryHost.innerHTML='';powerHost.innerHTML='';
-      window.WEPCompactFilters.render({rows:DATA.products,state,generated:!!window.WEPGeneratedCatalog,specGroups:marketplaceSpecGroups(),packageGroups:marketplaceGroups('P'),powerContext:marketplacePowerContextGroup(),promoAvailable:marketplacePromoAvailable(),matches:(row,options)=>(!state.brand.size||state.brand.has(clean(row.BrandID).toUpperCase()))&&marketplaceRowMatches(row,options),
+      window.WEPCompactFilters.render({rows:DATA.products.map(p=>({...p,Series:productSeries(p)})),state,generated:!!window.WEPGeneratedCatalog,specGroups:marketplaceSpecGroups(),packageGroups:marketplaceGroups('P'),powerContext:marketplacePowerContextGroup(),promoAvailable:marketplacePromoAvailable(),matches:(row,options)=>(!state.brand.size||state.brand.has(clean(row.BrandID).toUpperCase()))&&marketplaceRowMatches(row,options),
         hosts:[context,$('#market-mobile-context')],changed(action){renderTopFilters();renderSidebar();filterFamilies();if(action==='promos')track('marketplace_promos',{active:state.promoOnly});}});
-      widthHost.hidden=true;widthHost.innerHTML='';return;
+      widthHost.hidden=true;widthHost.innerHTML='';renderComponentNavigation();return;
     }
 
     if(state.shopMode!=='equipment'){
-      powerWrap.hidden=true;
-      categoryPanel.hidden=true;
-      contextPanel.hidden=true;
-      context.innerHTML='';
-      return;
+      powerWrap.hidden=true;categoryPanel.hidden=true;contextPanel.hidden=false;
+      const series=distinct(activeFamilies().filter(f=>!state.brand.size||state.brand.has(f.brand)).flatMap(f=>clean(f.series).split(/[|,]/).map(clean)).filter(Boolean)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+      context.innerHTML=componentNavigation()+'<div class="wep-component-series" role="group" aria-label="'+(state.shopMode==='batteries'?'Battery':'Charger')+' series">'+button('All Series','','series-filter',!state.seriesFilter)+series.map(value=>button(value,value,'series-filter',state.seriesFilter===value)).join('')+'</div>';
+      $('#market-mobile-context').innerHTML=context.innerHTML;widthHost.hidden=true;widthHost.innerHTML='';return;
     }
 
     tabs.hidden=true;
@@ -2584,8 +2611,8 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
 
     const seriesValues = distinct(
       DATA.products
-        .filter(p => marketplaceRowMatches(p,{ignoreSeries:true,ignoreModel:true}))
-        .map(p => clean(p.Series))
+        .filter(p => (!state.brand.size||state.brand.has(clean(p.BrandID).toUpperCase()))&&marketplaceRowMatches(p,{ignoreSeries:true,ignoreModel:true}))
+        .map(p => productSeries(p))
         .filter(Boolean)
     ).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
 
@@ -2962,9 +2989,15 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
 
     widthHost.hidden = true;
     widthHost.innerHTML = '';
+    renderComponentNavigation();
   }
 
   function renderSidebar(){
+    for(const id of ['filter-brand','filter-availability']){
+      const choices=document.getElementById(id),old=choices?.closest('details');
+      if(old){const section=document.createElement('section'),heading=document.createElement('h3');section.className='market-fixed-filter';heading.textContent=id==='filter-brand'?'Brand':'Availability';section.append(heading,choices);old.replaceWith(section);}
+    }
+
     DATA.families=activeFamilies();
 
     renderDynamicBrands();
@@ -3073,13 +3106,16 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
         num(v.marketplaceRow[qtyField])>0
       );
 
-      const status=inStock
+      const locationKey=value=>clean(value).toUpperCase().replace(/[^A-Z0-9]/g,'');
+      const aliases=[location.LocationID,location.ShortName,location.LocationName].map(locationKey).filter(Boolean);
+      const stockedHere=records.some(record=>(record.selections||[]).some(unit=>num(unit.quantity)>0&&aliases.includes(locationKey(unit.store))));
+      const status=stockedHere
         ? 'in-stock'
         : incoming
           ? 'incoming'
           : normallyStocked
             ? 'normally-stocked'
-            : 'out-of-stock';
+            : inStock ? 'confirm-stock' : 'out-of-stock';
 
       return {
         id:clean(location.LocationID),
@@ -3335,7 +3371,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
   }
 
     function card(f){
-    if(window.WestEndMarketplaceCard)return window.WestEndMarketplaceCard.render(f,{selectedPriceVariant,priceChoices,pricePanel,selectedStock,stockHeaderMarkup,sawHeaderBars,cardFinanceMarkup,paymentSelectionUrl,promoInfo,money,state,DATA,currentPrice,inventoryMarkup,selectPackageVariant,refreshSelectedCard,selectedPriceQuantity,updateCartFloat,track,compactBaseVariant});
+    if(window.WestEndMarketplaceCard)return window.WestEndMarketplaceCard.render(f,{selectedPriceVariant,priceChoices,pricePanel,selectedStock,stockHeaderMarkup,sawHeaderBars,cardFinanceMarkup,paymentSelectionUrl,promoInfo,money,state,DATA,currentPrice,inventoryMarkup,inventoryStatus:familyInventoryStatus,selectPackageVariant,refreshSelectedCard,selectedPriceQuantity,updateCartFloat,track,compactBaseVariant});
     const first=selectedPriceVariant(f);
     const specs=familySpecs(f).slice(0,4);
     const heading=clean(first.description)||clean(f.model)||clean(first.sku);
@@ -3529,6 +3565,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
 
   function marketplaceUrlParams(){
     const params=new URLSearchParams();
+    if(state.shopMode!=='equipment')params.set('shop',state.shopMode);
 
     if(state.category) params.set('category',state.category);
     if(state.subcategory) params.set('subcategory',state.subcategory);
@@ -3583,6 +3620,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     state.deck=clean(params.get('deck'));
     state.use=clean(params.get('use'));
     state.power=clean(params.get('power'));
+    if(state.power==='Battery')state.seriesModelView='series';
     state.seriesOrEngine=clean(params.get('filter'));
     state.seriesFilter=clean(params.get('series'));
     state.modelFilter=clean(params.get('model'));
@@ -3597,6 +3635,8 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
       .map(clean)
       .filter(Boolean)
       .forEach(value=>state.brand.add(value));
+
+    const mode=params.get('shop');if(['batteries','chargers'].includes(mode)){state.shopMode=mode;state.category='';state.subcategory='';state.use='';state.deck='';state.power='';state.modelFilter='';state.seriesOrEngine='';}
 
     state.availability.clear();
     clean(params.get('availability'))
@@ -3673,12 +3713,19 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
       if(e.target.closest('[data-market-home]')){
         returnMarketplaceHome();return;
       }
-      const shop=e.target.closest('[data-shop-mode]');
-      if(shop){
-        state.shopMode=shop.dataset.shopMode||'equipment';
-        state.category='';state.subcategory='';state.use='';state.deck='';state.power='';state.seriesOrEngine='';state.width='';state.specFilters.clear();state.compare.clear();
-        renderTopFilters();renderSidebar();filterFamilies();return;
+      const componentAdd=e.target.closest('[data-component-add]');
+      if(componentAdd){
+        const f=activeFamilies().find(f=>f.key===componentAdd.dataset.componentAdd),v=f&&selectedPriceVariant(f);if(!v||!(v.price>0))return;
+        try{const cart=JSON.parse(localStorage.getItem('wepCart')||'[]');if(!Array.isArray(cart))throw Error('Your cart could not be read.');
+          const type=state.shopMode==='batteries'?'battery':'charger',packageId=f.brand+':'+type+':'+v.sku,old=cart.find(x=>x.packageId===packageId&&x.type===type);
+          if(old){if(Number(old.quantity)>=99)throw Error('Maximum quantity reached.');old.quantity=Number(old.quantity)+1;}
+          else cart.push({brandId:f.brand,type,sku:v.sku,quantity:1,productName:v.description||f.model,itemPrice:v.price,shipping:null,packageId,equipmentSku:v.sku,inventoryId:'',quoteStockChoice:'orderable'});
+          localStorage.setItem('wepCart',JSON.stringify(cart));updateCartFloat();window.dispatchEvent(new CustomEvent('wep:cart-updated'));const note=componentAdd.closest('.market-card').querySelector('.pp-cart-status');if(note)note.textContent='Added to Cart ✓';
+        }catch(error){const note=componentAdd.closest('.market-card').querySelector('.pp-cart-status');if(note)note.textContent=error.message;}
+        return;
       }
+      const shop=e.target.closest('[data-shop-mode]');
+      if(shop){switchComponentBrowse(shop.dataset.shopMode);return;}
       const promo=e.target.closest('[data-promo-only]');
       if(promo){ state.promoOnly=!state.promoOnly; renderTopFilters(); filterFamilies(); track('marketplace_promos',{active:state.promoOnly}); return; }
       const c=e.target.closest('[data-category]');
@@ -3704,6 +3751,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
       if(p){
         const v=p.dataset.power||'';
         state.power=state.power===v?'':v;
+        if(state.power==='Battery')state.seriesModelView='series';
         renderTopFilters();
         renderSidebar();
         filterFamilies();
@@ -4178,8 +4226,9 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
         marketplaceBrandProfiles().map(profile=>clean(profile.id).toUpperCase())
       );
       DATA.equipmentFamilies=enrichFactoryPackageSavings(enrichRecommendedPackages(groupFamilies(products)));
-      DATA.batteryFamilies=groupComponents(batteries,'battery');
-      DATA.chargerFamilies=groupComponents(chargers,'charger');
+      const componentRows=kind=>{const seen=new Set();return [...Object.entries(DATA.componentSources||{}).flatMap(([brand,source])=>(source[kind]||[]).map(row=>({...row,BrandID:brand}))),...(kind==='batteries'?batteries:chargers)].filter(row=>{const id=clean(row.BrandID||'STIHL')+'|'+skuKey(row.SKU);if(seen.has(id))return false;seen.add(id);return true;});};
+      DATA.batteryFamilies=groupComponents(componentRows('batteries'),'battery');
+      DATA.chargerFamilies=groupComponents(componentRows('chargers'),'charger');
       DATA.families=activeFamilies();
       DATA.filtered=DATA.families.slice();
       applyDealer(DATA.settings);

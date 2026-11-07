@@ -150,9 +150,8 @@
    const config=configuration(m,s,c);c.selectPackageVariant(f,config.variant);c.refreshSelectedCard(f);return true;
   }
   const inventory=event.target.closest('[data-pp-inventory]');if(inventory){
-   const config=configuration(m,s,c),items=[{row:{...m.tool.marketplaceRow,SKU:m.tool.sku,Description:m.tool.description}},...config.parts],dialog=document.createElement('dialog');dialog.className='pp-dialog pp-inventory-dialog';dialog.setAttribute('aria-label','Selected configuration inventory');
-   dialog.innerHTML='<h2>Selected Configuration Inventory</h2>'+items.map((p,i)=>{const template=document.createElement('template');template.innerHTML=c.inventoryMarkup(f,{sku:p.row.SKU,marketplaceRow:p.row,description:p.row.Description},'option-'+i);return '<section><strong>'+esc(p.row.Description)+'</strong><small class="pp-inventory-sku">SKU: '+esc(p.row.SKU)+'</small>'+(template.content.querySelector('.market-inventory-popover')?.innerHTML||'Contact us to confirm availability.')+'</section>';}).join('')+'<button type="button">Close</button>';
-   document.body.append(dialog);dialog.querySelector('button').onclick=()=>dialog.close();dialog.addEventListener('close',()=>{dialog.remove();inventory.focus();},{once:true});dialog.showModal();return true;
+   const items=[{row:{...m.tool.marketplaceRow,SKU:m.tool.sku,Description:m.tool.description,Model:m.tool.model||f.model},qty:1,type:'tool'}];
+   return window.WestEndPackagePricing.showInventory(f,c,items,inventory);
   }
   const add=event.target.closest('[data-eqp-add]');if(add){
    try{

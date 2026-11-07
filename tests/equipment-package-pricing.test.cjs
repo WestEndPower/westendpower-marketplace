@@ -134,7 +134,7 @@ test('all published active SKUs follow battery, Yanmar compact, chainsaw or stan
   for(const row of products.filter(p=>p.SKU&&(!p.Active||/^(T|TRUE|1)$/i.test(p.Active)))){
    const v={sku:row.SKU,model:row.Model,description:row.Description,type:row.ProductType||'Tool',price:Kit.current(row),msrp:Number(row.MSRP),marketplaceRow:row};
    Object.assign(r.f,{key:table.brand+'|'+row.SKU,brand:table.brand,model:row.Model,category:row.Category,power:row.PowerType,variants:[v]});r.c.selectPackageVariant(r.f,v);
-   const html=r.api.render(r.f,r.c),battery=/battery/i.test(row.PowerType),compact=table.brand==='YANMAR'&&/^compact tractors?$/i.test(row.Category),saw=/^chainsaws?$/i.test(row.Category);
+   const html=r.api.render(r.f,r.c),battery=/battery/i.test(row.PowerType)&&!r.api.isUtilityVehicle(r.f),compact=table.brand==='YANMAR'&&/^compact tractors?$/i.test(row.Category),saw=/^chainsaws?$/i.test(row.Category);
    if(battery||compact){assert.equal(html,null,row.SKU);counts[battery?'battery':'compact']++;continue;}
    assert.ok(html,row.SKU);assert.match(html,/Package MSRP:/);assert.doesNotMatch(html,/data-eqp-option=/);
  for(const type of ['attachment','accessory']){const url=new URL(r.api.pickerUrl(r.f,r.c,type));assert.match(url.pathname,/product-options.html$/);assert.equal(url.searchParams.get('group'),type);assert.equal(url.hash,'#wep-panel-'+type);assert.ok(url.searchParams.get('configuration'));}

@@ -19,7 +19,7 @@
   return '';
  }
  const groups=[['series','Series','seriesFilter','ignoreSeries',r=>clean(r.Series)],['use','Use','use','ignoreUse',r=>clean(r.Use)],['deck','Deck Size','deck','ignoreDeck',deckValue],['power','Power Type','power','ignorePower',r=>clean(r.PowerType)]];
- let open='',current;
+ let open='',current,lastPower='';
  function builderGroups(context){
   const {state}=context;
   const list=[['category','Category','category','ignoreCategory',r=>clean(r.Category)],['subcategory','Type','subcategory','ignoreSubcategory',r=>clean(r.SubCategory)],groups[0],['model','Model','modelFilter','ignoreModel',r=>clean(r.Model)],groups[3],groups[1],groups[2]];
@@ -83,7 +83,7 @@
   }
   return '<div class="wep-filter-top" aria-label="Equipment filters">'+uses+top.join('')+'</div>'+choices;
  }
- function render(context){current=context;const html=markup(context);for(const host of context.hosts.filter(Boolean))host.innerHTML=html;}
+ function render(context){if(context.generated&&context.state.power==='Battery'&&lastPower!=='Battery')open='series';lastPower=context.state.power;current=context;const html=markup(context);for(const host of context.hosts.filter(Boolean))host.innerHTML=html;}
  document.addEventListener('change',event=>{
   if(!current||!event.target.matches?.('[data-brand]')||!document.querySelector('#market-refine.wep-compact-active'))return;
   // Run after the shopping handler has applied the customer's brand selection.
@@ -101,6 +101,7 @@
    if(selected[0]==='packages'){const values=current.state.packageComponents;if(!value)values.clear();else values.has(value)?values.delete(value):values.add(value);}
    else if(selected[5]){const filters=current.state.specFilters;if(!value)filters.delete(selected[5]);else{const values=filters.get(selected[5])||new Set();values.has(value)?values.delete(value):values.add(value);if(values.size)filters.set(selected[5],values);else filters.delete(selected[5]);}}
    else current.state[selected[2]]=current.state[selected[2]]===value?'':value;
+   if(selected[0]==='power'&&current.state.power==='Battery')open='series';
    current.changed();return;
   }
   const selected=groups.find(g=>g[0]===choice.dataset.compactChoice);if(!selected)return;
