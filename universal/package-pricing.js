@@ -180,13 +180,16 @@
  }
  function showInventory(f,c,items,opener){
   document.querySelector('.pp-inventory-dialog')?.remove();
-  const columns=items.map(p=>({...p,name:clean(p.row.BatteryID||p.row.ChargerID||p.row.Model||p.row.Description||p.row.SKU),status:c.inventoryStatus(f,{sku:p.row.SKU,marketplaceRow:p.row})}));
-  const locations=columns[0]?.status.locations||[],labels={'in-stock':'In Stock','incoming':'Incoming','normally-stocked':'Normally Stocked','out-of-stock':'Check Lead Time'};
+  const columns=items.map(p=>({...p,name:clean(p.row.BatteryID||p.row.ChargerID||p.row.Model||p.row.Description||p.row.SKU)}));
+  const first=columns[0],locations=first?c.inventoryStatus(f,{sku:first.row.SKU,marketplaceRow:first.row}).locations||[]:[];
   const heading=columns.map(p=>p.name+(p.qty>1?' × '+p.qty:'')).join(' — ');
   const dialog=document.createElement('dialog');dialog.className='pp-dialog pp-inventory-dialog pp-selected-inventory';dialog.setAttribute('aria-label','Selected tool, battery and charger stock');
-  dialog.innerHTML='<h2>Check Stock</h2><p class="pp-stock-selection">'+esc(heading)+'</p><div class="pp-stock-scroll"><table><thead><tr><th>Location</th>'+columns.map(p=>'<th>'+esc(p.type==='tool'?'Tool':p.type==='battery'?'Battery':'Charger')+'</th>').join('')+'</tr></thead><tbody>'+locations.map(l=>'<tr><th>'+esc(l.name)+'</th>'+columns.map(p=>'<td>'+esc(labels[p.status.locations.find(x=>x.id===l.id)?.status]||'Confirm Availability')+'</td>').join('')+'</tr>').join('')+'</tbody></table></div><div class="pp-stock-actions">'+locations.filter(l=>clean(l.phone)).map(l=>{
-   const body='Please confirm availability at '+l.name+' for '+columns.map(p=>p.name+' (SKU: '+p.row.SKU+'), quantity '+p.qty).join('; ')+'.';
-   return '<a href="sms:'+esc(clean(l.phone).replace(/[^0-9+]/g,''))+((typeof navigator!=='undefined'&&/iPad|iPhone|iPod/i.test(navigator.userAgent))?'&':'?')+'body='+esc(encodeURIComponent(body))+'">Text '+esc(l.name)+'</a>';
+  dialog.innerHTML='<h2>Check Stock / Availability</h2><p class="pp-stock-selection">'+esc(heading)+'</p><div class="pp-stock-locations">'+locations.map(l=>{
+   const body='Please confirm availability at '+l.name+' for '+(clean(f.brand)?clean(f.brand)+' equipment:':'the following selection:')+'\n'+columns.map(p=>(p.type==='tool'?'Tool':p.type==='battery'?'Battery':'Charger')+': '+p.name+' (SKU: '+p.row.SKU+'), quantity '+p.qty).join('\n');
+   const phone=clean(l.phone).replace(/[^0-9+]/g,''),email=clean(l.email);
+   const text=phone?'<a aria-label="Text '+esc(l.name)+' to confirm" href="sms:'+esc(phone)+((typeof navigator!=='undefined'&&/iPad|iPhone|iPod/i.test(navigator.userAgent))?'&':'?')+'body='+esc(encodeURIComponent(body))+'">Text to Confirm</a>':'';
+   const mail=/^[^\s@?&#]+@[^\s@?&#]+\.[^\s@?&#]+$/.test(email)?'<a aria-label="Email '+esc(l.name)+' to confirm" href="mailto:'+esc(email)+'?subject='+esc(encodeURIComponent('Stock confirmation — '+heading+' — '+l.name))+'&amp;body='+esc(encodeURIComponent(body))+'">Email to Confirm</a>':'';
+   return '<div class="pp-stock-location"><strong>'+esc(l.name)+'</strong><div class="pp-stock-actions">'+text+mail+(!text&&!mail?'<span>Contact store to confirm</span>':'')+'</div></div>';
   }).join('')+'</div><button type="button">Close</button>';
   document.body.append(dialog);dialog.querySelector('button').onclick=()=>dialog.close();dialog.addEventListener('close',()=>{dialog.remove();opener?.focus();},{once:true});dialog.showModal();return true;
  }
