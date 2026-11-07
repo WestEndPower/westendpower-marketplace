@@ -8,11 +8,20 @@ test('stock checks include only the currently selected tool, batteries and charg
  s.choice='tool';assert.equal(api.selectedInventoryItems(f,c,m,s).length,1);
  s.choice='package';s.battery=[];assert.deepEqual(Array.from(api.selectedInventoryItems(f,c,m,s),p=>p.row.SKU),['TOOL','C1']);
 });
-test('compact stock dialog has one selected-name line and one table row per location',()=>{
- const r=packageAPI(),items=[{type:'tool',qty:1,row:{SKU:'T',Model:'BGA300'}},{type:'battery',qty:2,row:{SKU:'B',BatteryID:'AP300S'}},{type:'charger',qty:1,row:{SKU:'C',ChargerID:'AL501'}}];
- const locations=[{id:'NM',name:'New Milford',phone:'8603558722',status:'normally-stocked'},{id:'D',name:'Danbury',phone:'2037923030',status:'out-of-stock'}];
- r.api.showInventory({}, {inventoryStatus:()=>({locations})},items,{});
- const html=r.opened().innerHTML;assert.match(html,/BGA300 — AP300S × 2 — AL501/);assert.equal((html.match(/<tr>/g)||[]).length,3);assert.equal((html.match(/<a href=/g)||[]).length,2);assert.doesNotMatch(html,/UNSELECTED|SKU:/);assert.match(html,/quantity%202/);assert.match(html,/Normally Stocked/);
+test('compact stock dialog has one selected heading and text/email on each store row',()=>{
+ const r=packageAPI(),items=[{type:'tool',qty:1,row:{SKU:'T',Model:'BGA86'}},{type:'battery',qty:2,row:{SKU:'B',BatteryID:'AP300S'}},{type:'charger',qty:1,row:{SKU:'C',ChargerID:'AL301'}}];
+ const locations=[{id:'NM',name:'New Milford',phone:'8603558722',email:'sales@westendpower.com'},{id:'D',name:'Danbury',phone:'4754443901',email:'dawepe@westendpower.com'}];
+ r.api.showInventory({brand:'STIHL'}, {inventoryStatus:()=>({locations})},items,{});
+ const html=r.opened().innerHTML;assert.match(html,/<h2>Check Stock \/ Availability<\/h2>/);assert.match(html,/BGA86 — AP300S × 2 — AL301/);assert.equal((html.match(/class="pp-stock-location"/g)||[]).length,2);assert.equal((html.match(/href="sms:/g)||[]).length,2);assert.equal((html.match(/href="mailto:/g)||[]).length,2);assert.doesNotMatch(html,/<table|Normally Stocked|Check Lead Time/);
+ const links=[...html.matchAll(/href="([^"]+)"/g)].map(m=>m[1].replace(/&amp;/g,'&'));
+ for(const link of links){const url=new URL(link),body=url.searchParams.get('body');assert.match(body,/Tool: BGA86 \(SKU: T\), quantity 1/);assert.match(body,/Battery: AP300S \(SKU: B\), quantity 2/);assert.match(body,/Charger: AL301 \(SKU: C\), quantity 1/);assert.match(body,/STIHL/);}
+ assert.match(new URL(links[0]).searchParams.get('body'),/New Milford/);assert.match(new URL(links[2]).searchParams.get('body'),/Danbury/);
+ assert.equal(new URL(links[1]).pathname,'sales@westendpower.com');assert.match(new URL(links[3]).searchParams.get('subject'),/BGA86 — AP300S × 2 — AL301 — Danbury/);
+});
+test('tool-only confirmation omits unselected components and invalid contact links',()=>{
+ const r=packageAPI(),items=[{type:'tool',qty:1,row:{SKU:'T&1',Model:'<Tool>'}}];
+ r.api.showInventory({}, {inventoryStatus:()=>({locations:[{name:'New Milford',email:'bad?subject=changed',phone:''}]})},items,{});
+ const html=r.opened().innerHTML;assert.match(html,/&lt;Tool&gt;/);assert.doesNotMatch(html,/Battery|Charger|mailto:|sms:/);assert.match(html,/Contact store to confirm/);
 });
 function section(s,a,b){return s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));}
 for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-brand.html'])test(file+': separate component browsing exposes series and restores tool filters',()=>{
