@@ -18,6 +18,8 @@
     replacement.querySelectorAll('[aria-current]').forEach(link=>link.removeAttribute('aria-current'));
     replacement.querySelector('a[href="'+(location.pathname.endsWith('/shop-by-product.html')?'shop-by-product.html':'shop-by-brand.html')+'"]')?.setAttribute('aria-current','page');
    }
+   // Retain the original portal node; the source header now includes one too.
+   if(selector==='.market-header'&&portal)replacement.querySelector('.wep-dealer-portal-bar')?.remove();
    existing.replaceWith(document.importNode(replacement,true));
   }
   if(portal)document.querySelector('.market-header').append(portal);

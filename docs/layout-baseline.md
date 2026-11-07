@@ -293,3 +293,8 @@ Change a baseline only when John requests or approves that layout change.
 - Show static header/navigation during loading, keeping interactive controls gated. Place the loading notice below navigation in the shell. Generated no-JavaScript information stays readable.
 - Resolve unversioned catalog requests to the same-origin, same-path preload version. Explicit versions and other URLs stay distinct.
 - Defer offscreen generated-page information layout with content-visibility:auto; keep all server text, comparison anchors and structured data.
+
+## Stable header during startup (November 7, 2026)
+
+- Render the Dealer Portal link and its desktop/mobile positioning before scripts execute. The standalone installer remains a fallback for other pages. Shared-shell replacement retains one portal node.
+- Include the approved compact navigation spacing in the initial styles; its asynchronous enhancement stylesheet must not change navigation geometry. Reserve the scrollbar gutter so results appearing cannot change line wrapping on browsers with classic scrollbars.
