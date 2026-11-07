@@ -687,8 +687,10 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     return (clean(unit.variant.model)||clean(f.model))+(description?' with '+description:'');
   }
   function stockHeaderMarkup(f){
-    const choices=stockChoices(f),stock=selectedStock(f);if(!choices.length&&!stock)return '';
-    return '<button type="button" data-stock-toggle="'+esc(f.key)+'" style="margin-left:auto;padding:5px 9px;border:1px solid #9ebda7;border-radius:5px;background:#fff;color:#155d2d;font-size:12px;font-weight:800;cursor:pointer">'+(stock?'Build / Order':'View In-Stock'+(choices.length>1?' ('+choices.length+')':''))+'</button>';
+    const choices=stockChoices(f),stock=selectedStock(f);
+    const action=choices.length||stock?'data-stock-toggle="'+esc(f.key)+'"':'data-pp-inventory';
+    const label=stock?'Build / Order':choices.length?'In-Stock ('+choices.length+')':'Check Stock';
+    return '<button type="button" '+action+' style="margin-left:auto;padding:5px 9px;border:1px solid #9ebda7;border-radius:5px;background:#fff;color:#155d2d;font-size:12px;font-weight:800;cursor:pointer">'+label+'</button>';
   }
   function stockUnitMarkup(f){
     const unit=selectedStock(f);if(!unit)return '';
@@ -971,8 +973,11 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
 
       if(!ignoreBrand && state.brand.size && !state.brand.has(f.brand)) return false;
       if(state.availability.size){
-        const label=availabilityText(f);
-        if(!state.availability.has(label)) return false;
+        const normallyStocked=relevantVariants(f).some(v=>
+          num(v.marketplaceRow?.QtyDanbury??v.qtyDanbury)>0 ||
+          num(v.marketplaceRow?.QtyNewMilford??v.qtyNewMilford)>0
+        ) || familyInventoryStatus(f).status==='in-stock';
+        if(!state.availability.has(normallyStocked?'Normally In Stock':'Available to Order')) return false;
       }
       if(state.buyOnline && !f.buyOnline) return false;
       if(state.shopMode==='equipment'){
@@ -1863,8 +1868,8 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       ['Normally In Stock','Available to Order'].map(x=>
         '<label>' +
           '<input type="checkbox" data-availability="' +
-            esc(x) +
-          '"> ' +
+            esc(x) + '"' + (state.availability.has(x)?' checked':'') +
+          '> ' +
           '<span>' + esc(x) + '</span>' +
         '</label>'
       ).join('');

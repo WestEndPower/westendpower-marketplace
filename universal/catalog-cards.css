@@ -357,3 +357,7 @@
 #market-app .wep-restored-card .market-buy{flex:1}
 #market-app .wep-restored-card .market-price-lines{flex:1}
 #market-app .wep-restored-card .pp-package:not(.pp-compact-package){flex:1}
+
+/* Brand and Availability stay open in the desktop sidebar and mobile drawer. */
+#market-app .market-sidebar .market-fixed-filter{border-top:1px solid var(--line)}
+#market-app .market-sidebar .market-fixed-filter>h3{font-size:inherit;line-height:inherit;margin:0;min-height:44px;padding:12px 14px;font-weight:900;display:flex;align-items:center}
