@@ -128,12 +128,12 @@ function builderCompact(){
  const click=dataset=>listeners.click({target:{closest:s=>s==='[data-compact-group]'&&dataset.compactGroup?{dataset}:s==='[data-compact-choice]'&&dataset.compactChoice?{dataset}:s==='[data-compact-action]'&&dataset.compactAction?{dataset}:null},preventDefault(){}});
  return {api,state,host,context,click};
 }
-test('builder backpack pages list actual subcategories, Power Type then Series, without Type or Model controls',()=>{
+test('builder subcategories open their power choices without a top-level Power Type button',()=>{
  const b=builderCompact();assert.match(b.host.innerHTML,/data-compact-choice="subcategory" data-value="Backpack"/);assert.doesNotMatch(b.host.innerHTML,/data-compact-group="(?:model|subcategory)"/);
- assert.ok(b.host.innerHTML.indexOf('data-compact-group="power"')<b.host.innerHTML.indexOf('data-compact-group="series"'));
+ assert.doesNotMatch(b.host.innerHTML,/data-compact-group="power"/);assert.match(b.host.innerHTML,/Power Type options/);
  b.click({compactGroup:'series'});assert.match(b.host.innerHTML,/Series options/);
  const choices=[...b.host.innerHTML.matchAll(/data-compact-choice="series" data-value="([^"]+)"/g)].map(m=>m[1]);assert.deepEqual(choices,['AP','BR']);
- b.click({compactChoice:'series',value:'BR'});b.click({compactGroup:'power'});assert.equal(b.state.seriesFilter,'BR');assert.match(b.host.innerHTML,/Power Type options/);assert.doesNotMatch(b.host.innerHTML,/Series options|data-value="Battery"/);
+ b.click({compactChoice:'series',value:'BR'});b.click({compactChoice:'subcategory',value:'Backpack'});assert.equal(b.state.seriesFilter,'BR');assert.match(b.host.innerHTML,/Power Type options/);assert.doesNotMatch(b.host.innerHTML,/Series options|data-value="Battery"/);
 });
 test('builder workbook specification and package choices remain usable and retain other selections',()=>{
  const b=builderCompact();b.state.power='Gas';b.api.render(b.context);
@@ -145,7 +145,7 @@ test('builder workbook specification and package choices remain usable and retai
 });
 test('builder controls retain incompatible selected values for clearing, without clearing other filters',()=>{
  const b=builderCompact();b.state.power='Gas';b.state.modelFilter='BGA300';b.api.render(b.context);
- b.click({compactGroup:'power'});assert.match(b.host.innerHTML,/data-value="Gas"/);assert.match(b.host.innerHTML,/data-value="Battery"/);
+ b.click({compactChoice:'subcategory',value:'Backpack'});assert.match(b.host.innerHTML,/data-value="Gas"/);assert.match(b.host.innerHTML,/data-value="Battery"/);
  b.click({compactChoice:'power',value:''});assert.equal(b.state.power,'');assert.equal(b.state.modelFilter,'BGA300');
  b.click({compactAction:'promos'});assert.equal(b.state.promoOnly,true);assert.equal(b.state.modelFilter,'BGA300');
  b.click({compactAction:'models'});assert.equal(b.state.modelFilter,'');assert.equal(b.state.promoOnly,true);
@@ -161,7 +161,7 @@ test('category pages replace Type and Model controls with direct subcategories o
  b.context.generated=false;b.api.render(b.context);assert.equal(b.host.innerHTML,generated);
  b.click({compactChoice:'subcategory',value:'Handheld'});assert.equal(b.state.subcategory,'Handheld');
  b.click({compactGroup:'series'});assert.match(b.host.innerHTML,/data-compact-choice="series" data-value="AK"/);assert.doesNotMatch(b.host.innerHTML,/data-compact-choice="series" data-value="BR"/);
- b.click({compactChoice:'series',value:'AK'});b.click({compactGroup:'power'});assert.equal(b.state.subcategory,'Handheld');assert.equal(b.state.seriesFilter,'AK');assert.match(b.host.innerHTML,/Power Type options/);assert.doesNotMatch(b.host.innerHTML,/Series options/);assert.match(b.host.innerHTML,/Batteries &amp; Chargers/);
+ b.click({compactChoice:'series',value:'AK'});b.click({compactChoice:'subcategory',value:'Handheld'});assert.equal(b.state.subcategory,'Handheld');assert.equal(b.state.seriesFilter,'AK');assert.match(b.host.innerHTML,/Power Type options/);assert.doesNotMatch(b.host.innerHTML,/Series options/);assert.match(b.host.innerHTML,/Batteries &amp; Chargers/);
  b.click({compactAction:'models'});assert.equal(b.state.subcategory,'');assert.equal(b.state.seriesFilter,'');
 });
 
@@ -169,10 +169,17 @@ test('mower categories use the same category format while retaining applicable U
  const b=builderCompact();b.context.categoryLayout=true;b.context.generated=false;b.state.category='Mowers';b.state.subcategory='';
  b.context.componentControls='<span>Batteries &amp; Chargers</span>';
  b.context.rows.splice(0,b.context.rows.length,{Category:'Mowers',SubCategory:'Zero-Turns',Series:'TimeCutter',Use:'Residential',PowerType:'Gas',CuttingWidth:'42'},{Category:'Mowers',SubCategory:'Walk-Behind',Series:'TurfMaster',Use:'Commercial',PowerType:'Gas',CuttingWidth:'30'});
- b.api.render(b.context);for(const label of ['All Models','Zero-Turns','Walk-Behind','Use','Series','Deck Size','Power Type','Batteries &amp; Chargers','Promos'])assert.ok(b.host.innerHTML.includes(label),label);
+ b.api.render(b.context);for(const label of ['All Models','Zero-Turns','Walk-Behind','Use','Series','Deck Size','Batteries &amp; Chargers','Promos'])assert.ok(b.host.innerHTML.includes(label),label);
  assert.doesNotMatch(b.host.innerHTML,/data-compact-group="(?:subcategory|model)"/);
- assert.ok(b.host.innerHTML.indexOf('Power Type')<b.host.innerHTML.indexOf('>Series<'));
+ assert.doesNotMatch(b.host.innerHTML,/data-compact-group="power"/);
  assert.ok(b.host.innerHTML.indexOf('Batteries &amp; Chargers')<b.host.innerHTML.indexOf('>Promos<'));
  b.click({compactChoice:'subcategory',value:'Zero-Turns'});assert.equal(b.state.subcategory,'Zero-Turns');
  b.click({compactGroup:'use'});assert.match(b.host.innerHTML,/Residential/);b.click({compactChoice:'use',value:'Commercial'});assert.equal(b.state.use,'Commercial');
+});
+
+test('battery systems have a Battery Series heading while equipment series keep Series',()=>{
+ const b=builderCompact();b.context.rows=[{Category:'Blowers',SubCategory:'Backpack',PowerType:'Battery',Series:'AP',System:'AP'},{Category:'Blowers',SubCategory:'Backpack',PowerType:'Battery',Series:'AK',System:'AK'}];b.api.render(b.context);
+ assert.match(b.host.innerHTML,/>Battery Series<\/button>/);b.click({compactGroup:'series'});assert.match(b.host.innerHTML,/Battery Series options/);assert.match(b.host.innerHTML,/All Battery Series/);
+ b.context.rows=[{Category:'Blowers',SubCategory:'Backpack',PowerType:'Battery',Series:'Optimus Z',System:'82V'}];b.api.render(b.context);assert.doesNotMatch(b.host.innerHTML,/Battery Series/);assert.match(b.host.innerHTML,/>Series<\/button>/);
+ b.state.power='Battery';b.click({compactAction:'models'});assert.equal(b.state.power,'');assert.equal(b.state.subcategory,'');assert.match(b.host.innerHTML,/Power Type options/);
 });
