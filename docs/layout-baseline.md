@@ -275,3 +275,8 @@ Change a baseline only when John requests or approves that layout change.
 
 - Reuse scope analysis and group definitions only within a compact-filter render; recompute on each render after state/row changes. Do not rebuild unchanged filter markup. Preserve selection, option order, one open row and all three entry routes.
 - Navigation and shopping share one in-flight version of the same public catalog URL and its JSON decode. Keep active-brand filtering, published-page links, standalone fallbacks and failure retry. This reduces duplicate startup work without changing catalog data or analytics.
+
+## First card paint (November 7, 2026)
+
+- Start inventory loading alongside independent finance/component startup work, but retain the stock-readiness gate before interactive cards. Preserve all-brand inventory coverage and stock authority.
+- Render equipment cards in batches of six, yielding between batches. Keep exact order, selections and the stale-render cancellation guard. Counts and comparison reflect the full filtered result, even while later cards are being appended.
