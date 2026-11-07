@@ -2277,7 +2277,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
   function catalogSpecs(f){const v=selectedPriceVariant(f);return Object.entries(v.specs||f.specs||{}).filter(([,value])=>clean(value)).slice(0,4);}
   function card(f){
-    if(window.WestEndMarketplaceCard)return window.WestEndMarketplaceCard.render(f,{selectedPriceVariant,priceChoices,pricePanel,selectedStock,stockHeaderMarkup,sawHeaderBars,cardFinanceMarkup,paymentSelectionUrl,promoInfo,money,state,DATA,currentPrice,inventoryMarkup,inventoryStatus:familyInventoryStatus,selectPackageVariant,refreshSelectedCard,selectedPriceQuantity,updateCartFloat,track,compactBaseVariant});
+    if(window.WestEndMarketplaceCard)return window.WestEndMarketplaceCard.render(f,{imagePriority:DATA.filtered[0]?.key===f.key?'high':'auto',selectedPriceVariant,priceChoices,pricePanel,selectedStock,stockHeaderMarkup,sawHeaderBars,cardFinanceMarkup,paymentSelectionUrl,promoInfo,money,state,DATA,currentPrice,inventoryMarkup,inventoryStatus:familyInventoryStatus,selectPackageVariant,refreshSelectedCard,selectedPriceQuantity,updateCartFloat,track,compactBaseVariant});
     const first=selectedPriceVariant(f),specs=catalogSpecs(f),url=catalogBuildUrl(f),heading=clean(first.description)||clean(f.model)||clean(first.sku);
     const productUrl='product.html?'+new URLSearchParams({brand:f.brand,sku:first.sku||''}),promo=isCompactTractor(f)?null:promoInfo(first);
     const msrp=Number(first.msrp||first.price||0),price=promo?.type==='sale'?promo.price:msrp;

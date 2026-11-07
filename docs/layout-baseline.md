@@ -266,3 +266,7 @@ Change a baseline only when John requests or approves that layout change.
 - Need help choosing? is a separate card immediately above Filter Products, with a visible gap and its own rounded border. Keep the desktop filter column sticky and the help card above the mobile filter drawer.
 - Category pages do not have a top-level Power Type button. Selecting a named subcategory opens its available power choices below the main row. Clicking that subcategory again reopens power choices; All Models clears subcategory, series/model and power and shows all power choices. Other chosen filters remain. Battery power can lead into series choices.
 - Label the series group Battery Series when its published values are battery System choices; keep Series for equipment/model series such as Toro and Yanmar. Retain exact workbook values and ordering.
+
+## First-result image priority (November 7, 2026)
+
+- The first current result image loads eagerly with high fetch priority; other product-card images remain lazy. All card images use asynchronous decoding. Recompute the first result after filtering without changing source images, crop/fit behavior, card dimensions, pricing or stock controls. This is a loading-policy improvement, not a measured Core Web Vitals result.

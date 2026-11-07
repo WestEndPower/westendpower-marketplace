@@ -30,6 +30,7 @@
   const viewSku=build.searchParams.get('sku')||v.sku||displaySku;
   const runtime=new URL(build);runtime.searchParams.set('view','runtime');
   const image=clean(tool.marketplaceRow?.ImageURL)||f.image;
+  const imageLoading=context.imagePriority==='high'?'loading="eager" fetchpriority="high" decoding="async"':'loading="lazy" decoding="async"';
   const packageSelected=/kit|package/i.test(v.type);
   const choices=selectedStock(f)?[{label:packageSelected?'Package:':'MSRP:',v,variants:[v],isPackage:packageSelected}]:priceChoices(f);
   const specs=Object.entries(Object.values(v.specs||{}).some(clean)?v.specs:f.specs||{}).filter(([,value])=>clean(value));
@@ -44,7 +45,7 @@
   return '<article class="market-card wep-blended-card wep-restored-card" data-key="'+escape(f.key)+'" data-brand="'+escape(clean(f.brand).toUpperCase())+'">'+
    '<header class="market-card-head"><h3><strong class="market-card-title" title="'+escape(heading)+'">'+escape(heading)+'</strong><div class="wep-card-sku"><span>SKU: '+escape(displaySku)+(tool.chainsawBarTrial?'':sawHeaderBars(f))+'</span>'+stockHeaderMarkup(f,compact?v:tool)+'</div></h3></header>'+
    promoNote+'<div class="market-card-body"><div class="market-card-overview"><section class="market-card-left">'+
-    '<div class="market-image-wrap">'+banner(compact?v:equipment?.tool(f)||v,context)+'<a class="market-image" href="'+escape(product)+'" target="_blank" rel="noopener noreferrer" title="View product details" aria-label="View product details for '+escape(heading)+'">'+(image?'<img src="'+escape(image)+'" alt="'+escape(heading)+'" loading="lazy">':'<span>Image Coming Soon</span>')+'</a><span class="wep-view-count" data-wep-view-brand="'+escape(f.brand)+'" data-wep-view-sku="'+escape(viewSku)+'" title="Recorded views of selected SKU '+escape(viewSku)+'" hidden></span></div>'+
+    '<div class="market-image-wrap">'+banner(compact?v:equipment?.tool(f)||v,context)+'<a class="market-image" href="'+escape(product)+'" target="_blank" rel="noopener noreferrer" title="View product details" aria-label="View product details for '+escape(heading)+'">'+(image?'<img src="'+escape(image)+'" alt="'+escape(heading)+'" '+imageLoading+'>':'<span>Image Coming Soon</span>')+'</a><span class="wep-view-count" data-wep-view-brand="'+escape(f.brand)+'" data-wep-view-sku="'+escape(viewSku)+'" title="Recorded views of selected SKU '+escape(viewSku)+'" hidden></span></div>'+
    '</section>'+
    (specs.length?'<dl class="market-specs market-card-side-specs" tabindex="0" aria-label="Product specifications">'+specs.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+escape(value)+'</dd></div>').join('')+'</dl>':'<div class="market-empty-specs" aria-hidden="true"></div>')+
    '</div>'+(window.WestEndPackagePricing?.warranty(tool.marketplaceRow||{})||'<div class="market-card-warranty" aria-hidden="true"></div>')+'<section class="market-buy">'+
