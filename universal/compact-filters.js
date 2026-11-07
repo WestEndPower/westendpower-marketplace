@@ -40,16 +40,23 @@
   if(group[0]==='packages')return (context.packageGroups||[]).filter(g=>rows.some(r=>/^(T|TRUE|Y|YES|1)$/i.test(clean(r[g.field])))).map(g=>g.field);
   return unique(rows.map(group[4]));
  }
+ function subcategoryButtons(context){
+  const group=builderGroups(context).find(g=>g[0]==='subcategory');
+  const values=unique([...builderOptions(context,group,true),context.state.subcategory]);
+  return values.map(value=>'<button type="button" class="market-chip'+(context.state.subcategory===value?' active':'')+'" data-compact-choice="subcategory" data-value="'+esc(value)+'" aria-pressed="'+(context.state.subcategory===value)+'">'+esc(value)+'</button>').join('');
+ }
  function builderMarkup(context){
   const {rows,state}=context;
   const list=builderGroups(context).filter(g=>{
+   if(context.categoryLayout&&['category','subcategory','model'].includes(g[0]))return false;
    const values=builderOptions(context,g,true),selected=builderSelected(g,state);
    // Do not add meaningless type/category controls to a page with a single fixed scope.
    if(['category','subcategory'].includes(g[0]))return values.length>1||(!values.length&&selected.length);
    return values.length||selected.length;
   });
   if(!list.some(g=>g[0]===open))open='';
-  const top=['<button type="button" class="market-chip'+(!state.seriesFilter&&!state.modelFilter?' active':'')+'" data-compact-action="models">All Models</button>'];
+  const top=['<button type="button" class="market-chip'+(!state.seriesFilter&&!state.modelFilter&&(!context.categoryLayout||!state.subcategory)?' active':'')+'" data-compact-action="models">All Models</button>'];
+  if(context.categoryLayout)top.push(subcategoryButtons(context));
   if(context.promoAvailable||state.promoOnly)top.push('<button type="button" class="market-chip'+(state.promoOnly?' active':'')+'" data-compact-action="promos" aria-pressed="'+!!state.promoOnly+'">Promos</button>');
   for(const g of list){
    const selected=builderSelected(g,state),suffix=selected.length?(g[5]||g[0]==='packages'?' ('+selected.length+')':': '+selected[0]):'';
@@ -63,10 +70,10 @@
    const button=(value,name,active)=>'<button type="button" class="market-chip'+(active?' active':'')+'" data-compact-choice="'+esc(group[0])+'" data-value="'+esc(value)+'" aria-pressed="'+active+'">'+esc(name)+'</button>';
    choices='<div class="wep-filter-options" role="group" aria-label="'+esc(group[1])+' options">'+button('','All '+(({category:'Categories',subcategory:'Types',series:'Series',model:'Models',power:'Power Types',use:'Uses',deck:'Deck Sizes',packages:'Packages'})[group[0]]||group[1]),!selected.length)+values.map(v=>button(v,label(v),selected.includes(v))).join('')+'</div>';
   }
-  return '<div class="wep-filter-top" aria-label="Equipment filters">'+top.join('')+'</div>'+choices;
+  return '<div class="wep-filter-top" aria-label="Equipment filters">'+top.join('')+(context.componentControls||'')+'</div>'+choices;
  }
  function markup(context){
-  if(context.generated&&context.state.category!=='Mowers')return builderMarkup(context);
+  if((context.generated||context.categoryLayout)&&context.state.category!=='Mowers')return builderMarkup(context);
   const {rows,state,matches}=context;
   const scope=rows.filter(r=>matches(r,{ignoreSeries:true,ignoreModel:true,ignoreUse:true,ignoreDeck:true,ignorePower:true}));
   const useValues=unique([...scope.map(r=>r.Use),state.use]);
@@ -81,9 +88,10 @@
    if(id==='series')seriesOrder(scope,all);
    choices='<div class="wep-filter-options" role="group" aria-label="'+esc(label)+' options"><button type="button" class="market-chip'+(!state[key]?' active':'')+'" data-compact-choice="'+id+'" data-value="">All '+esc(({series:'Series',use:'Uses',deck:'Deck Sizes',power:'Power Types'})[id])+'</button>'+all.map(v=>'<button type="button" class="market-chip'+(state[key]===v?' active':'')+'" data-compact-choice="'+id+'" data-value="'+esc(v)+'"'+(!available.has(v)&&state[key]!==v?' disabled':'')+'>'+esc(v)+'</button>').join('')+'</div>';
   }
-  return '<div class="wep-filter-top" aria-label="Equipment filters">'+uses+top.join('')+'</div>'+choices;
+  const categoryPrefix=context.categoryLayout?'<button type="button" class="market-chip" data-compact-action="models">All Models</button>'+subcategoryButtons(context):'';
+  return '<div class="wep-filter-top" aria-label="Equipment filters">'+categoryPrefix+uses+top.join('')+(context.componentControls||'')+'</div>'+choices;
  }
- function render(context){if(context.generated&&context.state.power==='Battery'&&lastPower!=='Battery')open='series';lastPower=context.state.power;current=context;const html=markup(context);for(const host of context.hosts.filter(Boolean))host.innerHTML=html;}
+ function render(context){if((context.generated||context.categoryLayout)&&context.state.power==='Battery'&&lastPower!=='Battery')open='series';lastPower=context.state.power;current=context;const html=markup(context);for(const host of context.hosts.filter(Boolean))host.innerHTML=html;}
  document.addEventListener('change',event=>{
   if(!current||!event.target.matches?.('[data-brand]')||!document.querySelector('#market-refine.wep-compact-active'))return;
   // Run after the shopping handler has applied the customer's brand selection.
@@ -93,9 +101,10 @@
   const group=event.target.closest('[data-compact-group]'),choice=event.target.closest('[data-compact-choice]'),action=event.target.closest('[data-compact-action]');
   if(!current||(!group&&!choice&&!action)||!current.hosts.some(host=>host?.contains(group||choice||action)))return;
   event.preventDefault();
-  if(action){if(action.dataset.compactAction==='models'){current.state.seriesFilter='';current.state.modelFilter='';open='';}else current.state.promoOnly=!current.state.promoOnly;current.changed(action.dataset.compactAction);return;}
+  if(action){if(action.dataset.compactAction==='models'){current.state.seriesFilter='';current.state.modelFilter='';if(current.categoryLayout)current.state.subcategory='';open='';}else current.state.promoOnly=!current.state.promoOnly;current.changed(action.dataset.compactAction);return;}
   if(group){open=open===group.dataset.compactGroup?'':group.dataset.compactGroup;render(current);return;}
-  if(current.generated&&current.state.category!=='Mowers'){
+  if(choice.dataset.compactChoice==='subcategory'){current.state.subcategory=current.state.subcategory===choice.dataset.value?'':choice.dataset.value;current.changed();return;}
+  if((current.generated||current.categoryLayout)&&current.state.category!=='Mowers'){
    const selected=builderGroups(current).find(g=>g[0]===choice.dataset.compactChoice);if(!selected)return;
    const value=choice.dataset.value||'';
    if(selected[0]==='packages'){const values=current.state.packageComponents;if(!value)values.clear();else values.has(value)?values.delete(value):values.add(value);}

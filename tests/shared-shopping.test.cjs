@@ -150,3 +150,24 @@ test('builder controls retain incompatible selected values for clearing, without
  b.click({compactAction:'promos'});assert.equal(b.state.promoOnly,true);assert.equal(b.state.modelFilter,'BGA300');
  b.click({compactAction:'models'});assert.equal(b.state.modelFilter,'');assert.equal(b.state.promoOnly,true);
 });
+
+
+test('category pages replace Type and Model controls with direct subcategories on both entry paths',()=>{
+ const b=builderCompact();b.context.categoryLayout=true;b.context.componentControls='<div class="wep-component-nav">Batteries &amp; Chargers</div>';b.state.subcategory='';
+ b.context.rows.push({Category:'Blowers',SubCategory:'Handheld',Series:'AK',Model:'BGA60',PowerType:'Battery',SortOrder:'1'},{Category:'Blowers',SubCategory:'Walk-Behind',Series:'Force',Model:'F602X',PowerType:'Gas',SortOrder:'8'},{Category:'Trimmers',SubCategory:'Other type',Series:'FS',Model:'FS1',PowerType:'Gas'});
+ const match=b.context.matches;b.context.matches=(r,o)=>r.Category==='Blowers'&&match(r,o);
+ b.api.render(b.context);const generated=b.host.innerHTML;
+ assert.match(generated,/data-compact-choice="subcategory" data-value="Handheld"/);assert.match(generated,/data-value="Backpack"/);assert.match(generated,/data-value="Walk-Behind"/);assert.doesNotMatch(generated,/Other type|data-compact-group="subcategory"|data-compact-group="model"/);
+ b.context.generated=false;b.api.render(b.context);assert.equal(b.host.innerHTML,generated);
+ b.click({compactChoice:'subcategory',value:'Handheld'});assert.equal(b.state.subcategory,'Handheld');
+ b.click({compactGroup:'series'});assert.match(b.host.innerHTML,/data-compact-choice="series" data-value="AK"/);assert.doesNotMatch(b.host.innerHTML,/data-compact-choice="series" data-value="BR"/);
+ b.click({compactChoice:'series',value:'AK'});b.click({compactGroup:'power'});assert.equal(b.state.subcategory,'Handheld');assert.equal(b.state.seriesFilter,'AK');assert.match(b.host.innerHTML,/Power Type options/);assert.doesNotMatch(b.host.innerHTML,/Series options/);assert.match(b.host.innerHTML,/Batteries &amp; Chargers/);
+ b.click({compactAction:'models'});assert.equal(b.state.subcategory,'');assert.equal(b.state.seriesFilter,'');
+});
+
+test('mower category controls retain Residential, Commercial, Series, Deck Size and Power Type',()=>{
+ const b=builderCompact();b.context.categoryLayout=true;b.context.generated=false;b.state.category='Mowers';b.state.subcategory='';
+ b.context.rows.splice(0,b.context.rows.length,{Category:'Mowers',SubCategory:'Zero-Turns',Series:'TimeCutter',Use:'Residential',PowerType:'Gas'},{Category:'Mowers',SubCategory:'Walk-Behind',Series:'TurfMaster',Use:'Commercial',PowerType:'Gas'});
+ b.api.render(b.context);for(const label of ['All Models','Zero-Turns','Walk-Behind','Residential','Commercial','Series','Deck Size','Power Type'])assert.ok(b.host.innerHTML.includes(label),label);
+ b.click({compactChoice:'subcategory',value:'Zero-Turns'});assert.equal(b.state.subcategory,'Zero-Turns');
+});

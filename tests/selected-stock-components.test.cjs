@@ -21,8 +21,8 @@ for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-br
  vm.runInNewContext(section(source,'  function productSeries(','  function groupComponents(')+';this.series=componentSeries;this.tools=productSeries;this.switchMode=switchComponentBrowse;this.nav=componentNavigation;',box);
  assert.equal(box.tools({PowerType:'Battery',System:'AK'}),'AK');assert.equal(box.tools({Series:'PRO',PowerType:'Battery',System:'AK'}),'PRO');
  assert.equal(box.series({BrandID:'STIHL',BatteryID:'AP300S',System:'Battery'},'battery'),'AP');assert.equal(box.series({System:'AS'},'charger'),'AS');
- assert.match(box.nav(),/data-shop-mode="batteries">Battery/);assert.match(box.nav(),/data-shop-mode="chargers">Charger/);
- box.switchMode('batteries');assert.equal(state.category,'');assert.equal(state.seriesFilter,'');assert.equal(state.availability.size,0);assert.match(box.nav(),/>Tools/);
+ assert.match(box.nav(),/data-shop-mode="batteries">Batteries & Chargers/);assert.doesNotMatch(box.nav(),/data-shop-mode="chargers"/);
+ box.switchMode('batteries');assert.equal(state.category,'');assert.equal(state.seriesFilter,'');assert.equal(state.availability.size,0);assert.match(box.nav(),/>Return to Tools/);
  box.switchMode('chargers');assert.equal(state.shopMode,'chargers');box.switchMode('equipment');assert.equal(state.category,'Blowers');assert.equal(state.seriesFilter,'AK');assert.equal(state.availability.has('Normally In Stock'),true);
  assert.match(source,/aria-label="'\+\(state.shopMode==='batteries'\?'Battery':'Charger'\)\+' series"/);
 });
