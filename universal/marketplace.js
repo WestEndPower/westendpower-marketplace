@@ -866,7 +866,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
 
   let financeCardObserver;
-  function observeCardFinance(){
+  function observeCardFinance(root=document){
     if(typeof IntersectionObserver!=='function')return;
     if(!financeCardObserver)financeCardObserver=new IntersectionObserver(entries=>{
       for(const entry of entries){
@@ -875,7 +875,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
         if(f)requestMarketplaceFinanceSummary(f);
       }
     },{rootMargin:'100px'});
-    for(const element of document.querySelectorAll('#market-grid .market-card'))financeCardObserver.observe(element);
+    for(const element of root===document?document.querySelectorAll('#market-grid .market-card'):[root])financeCardObserver.observe(element);
   }
   function financeCardCurrent(f,key){
     if(document.hidden||financeSummaryKey(f)!==key)return false;
@@ -2309,14 +2309,14 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
   const descriptionResize=typeof ResizeObserver==='function'
     ? new ResizeObserver(entries=>entries.forEach(entry=>fitPriceDescription(entry.target))) : null;
-  function fitPriceDescriptions(){
-    if(descriptionResize)descriptionResize.disconnect();
-    document.querySelectorAll('.market-price-description,.market-card-title').forEach(el=>{
+  function fitPriceDescriptions(root=document,reset=true){
+    if(reset&&descriptionResize)descriptionResize.disconnect();
+    root.querySelectorAll('.market-price-description,.market-card-title').forEach(el=>{
       fitPriceDescription(el);
       if(descriptionResize)descriptionResize.observe(el);
     });
   }
-  window.addEventListener('resize',fitPriceDescriptions);
+  window.addEventListener('resize',()=>fitPriceDescriptions());
 
   function syncGeneratedComparison(){
     if(!window.WEPGeneratedCatalog)return;
@@ -2340,7 +2340,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     }
     const grid=$('#market-grid');
     const families=DATA.filtered.slice();
-    const batchSize=24;
+    const batchSize=6;
     let offset=0;
     grid.setAttribute('aria-busy',families.length>batchSize ? 'true' : 'false');
     if(!families.length){
@@ -2354,7 +2354,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       // A changed filter invalidates any pending cards from the previous results.
       if(version!==cardRenderVersion) return;
       grid.insertAdjacentHTML('beforeend',families.slice(offset,offset+batchSize).map(card).join(''));
-      fitPriceDescriptions();observeCardFinance();
+      for(const element of Array.from(grid.children).slice(offset)){fitPriceDescriptions(element,false);observeCardFinance(element);}
       offset+=batchSize;
       if(offset<families.length) setTimeout(appendBatch,16);
       else grid.setAttribute('aria-busy','false');
@@ -3092,6 +3092,11 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       let [products,batteries,chargers,compatibility,financePrograms,settingsRows]=catalog;
       if(window.WEPGeneratedCatalog)products=window.WEPGeneratedCatalog.products(products);
       DATA.products=products;
+      // Start stock requests while independent component/finance setup runs.
+      // Keep the await below: never expose interactive cards before stock resolves.
+      const inventoryReady=loadInventoryAvailability(
+        marketplaceBrandProfiles().map(profile=>clean(profile.id).toUpperCase())
+      );
       if(['zero','responders','fleet'].includes(new URLSearchParams(location.search).get('promo')))await ensurePromotionPrograms(new URLSearchParams(location.search).get('promo'));
       DATA.batteries=batteries;
       DATA.chargers=chargers;
@@ -3116,9 +3121,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       }
       DATA.settings=settingsRows[0]||{};
       DATA.locations=locations;
-      await loadInventoryAvailability(
-        marketplaceBrandProfiles().map(profile=>clean(profile.id).toUpperCase())
-      );
+      await inventoryReady;
       DATA.equipmentFamilies=enrichFactoryPackageSavings(enrichRecommendedPackages(groupFamilies(products)));
       const componentRows=kind=>{const seen=new Set();return [...Object.entries(DATA.componentSources||{}).flatMap(([brand,source])=>(source[kind]||[]).map(row=>({...row,BrandID:brand}))),...(kind==='batteries'?batteries:chargers)].filter(row=>{const id=clean(row.BrandID||'STIHL')+'|'+skuKey(row.SKU);if(seen.has(id))return false;seen.add(id);return true;});};
       DATA.batteryFamilies=groupComponents(componentRows('batteries'),'battery');
