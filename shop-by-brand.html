@@ -711,7 +711,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-recommended-series1"></script><script src="universal/package-pricing.js?v=20261107-stock-labels1"></script><script src="universal/equipment-package-pricing.js?v=20261107-selected-stock1"></script><script src="universal/marketplace-card.js?v=20261107-stock-labels1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261107-stock-labels1"><link rel="stylesheet" href="universal/promotions.css?v=20261031-promo1"><script src="universal/promotions.js?v=20261031-verified-finance5"></script><script src="universal/site-tracking.js?v=20261105-views1" defer></script><link rel="stylesheet" href="universal/product-views.css?v=20261106-image-fit1"><meta name="wep-shopping-template" content="2"><link rel="stylesheet" href="universal/compact-filters.css?v=20261107-selected-stock1"><script src="universal/compact-filters.js?v=20261107-selected-stock1"></script><link rel="stylesheet" href="universal/shopping-shell.css?v=20261105-shared1"><script src="universal/shopping-shell.js?v=20261105-shared1"></script><script src="universal/card-image-fit.js?v=20261106-image-fit1" defer></script></head>
+<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-recommended-series1"></script><script src="universal/package-pricing.js?v=20261107-stock-labels1"></script><script src="universal/equipment-package-pricing.js?v=20261107-selected-stock1"></script><script src="universal/marketplace-card.js?v=20261107-stock-labels1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261107-stock-labels1"><link rel="stylesheet" href="universal/promotions.css?v=20261031-promo1"><script src="universal/promotions.js?v=20261031-verified-finance5"></script><script src="universal/site-tracking.js?v=20261105-views1" defer></script><link rel="stylesheet" href="universal/product-views.css?v=20261106-image-fit1"><meta name="wep-shopping-template" content="2"><link rel="stylesheet" href="universal/compact-filters.css?v=20261107-selected-stock1"><script src="universal/compact-filters.js?v=20261107-filter-help1"></script><link rel="stylesheet" href="universal/shopping-shell.css?v=20261105-shared1"><script src="universal/shopping-shell.js?v=20261105-shared1"></script><script src="universal/card-image-fit.js?v=20261106-image-fit1" defer></script><link rel="stylesheet" href="universal/shopping-help.css?v=20261107-filter-help1"><script src="universal/shopping-help.js?v=20261107-filter-help1"></script></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -1397,12 +1397,12 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     const battery=DATA.batteryFamilies?.length,charger=DATA.chargerFamilies?.length;
     const available=state.shopMode!=='equipment'||DATA.products.some(p=>truthy(p.Active)&&/battery/i.test(clean(p.PowerType))&&(!state.category||clean(p.Category)===state.category)&&(!state.subcategory||clean(p.SubCategory)===state.subcategory)&&(!state.brand.size||state.brand.has(clean(p.BrandID).toUpperCase())));
     if(!available)return '';
-    return '<div class="wep-component-nav" role="group" aria-label="Shop equipment, batteries or chargers">'+(state.shopMode!=='equipment'?button('Tools','equipment','shop-mode',false):'')+(battery?button('Battery','batteries','shop-mode',state.shopMode==='batteries'):'')+(charger?button('Charger','chargers','shop-mode',state.shopMode==='chargers'):'')+'</div>';
+    return '<div class="wep-component-nav" role="group" aria-label="Shop equipment, batteries or chargers">'+(state.shopMode==='equipment'?(battery||charger?button('Batteries & Chargers',battery?'batteries':'chargers','shop-mode',false):''):button('Return to Tools','equipment','shop-mode',false)+(battery?button('Batteries','batteries','shop-mode',state.shopMode==='batteries'):'')+(charger?button('Chargers','chargers','shop-mode',state.shopMode==='chargers'):''))+'</div>';
   }
   function renderComponentNavigation(){
     for(const host of [$('#market-context'),$('#market-mobile-context')].filter(Boolean)){
       host.querySelector('.wep-component-nav')?.remove();
-      const html=componentNavigation();if(html)(host.querySelector('.wep-filter-top')||host).insertAdjacentHTML('beforeend',html);
+      const html=componentNavigation(),promos=host.querySelector('[data-compact-action="promos"]');if(html){if(promos)promos.insertAdjacentHTML('beforebegin',html);else (host.querySelector('.wep-filter-top')||host).insertAdjacentHTML('beforeend',html);}
     }
   }
   let equipmentBrowseState=null;
@@ -2108,7 +2108,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
           num(v.marketplaceRow?.QtyDanbury??v.qtyDanbury)>0 ||
           num(v.marketplaceRow?.QtyNewMilford??v.qtyNewMilford)>0
         ) || familyInventoryStatus(f).status==='in-stock';
-        if(!state.availability.has(normallyStocked?'Normally In Stock':'Available to Order')) return false;
+        if((state.availability.has('Stocked')||state.availability.has('Normally In Stock'))&&!normallyStocked) return false;
       }
       if(state.buyOnline && !f.buyOnline) return false;
       if(state.shopMode==='equipment'){
@@ -2538,12 +2538,12 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     const categoryHost=$('#market-categories');
     const widthHost=$('#market-width');
 
-    const compactFilters=state.shopMode==='equipment' && (window.WEPGeneratedCatalog || (state.category==='Mowers' && state.subcategory)) && window.WEPCompactFilters;
+    const compactFilters=state.shopMode==='equipment' && (window.WEPGeneratedCatalog || state.category) && window.WEPCompactFilters;
     $('#market-refine')?.classList.toggle('wep-compact-active',!!compactFilters);
     if(compactFilters){
       powerWrap.hidden=true;categoryPanel.hidden=true;contextPanel.hidden=false;
       categoryHost.innerHTML='';powerHost.innerHTML='';
-      window.WEPCompactFilters.render({rows:DATA.products.map(p=>({...p,Series:productSeries(p)})),state,generated:!!window.WEPGeneratedCatalog,specGroups:marketplaceSpecGroups(),packageGroups:marketplaceGroups('P'),powerContext:marketplacePowerContextGroup(),promoAvailable:marketplacePromoAvailable(),matches:(row,options)=>(!state.brand.size||state.brand.has(clean(row.BrandID).toUpperCase()))&&marketplaceRowMatches(row,options),
+      window.WEPCompactFilters.render({rows:DATA.products.map(p=>({...p,Series:productSeries(p)})),state,generated:!!window.WEPGeneratedCatalog,categoryLayout:!!state.category,componentControls:componentNavigation(),specGroups:marketplaceSpecGroups(),packageGroups:marketplaceGroups('P'),powerContext:marketplacePowerContextGroup(),promoAvailable:marketplacePromoAvailable(),matches:(row,options)=>(!state.category||clean(row.Category)===state.category)&&(!state.brand.size||state.brand.has(clean(row.BrandID).toUpperCase()))&&marketplaceRowMatches(row,options),
         hosts:[context,$('#market-mobile-context')],changed(action){renderTopFilters();renderSidebar();filterFamilies();if(action==='promos')track('marketplace_promos',{active:state.promoOnly});}});
       widthHost.hidden=true;widthHost.innerHTML='';renderComponentNavigation();return;
     }
@@ -3005,15 +3005,16 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     renderDynamicBrands();
 
     $('#filter-availability').innerHTML=
-      ['Normally In Stock','Available to Order'].map(x=>
+      ['Stocked'].map(x=>
         '<label>' +
           '<input type="checkbox" data-availability="' +
-            esc(x) + '"' + (state.availability.has(x)?' checked':'') +
+            esc(x) + '"' + (state.availability.has(x)||state.availability.has('Normally In Stock')?' checked':'') +
           '> ' +
           '<span>' + esc(x) + '</span>' +
         '</label>'
       ).join('');
 
+    window.WEPShoppingHelp?.mount(DATA.locations||[]);
     const fGroups=marketplaceGroups('F');
 
     $('#filter-specs-wrap').hidden=!fGroups.length;
@@ -3656,7 +3657,7 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
       .split(',')
       .map(clean)
       .filter(Boolean)
-      .forEach(value=>state.availability.add(value));
+      .forEach(value=>{if(['Stocked','Normally In Stock'].includes(value))state.availability.add('Stocked');});
 
     if($('#market-search')) $('#market-search').value=state.search;
     if($('#filter-buy-online')) $('#filter-buy-online').checked=state.buyOnline;

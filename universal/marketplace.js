@@ -313,12 +313,12 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const battery=DATA.batteryFamilies?.length,charger=DATA.chargerFamilies?.length;
     const available=state.shopMode!=='equipment'||DATA.products.some(p=>truthy(p.Active)&&/battery/i.test(clean(p.PowerType))&&(!state.category||clean(p.Category)===state.category)&&(!state.subcategory||clean(p.SubCategory)===state.subcategory)&&(!state.brand.size||state.brand.has(clean(p.BrandID).toUpperCase())));
     if(!available)return '';
-    return '<div class="wep-component-nav" role="group" aria-label="Shop equipment, batteries or chargers">'+(state.shopMode!=='equipment'?button('Tools','equipment','shop-mode',false):'')+(battery?button('Battery','batteries','shop-mode',state.shopMode==='batteries'):'')+(charger?button('Charger','chargers','shop-mode',state.shopMode==='chargers'):'')+'</div>';
+    return '<div class="wep-component-nav" role="group" aria-label="Shop equipment, batteries or chargers">'+(state.shopMode==='equipment'?(battery||charger?button('Batteries & Chargers',battery?'batteries':'chargers','shop-mode',false):''):button('Return to Tools','equipment','shop-mode',false)+(battery?button('Batteries','batteries','shop-mode',state.shopMode==='batteries'):'')+(charger?button('Chargers','chargers','shop-mode',state.shopMode==='chargers'):''))+'</div>';
   }
   function renderComponentNavigation(){
     for(const host of [$('#market-context'),$('#market-mobile-context')].filter(Boolean)){
       host.querySelector('.wep-component-nav')?.remove();
-      const html=componentNavigation();if(html)(host.querySelector('.wep-filter-top')||host).insertAdjacentHTML('beforeend',html);
+      const html=componentNavigation(),promos=host.querySelector('[data-compact-action="promos"]');if(html){if(promos)promos.insertAdjacentHTML('beforebegin',html);else (host.querySelector('.wep-filter-top')||host).insertAdjacentHTML('beforeend',html);}
     }
   }
   let equipmentBrowseState=null;
@@ -1007,7 +1007,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
           num(v.marketplaceRow?.QtyDanbury??v.qtyDanbury)>0 ||
           num(v.marketplaceRow?.QtyNewMilford??v.qtyNewMilford)>0
         ) || familyInventoryStatus(f).status==='in-stock';
-        if(!state.availability.has(normallyStocked?'Normally In Stock':'Available to Order')) return false;
+        if((state.availability.has('Stocked')||state.availability.has('Normally In Stock'))&&!normallyStocked) return false;
       }
       if(state.buyOnline && !f.buyOnline) return false;
       if(state.shopMode==='equipment'){
@@ -1437,12 +1437,12 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const categoryHost=$('#market-categories');
     const widthHost=$('#market-width');
 
-    const compactFilters=state.shopMode==='equipment' && (window.WEPGeneratedCatalog || (state.category==='Mowers' && state.subcategory)) && window.WEPCompactFilters;
+    const compactFilters=state.shopMode==='equipment' && (window.WEPGeneratedCatalog || state.category) && window.WEPCompactFilters;
     $('#market-refine')?.classList.toggle('wep-compact-active',!!compactFilters);
     if(compactFilters){
       powerWrap.hidden=true;categoryPanel.hidden=true;contextPanel.hidden=false;
       categoryHost.innerHTML='';powerHost.innerHTML='';
-      window.WEPCompactFilters.render({rows:DATA.products.map(p=>({...p,Series:productSeries(p)})),state,generated:!!window.WEPGeneratedCatalog,specGroups:marketplaceSpecGroups(),packageGroups:marketplaceGroups('P'),powerContext:marketplacePowerContextGroup(),promoAvailable:marketplacePromoAvailable(),matches:(row,options)=>(!state.brand.size||state.brand.has(clean(row.BrandID).toUpperCase()))&&marketplaceRowMatches(row,options),
+      window.WEPCompactFilters.render({rows:DATA.products.map(p=>({...p,Series:productSeries(p)})),state,generated:!!window.WEPGeneratedCatalog,categoryLayout:!!state.category,componentControls:componentNavigation(),specGroups:marketplaceSpecGroups(),packageGroups:marketplaceGroups('P'),powerContext:marketplacePowerContextGroup(),promoAvailable:marketplacePromoAvailable(),matches:(row,options)=>(!state.category||clean(row.Category)===state.category)&&(!state.brand.size||state.brand.has(clean(row.BrandID).toUpperCase()))&&marketplaceRowMatches(row,options),
         hosts:[context,$('#market-mobile-context')],changed(action){renderTopFilters();renderSidebar();filterFamilies();if(action==='promos')track('marketplace_promos',{active:state.promoOnly});}});
       widthHost.hidden=true;widthHost.innerHTML='';renderComponentNavigation();return;
     }
@@ -1900,15 +1900,16 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     renderDynamicBrands();
 
     $('#filter-availability').innerHTML=
-      ['Normally In Stock','Available to Order'].map(x=>
+      ['Stocked'].map(x=>
         '<label>' +
           '<input type="checkbox" data-availability="' +
-            esc(x) + '"' + (state.availability.has(x)?' checked':'') +
+            esc(x) + '"' + (state.availability.has(x)||state.availability.has('Normally In Stock')?' checked':'') +
           '> ' +
           '<span>' + esc(x) + '</span>' +
         '</label>'
       ).join('');
 
+    window.WEPShoppingHelp?.mount(DATA.locations||[]);
     const fGroups=marketplaceGroups('F');
 
     $('#filter-specs-wrap').hidden=!fGroups.length;
@@ -2532,7 +2533,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
       .split(',')
       .map(clean)
       .filter(Boolean)
-      .forEach(value=>state.availability.add(value));
+      .forEach(value=>{if(['Stocked','Normally In Stock'].includes(value))state.availability.add('Stocked');});
 
     for(const [key,value] of params){
       if(key.startsWith('spec.')&&/^[BF]\d+-.+/i.test(key.slice(5))){const field=key.slice(5);if(!state.specFilters.has(field))state.specFilters.set(field,new Set());state.specFilters.get(field).add(value);}
@@ -2872,7 +2873,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
         if(f){if(selectCardVariant(f,cardSelectionFor(f).index,Number(el.value)))refreshSelectedCard(f);else{el.value=String(selectedPriceQuantity(f));el.reportValidity();}}
         return;
       }
-      if(el.matches('[data-brand]')){ el.checked?state.brand.add(el.dataset.brand):state.brand.delete(el.dataset.brand); filterFamilies(); }
+      if(el.matches('[data-brand]')){ el.checked?state.brand.add(el.dataset.brand):state.brand.delete(el.dataset.brand); renderTopFilters();filterFamilies(); }
       else if(el.matches('[data-availability]')){ el.checked?state.availability.add(el.dataset.availability):state.availability.delete(el.dataset.availability); filterFamilies(); }
       else if(el.id==='filter-buy-online'){ state.buyOnline=el.checked; filterFamilies(); }
       else if(el.matches('[data-compare]')){

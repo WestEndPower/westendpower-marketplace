@@ -128,12 +128,12 @@ function builderCompact(){
  const click=dataset=>listeners.click({target:{closest:s=>s==='[data-compact-group]'&&dataset.compactGroup?{dataset}:s==='[data-compact-choice]'&&dataset.compactChoice?{dataset}:s==='[data-compact-action]'&&dataset.compactAction?{dataset}:null},preventDefault(){}});
  return {api,state,host,context,click};
 }
-test('builder backpack pages use one options row with relevant model/series/power controls',()=>{
- const b=builderCompact();assert.match(b.host.innerHTML,/data-compact-group="model"/);assert.match(b.host.innerHTML,/data-compact-group="power"/);assert.doesNotMatch(b.host.innerHTML,/Residential|Commercial|Deck Size|data-compact-group="subcategory"/);
+test('builder backpack pages list actual subcategories, Power Type then Series, without Type or Model controls',()=>{
+ const b=builderCompact();assert.match(b.host.innerHTML,/data-compact-choice="subcategory" data-value="Backpack"/);assert.doesNotMatch(b.host.innerHTML,/data-compact-group="(?:model|subcategory)"/);
+ assert.ok(b.host.innerHTML.indexOf('data-compact-group="power"')<b.host.innerHTML.indexOf('data-compact-group="series"'));
  b.click({compactGroup:'series'});assert.match(b.host.innerHTML,/Series options/);
  const choices=[...b.host.innerHTML.matchAll(/data-compact-choice="series" data-value="([^"]+)"/g)].map(m=>m[1]);assert.deepEqual(choices,['AP','BR']);
- b.click({compactChoice:'series',value:'BR'});b.click({compactGroup:'model'});assert.doesNotMatch(b.host.innerHTML,/Series options/);assert.match(b.host.innerHTML,/Model options/);assert.match(b.host.innerHTML,/BR600/);assert.doesNotMatch(b.host.innerHTML,/data-value="BGA300"/);
- b.click({compactChoice:'model',value:'BR800'});b.click({compactGroup:'power'});assert.equal(b.state.seriesFilter,'BR');assert.equal(b.state.modelFilter,'BR800');assert.match(b.host.innerHTML,/Power Type options/);assert.doesNotMatch(b.host.innerHTML,/data-value="Battery"/);
+ b.click({compactChoice:'series',value:'BR'});b.click({compactGroup:'power'});assert.equal(b.state.seriesFilter,'BR');assert.match(b.host.innerHTML,/Power Type options/);assert.doesNotMatch(b.host.innerHTML,/Series options|data-value="Battery"/);
 });
 test('builder workbook specification and package choices remain usable and retain other selections',()=>{
  const b=builderCompact();b.state.power='Gas';b.api.render(b.context);
@@ -149,4 +149,30 @@ test('builder controls retain incompatible selected values for clearing, without
  b.click({compactChoice:'power',value:''});assert.equal(b.state.power,'');assert.equal(b.state.modelFilter,'BGA300');
  b.click({compactAction:'promos'});assert.equal(b.state.promoOnly,true);assert.equal(b.state.modelFilter,'BGA300');
  b.click({compactAction:'models'});assert.equal(b.state.modelFilter,'');assert.equal(b.state.promoOnly,true);
+});
+
+
+test('category pages replace Type and Model controls with direct subcategories on both entry paths',()=>{
+ const b=builderCompact();b.context.categoryLayout=true;b.context.componentControls='<div class="wep-component-nav">Batteries &amp; Chargers</div>';b.state.subcategory='';
+ b.context.rows.push({Category:'Blowers',SubCategory:'Handheld',Series:'AK',Model:'BGA60',PowerType:'Battery',SortOrder:'1'},{Category:'Blowers',SubCategory:'Walk-Behind',Series:'Force',Model:'F602X',PowerType:'Gas',SortOrder:'8'},{Category:'Trimmers',SubCategory:'Other type',Series:'FS',Model:'FS1',PowerType:'Gas'});
+ const match=b.context.matches;b.context.matches=(r,o)=>r.Category==='Blowers'&&match(r,o);
+ b.api.render(b.context);const generated=b.host.innerHTML;
+ assert.match(generated,/data-compact-choice="subcategory" data-value="Handheld"/);assert.match(generated,/data-value="Backpack"/);assert.match(generated,/data-value="Walk-Behind"/);assert.doesNotMatch(generated,/Other type|data-compact-group="subcategory"|data-compact-group="model"/);
+ b.context.generated=false;b.api.render(b.context);assert.equal(b.host.innerHTML,generated);
+ b.click({compactChoice:'subcategory',value:'Handheld'});assert.equal(b.state.subcategory,'Handheld');
+ b.click({compactGroup:'series'});assert.match(b.host.innerHTML,/data-compact-choice="series" data-value="AK"/);assert.doesNotMatch(b.host.innerHTML,/data-compact-choice="series" data-value="BR"/);
+ b.click({compactChoice:'series',value:'AK'});b.click({compactGroup:'power'});assert.equal(b.state.subcategory,'Handheld');assert.equal(b.state.seriesFilter,'AK');assert.match(b.host.innerHTML,/Power Type options/);assert.doesNotMatch(b.host.innerHTML,/Series options/);assert.match(b.host.innerHTML,/Batteries &amp; Chargers/);
+ b.click({compactAction:'models'});assert.equal(b.state.subcategory,'');assert.equal(b.state.seriesFilter,'');
+});
+
+test('mower categories use the same category format while retaining applicable Use and Deck filters',()=>{
+ const b=builderCompact();b.context.categoryLayout=true;b.context.generated=false;b.state.category='Mowers';b.state.subcategory='';
+ b.context.componentControls='<span>Batteries &amp; Chargers</span>';
+ b.context.rows.splice(0,b.context.rows.length,{Category:'Mowers',SubCategory:'Zero-Turns',Series:'TimeCutter',Use:'Residential',PowerType:'Gas',CuttingWidth:'42'},{Category:'Mowers',SubCategory:'Walk-Behind',Series:'TurfMaster',Use:'Commercial',PowerType:'Gas',CuttingWidth:'30'});
+ b.api.render(b.context);for(const label of ['All Models','Zero-Turns','Walk-Behind','Use','Series','Deck Size','Power Type','Batteries &amp; Chargers','Promos'])assert.ok(b.host.innerHTML.includes(label),label);
+ assert.doesNotMatch(b.host.innerHTML,/data-compact-group="(?:subcategory|model)"/);
+ assert.ok(b.host.innerHTML.indexOf('Power Type')<b.host.innerHTML.indexOf('>Series<'));
+ assert.ok(b.host.innerHTML.indexOf('Batteries &amp; Chargers')<b.host.innerHTML.indexOf('>Promos<'));
+ b.click({compactChoice:'subcategory',value:'Zero-Turns'});assert.equal(b.state.subcategory,'Zero-Turns');
+ b.click({compactGroup:'use'});assert.match(b.host.innerHTML,/Residential/);b.click({compactChoice:'use',value:'Commercial'});assert.equal(b.state.use,'Commercial');
 });
