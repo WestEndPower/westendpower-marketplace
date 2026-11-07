@@ -49,3 +49,14 @@ test('all shopping entry points and brand navigation use the shared reader with 
   const code=fs.readFileSync(file,'utf8');assert.match(code,/window.WEPReadMarketplaceCatalog\?/);assert.match(code,/fetch\(/);
  }
 });
+
+test('pre-rendered portal prevents the deferred installer from adding another header row',()=>{
+ for(const file of ['marketplace.html','shop-by-product.html','shop-by-brand.html']){
+  const html=fs.readFileSync(file,'utf8'),header=html.match(/<header class="market-header">([\s\S]*?)<\/header>/)[1];
+  assert.equal((header.match(/class="wep-dealer-portal-bar wep-dealer-portal-inline"/g)||[]).length,1);
+  assert.match(html,/#we-shared-nav\{margin:6px 0!important;padding:0 4px!important\}/);
+  assert.match(html,/html\{scrollbar-gutter:stable\}/);
+ }
+ const source=fs.readFileSync('universal/dealer-portal-link.js','utf8');
+ vm.runInNewContext(source,{document:{querySelector:()=>({}),createElement(){throw Error('Existing portal must prevent new markup or late styles');}}});
+});
