@@ -711,7 +711,7 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
 .wep-nav details[open] summary::after{content:''!important;border-top:0;border-bottom:5px solid currentColor}
 </style>
 <link rel="stylesheet" href="universal/equipment-images.css?v=1">
-<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-recommended-series1"></script><script src="universal/package-pricing.js?v=20261105-shared1"></script><script src="universal/equipment-package-pricing.js?v=20261104-utv-options1"></script><script src="universal/marketplace-card.js?v=20261105-views1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261104-card-alignment1"><link rel="stylesheet" href="universal/promotions.css?v=20261031-promo1"><script src="universal/promotions.js?v=20261031-verified-finance5"></script><script src="universal/site-tracking.js?v=20261105-views1" defer></script><link rel="stylesheet" href="universal/product-views.css?v=20261106-image-fit1"><meta name="wep-shopping-template" content="2"><link rel="stylesheet" href="universal/compact-filters.css?v=20261106-builder-standard1"><script src="universal/compact-filters.js?v=20261106-builder-standard1"></script><link rel="stylesheet" href="universal/shopping-shell.css?v=20261105-shared1"><script src="universal/shopping-shell.js?v=20261105-shared1"></script><script src="universal/card-image-fit.js?v=20261106-image-fit1" defer></script></head>
+<script src="universal/dealer-portal-link.js?v=20261025-portal-right1" defer></script><script src="universal/package-components.js?v=20261026-recommended-series1"></script><script src="universal/package-pricing.js?v=20261105-shared1"></script><script src="universal/equipment-package-pricing.js?v=20261104-utv-options1"></script><script src="universal/marketplace-card.js?v=20261105-views1"></script><link rel="stylesheet" href="universal/catalog-cards.css?v=20261107-stock-availability1"><link rel="stylesheet" href="universal/promotions.css?v=20261031-promo1"><script src="universal/promotions.js?v=20261031-verified-finance5"></script><script src="universal/site-tracking.js?v=20261105-views1" defer></script><link rel="stylesheet" href="universal/product-views.css?v=20261106-image-fit1"><meta name="wep-shopping-template" content="2"><link rel="stylesheet" href="universal/compact-filters.css?v=20261107-stock-availability1"><script src="universal/compact-filters.js?v=20261107-stock-availability1"></script><link rel="stylesheet" href="universal/shopping-shell.css?v=20261105-shared1"><script src="universal/shopping-shell.js?v=20261105-shared1"></script><script src="universal/card-image-fit.js?v=20261106-image-fit1" defer></script></head>
 <body>
 <div id="market-loading">Loading product catalog…</div>
 <div id="market-app" class="market-shell" hidden="">
@@ -754,8 +754,8 @@ html,body,.market-shell,.market-top-panel,#we-shared-nav{background:#176A14}
         <button type="button" class="market-mobile-filter-close" data-mobile-filters-close="" aria-label="Close filters">×</button>
       </div>
       <div id="market-mobile-context" class="market-mobile-context"></div>
-      <details open=""><summary>Brand</summary><div id="filter-brand" class="market-checks"></div></details>
-      <details><summary>Availability</summary><div id="filter-availability" class="market-checks"><label><input type="checkbox" data-availability="Normally In Stock"> <span>Normally In Stock</span></label><label><input type="checkbox" data-availability="Available to Order"> <span>Available to Order</span></label></div></details>
+      <section class="market-fixed-filter"><h3>Brand</h3><div id="filter-brand" class="market-checks"></div></section>
+      <section class="market-fixed-filter"><h3>Availability</h3><div id="filter-availability" class="market-checks"><label><input type="checkbox" data-availability="Normally In Stock"> <span>Normally In Stock</span></label><label><input type="checkbox" data-availability="Available to Order"> <span>Available to Order</span></label></div></section>
       <details><summary>Online Purchase</summary><div class="market-checks"><label><input id="filter-buy-online" type="checkbox"> <span>Buy online eligible</span></label></div></details>
       <div id="filter-specs-wrap" hidden=""><div id="filter-specs"></div></div>
     </aside>
@@ -1789,8 +1789,10 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
     return (clean(unit.variant.model)||clean(f.model))+(description?' with '+description:'');
   }
   function stockHeaderMarkup(f){
-    const choices=stockChoices(f),stock=selectedStock(f);if(!choices.length&&!stock)return '';
-    return '<button type="button" data-stock-toggle="'+esc(f.key)+'" style="margin-left:auto;padding:5px 9px;border:1px solid #9ebda7;border-radius:5px;background:#fff;color:#155d2d;font-size:12px;font-weight:800;cursor:pointer">'+(stock?'Build / Order':'View In-Stock'+(choices.length>1?' ('+choices.length+')':''))+'</button>';
+    const choices=stockChoices(f),stock=selectedStock(f);
+    const action=choices.length||stock?'data-stock-toggle="'+esc(f.key)+'"':'data-pp-inventory';
+    const label=stock?'Build / Order':choices.length?'In-Stock ('+choices.length+')':'Check Stock';
+    return '<button type="button" '+action+' style="margin-left:auto;padding:5px 9px;border:1px solid #9ebda7;border-radius:5px;background:#fff;color:#155d2d;font-size:12px;font-weight:800;cursor:pointer">'+label+'</button>';
   }
   function stockUnitMarkup(f){
     const unit=selectedStock(f);if(!unit)return '';
@@ -2072,8 +2074,11 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
 
       if(!ignoreBrand && state.brand.size && !state.brand.has(f.brand)) return false;
       if(state.availability.size){
-        const label=availabilityText(f);
-        if(!state.availability.has(label)) return false;
+        const normallyStocked=relevantVariants(f).some(v=>
+          num(v.marketplaceRow?.QtyDanbury??v.qtyDanbury)>0 ||
+          num(v.marketplaceRow?.QtyNewMilford??v.qtyNewMilford)>0
+        ) || familyInventoryStatus(f).status==='in-stock';
+        if(!state.availability.has(normallyStocked?'Normally In Stock':'Available to Order')) return false;
       }
       if(state.buyOnline && !f.buyOnline) return false;
       if(state.shopMode==='equipment'){
@@ -2968,8 +2973,8 @@ root.WestEndPayments={inventory,selectInventory,programs,quote,bestMarketplaceFi
       ['Normally In Stock','Available to Order'].map(x=>
         '<label>' +
           '<input type="checkbox" data-availability="' +
-            esc(x) +
-          '"> ' +
+            esc(x) + '"' + (state.availability.has(x)?' checked':'') +
+          '> ' +
           '<span>' + esc(x) + '</span>' +
         '</label>'
       ).join('');

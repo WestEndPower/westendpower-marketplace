@@ -225,3 +225,11 @@ Change a baseline only when John requests or approves that layout change.
 - All generated equipment pages use centered top filter buttons with exactly one centered options row open at a time. Opening another group preserves selected filters; selected values remain available to clear even when combinations have no matches.
 - Non-mower pages show controls backed by their published products: model, series, power, use, deck size, workbook B specifications and P package filters where applicable. Category/type controls appear only when the saved scope has multiple choices. All Models clears only model and series; Promos preserves other choices. Do not add mower-specific Residential/Commercial or deck controls to blowers without published values.
 - Preserve the existing five-button mower row and normal Marketplace/Shop browse controls. Use the same builder behavior on Marketplace, Shop by Product and Shop by Brand templates; mobile puts these controls in the Filters drawer.
+
+## Stock filter and header actions (November 7, 2026)
+
+- Normally In Stock matches relevant exact SKU variants with positive QtyDanbury or QtyNewMilford, and units confirmed in stock by the inventory feed. Available to Order is the complementary group. Keep checkbox labels separate from descriptive inventory status text.
+- Every price tag has a header stock action in the reserved SKU row: Check Stock opens the existing tool/package inventory window when no selectable serialized units exist; In-Stock (N) opens the serialized-unit chooser and always includes one. A selected unit keeps Build / Order to return to its orderable configuration. Keep the lower Inventory action and all existing selection/pricing safeguards.
+- Apply identically to Marketplace, Shop by Product, Shop by Brand and generated pages using the shared template.
+
+- Brand is the first sidebar section and Availability is second; both are non-collapsible and always show their choices, including in the mobile drawer. Online Purchase and workbook specification sections keep their existing expandable behavior.
