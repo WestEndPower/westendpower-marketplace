@@ -46,7 +46,7 @@
         }
         cache.set(src,cropped);
       }
-      if(cropped)img.src=cropped;
+      if(cropped){img.removeAttribute('srcset');img.removeAttribute('sizes');img.src=cropped;}
     }catch(_){/* Keep the original image if canvas access is unavailable. */}
   }
   document.addEventListener('load',event=>{if(event.target.tagName==='IMG')fit(event.target);},true);
