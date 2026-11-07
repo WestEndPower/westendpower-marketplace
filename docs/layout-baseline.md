@@ -287,3 +287,9 @@ Change a baseline only when John requests or approves that layout change.
 - The four PageSpeed-flagged STIHL blower pictures use generated WebP card copies at 320 and up to 640 pixels, with srcset/sizes. Keep originals and product/detail links unchanged; unlisted images use their existing source. Trim only white/transparent outer margins using the existing card-fit rule and a safety border; preserve equipment proportions, image priority, margin fitting and original-image fallback.
 - Run `python scripts/build-responsive-images.py` with Pillow installed after updating any source listed in `data/responsive-image-sources.json`; commit the updated runtime manifest and copies together. Add more source paths there to extend coverage. Source hashes keep copy URLs immutable.
 - Use `scripts/Trace-Webpage-Performance.ps1` on Windows with Chrome and Node installed to record a local Lighthouse report plus trace. That report is diagnostic and is not the Google-hosted score.
+
+## Trace-driven startup (November 7, 2026)
+
+- Show static header/navigation during loading, keeping interactive controls gated. Place the loading notice below navigation in the shell. Generated no-JavaScript information stays readable.
+- Resolve unversioned catalog requests to the same-origin, same-path preload version. Explicit versions and other URLs stay distinct.
+- Defer offscreen generated-page information layout with content-visibility:auto; keep all server text, comparison anchors and structured data.

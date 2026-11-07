@@ -4,7 +4,13 @@
  if(!window.WEPReadMarketplaceCatalog){
   const requests=new Map();
   window.WEPReadMarketplaceCatalog=url=>{
-   const key=new URL(url,document.baseURI).href,entry=requests.get(key);
+   const requested=new URL(url,document.baseURI);
+   const hint=document.querySelector?.('link[data-marketplace-catalog]')?.getAttribute('href');
+   if(hint&&!requested.search){
+    const versioned=new URL(hint,document.baseURI);
+    if(requested.origin===versioned.origin&&requested.pathname===versioned.pathname)requested.search=versioned.search;
+   }
+   const key=requested.href,entry=requests.get(key);
    if(entry&&entry.until>Date.now())return entry.pending;
    const pending=fetch(key,{cache:'no-cache',credentials:'same-origin'}).then(response=>{if(!response.ok)throw Error('Catalog unavailable');return response.json();}).catch(error=>{if(requests.get(key)?.pending===pending)requests.delete(key);throw error;});
    requests.set(key,{pending,until:Date.now()+60000});

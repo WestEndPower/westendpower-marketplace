@@ -12,11 +12,26 @@ test('compact render reuses broad scope scans and does not replace unchanged con
  // Component browsing replaces these same hosts outside the compact renderer.
  host.innerHTML='Component series';window.WEPCompactFilters.render(context);assert.equal(writes,5);assert.doesNotMatch(html,/Component series/);
 });
-function catalog(fetch){
+function catalog(fetch,preload){
  const window={addEventListener(){}},document={baseURI:'https://westendpower.github.io/westendpower-marketplace/',head:{append(){}},createElement:()=>({}),readyState:'loading',addEventListener(){}};
+ document.querySelector=()=>preload?{getAttribute:()=>preload}:null;
  vm.runInNewContext(fs.readFileSync('universal/navigation-dropdowns.js','utf8'),{window,document,fetch,URL});
  return window.WEPReadMarketplaceCatalog;
 }
+test('unversioned navigation shares the declared versioned preload without merging explicit versions',async()=>{
+ const calls=[],read=catalog(async url=>{calls.push(url);return {ok:true,json:async()=>({})}},'data/marketplace-catalog.json?v=current');
+ const first=read('data/marketplace-catalog.json');assert.equal(first,read('data/marketplace-catalog.json?v=current'));await first;
+ assert.match(calls[0],/v=current$/);await read('data/marketplace-catalog.json?v=other');assert.equal(calls.length,2);
+ await read('https://example.com/data/marketplace-catalog.json');assert.equal(calls.length,3);assert.doesNotMatch(calls[2],/v=current/);
+});
+test('static header precedes loading notice while interactive content stays hidden and fallback text stays accessible',()=>{
+ for(const file of ['marketplace.html','shop-by-product.html','shop-by-brand.html']){
+  const html=fs.readFileSync(file,'utf8');assert.ok(html.indexOf('class="market-header"')<html.indexOf('id="market-loading"'));
+  assert.match(html,/#market-app\[hidden\]>:where\(:not\(\.market-header\):not\(#we-shared-nav\):not\(#market-loading\)\)/);
+  assert.match(html,/content-visibility:auto;contain-intrinsic-size:auto 1600px/);
+  assert.match(html,/<noscript><style>html body #market-app\[hidden\]>#wep-page-information/);
+ }
+});
 test('navigation and shopping share one in-flight fetch and JSON parse for the same URL',async()=>{
  let fetches=0,decodes=0;const read=catalog(async()=>{fetches++;return {ok:true,json:async()=>{decodes++;return {brands:['STIHL']}}}});
  const a=read('data/marketplace-catalog.json'),b=read('https://westendpower.github.io/westendpower-marketplace/data/marketplace-catalog.json');
