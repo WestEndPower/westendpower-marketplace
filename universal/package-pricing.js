@@ -169,6 +169,27 @@
    c.track('marketplace_add_to_cart',{sku:rows[0].sku,model:f.model,quantity:rows[0].quantity});return true;
   }catch(error){popup(error.message||'This selection could not be added. Please try again.',opener);return false;}
  }
+ function selectedInventoryItems(f,c,m,s){
+  const selected=c.selectedPriceVariant(f),tool=m?m.tool:selected;
+  let parts=m?(s.choice==='tool'?[]:configured(m,s,c).parts):[];
+  if(!m){
+   const source=c.DATA.componentSources?.[key(f.brand)],pkg=source?.packages?.find(r=>(!clean(r.Active)||yes(r.Active))&&key(r.ParentSKU)===key(selected.sku));
+   if(pkg)for(const type of ['Battery','Charger'])parts.push(...(packageParts(pkg,type,source[type==='Battery'?'batteries':'chargers']||[])||[]).map(p=>({...p,type:type.toLowerCase()})));
+  }
+  return [{row:{...tool.marketplaceRow,SKU:tool.sku,Description:tool.description,Model:tool.model||f.model},qty:1,type:f.category==='Batteries'?'battery':f.category==='Chargers'?'charger':'tool'},...parts.filter(p=>['battery','charger'].includes(p.type))];
+ }
+ function showInventory(f,c,items,opener){
+  document.querySelector('.pp-inventory-dialog')?.remove();
+  const columns=items.map(p=>({...p,name:clean(p.row.BatteryID||p.row.ChargerID||p.row.Model||p.row.Description||p.row.SKU),status:c.inventoryStatus(f,{sku:p.row.SKU,marketplaceRow:p.row})}));
+  const locations=columns[0]?.status.locations||[],labels={'in-stock':'In Stock','incoming':'Incoming','normally-stocked':'Normally Stocked','out-of-stock':'Check Lead Time'};
+  const heading=columns.map(p=>p.name+(p.qty>1?' × '+p.qty:'')).join(' — ');
+  const dialog=document.createElement('dialog');dialog.className='pp-dialog pp-inventory-dialog pp-selected-inventory';dialog.setAttribute('aria-label','Selected tool, battery and charger stock');
+  dialog.innerHTML='<h2>Check Stock</h2><p class="pp-stock-selection">'+esc(heading)+'</p><div class="pp-stock-scroll"><table><thead><tr><th>Location</th>'+columns.map(p=>'<th>'+esc(p.type==='tool'?'Tool':p.type==='battery'?'Battery':'Charger')+'</th>').join('')+'</tr></thead><tbody>'+locations.map(l=>'<tr><th>'+esc(l.name)+'</th>'+columns.map(p=>'<td>'+esc(labels[p.status.locations.find(x=>x.id===l.id)?.status]||'Confirm Availability')+'</td>').join('')+'</tr>').join('')+'</tbody></table></div><div class="pp-stock-actions">'+locations.filter(l=>clean(l.phone)).map(l=>{
+   const body='Please confirm availability at '+l.name+' for '+columns.map(p=>p.name+' (SKU: '+p.row.SKU+'), quantity '+p.qty).join('; ')+'.';
+   return '<a href="sms:'+esc(clean(l.phone).replace(/[^0-9+]/g,''))+((typeof navigator!=='undefined'&&/iPad|iPhone|iPod/i.test(navigator.userAgent))?'&':'?')+'body='+esc(encodeURIComponent(body))+'">Text '+esc(l.name)+'</a>';
+  }).join('')+'</div><button type="button">Close</button>';
+  document.body.append(dialog);dialog.querySelector('button').onclick=()=>dialog.close();dialog.addEventListener('close',()=>{dialog.remove();opener?.focus();},{once:true});dialog.showModal();return true;
+ }
  function handle(event){
   const host=event.target.closest('.wep-restored-card'),entry=host&&contexts.get(host.dataset.key);if(!entry)return false;
   const {f,c}=entry,m=model(f,c),s=m&&state(f,m),component=event.target.closest('[data-pp-component]');
@@ -178,16 +199,7 @@
   if(!select&&box&&!event.target.closest('button,a,.market-inventory-wrap'))select={dataset:{ppSelect:box.dataset.ppBox}};
   if(component&&m){const field=component.dataset.ppComponent,parts=m[field+'Options'][Number(component.dataset.ppIndex)];if(!parts||component.disabled)return true;const same=parts.map(p=>key(p.row.SKU)).sort().join('|')===s[field].map(p=>key(p.row.SKU)).sort().join('|');s[field]=same?[]:parts;if(!same){const kit=m.packages.find(p=>p[field].length&&p[field].every(x=>parts.some(y=>key(y.row.SKU)===key(x.row.SKU)))&&(field==='battery'?signature(p.charger)===signature(s.charger):signature(p.battery)===signature(s.battery)));if(kit){s.battery=kit.battery;s.charger=kit.charger;}}if(field==='battery'&&!compatibleCharger(s.charger,s.battery))s.charger=[];s.choice='package';apply(f,m,s,c);document.querySelector('.market-card[data-key="'+CSS.escape(f.key)+'"] [data-pp-component="'+field+'"][data-pp-index="'+component.dataset.ppIndex+'"]')?.focus({preventScroll:true});return true;}
   if(select&&m){s.choice=s.choice===select.dataset.ppSelect?null:select.dataset.ppSelect;apply(f,m,s,c);return true;}
-  const check=event.target.closest('[data-pp-inventory]');if(check){
-   const compact=/^compact tractors?$/i.test(clean(f.category)),heading=compact?'Selected Configuration Inventory':'Tool &amp; Package Inventory';
-   const dialog=document.createElement('dialog');dialog.className='pp-dialog pp-inventory-dialog';dialog.setAttribute('aria-label',compact?'Selected configuration inventory':'Tool and package inventory');
-   const variants=compact?[c.selectedPriceVariant(f)]:m?[m.tool,...m.packages.map(p=>p.variant)]:f.variants;
-   const parts=m?[...m.batteryOptions.flat(),...m.chargerOptions.flat(),...configured(m,s,c).parts]:[];
-   const items=[...variants.filter(v=>!v.recommendedPackage).map(v=>({row:{...v.marketplaceRow,SKU:v.sku,Description:v.description},qty:1})),...parts];
-   const seen=new Set();
-   dialog.innerHTML='<h2>'+heading+'</h2>'+items.filter(p=>{const id=key(p.row.SKU);if(seen.has(id))return false;seen.add(id);return true;}).map((p,i)=>{const v={sku:p.row.SKU,marketplaceRow:p.row,description:p.row.Description},template=document.createElement('template');template.innerHTML=c.inventoryMarkup(f,v,'component-'+i);return '<section><strong>'+esc(clean(p.row.BatteryID||p.row.ChargerID||p.row.Description||p.row.SKU))+'</strong><small class="pp-inventory-sku">SKU: '+esc(p.row.SKU)+'</small>'+(template.content.querySelector('.market-inventory-popover')?.innerHTML||'Contact us to confirm availability.')+'</section>';}).join('')+'<button type="button">Close</button>';
-   document.body.append(dialog);dialog.querySelector('button').onclick=()=>dialog.close();dialog.addEventListener('close',()=>{dialog.remove();check.focus();},{once:true});dialog.showModal();return true;
-  }
+  const check=event.target.closest('[data-pp-inventory]');if(check)return showInventory(f,c,selectedInventoryItems(f,c,m,s),check);
   const addButton=event.target.closest('[data-pp-add]');if(addButton){add(f,c,m,s,addButton);return true;}
   const build=event.target.closest('[data-pp-build]');if(build&&m){event.preventDefault();if(add(f,c,m,s,build,false)){const target=new URL('checkout.html'+(new URLSearchParams(location.search).get('api')==='local'?'?api=local':''),document.baseURI||location.href).href;location.assign(window.WEPCartHandoff?.url(target)||target);}return true;}
   return false;
@@ -209,6 +221,6 @@
   let url='';try{const parsed=new URL(clean(row.WarrantyURL||row.WarrantyStatementURL||row.ManufacturerWarrantyURL));if(['http:','https:'].includes(parsed.protocol))url=parsed.href;}catch{}
   return '<div class="market-card-warranty">'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">':'<span>')+esc(text)+(url?'</a>':'</span>')+'</div>';
  }
- window.WestEndPackagePricing={inclusion,render,actions,handle,warranty,tool,buildUrl};
+ window.WestEndPackagePricing={showInventory,selectedInventoryItems,inclusion,render,actions,handle,warranty,tool,buildUrl};
 })();
 

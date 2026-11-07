@@ -17,11 +17,13 @@
  }
  function render(f,context){
   const {selectedPriceVariant,priceChoices,pricePanel,selectedStock,stockHeaderMarkup,sawHeaderBars,cardFinanceMarkup,paymentSelectionUrl,state}=context;
-  const equipment=window.WestEndEquipmentPackages,battery=/battery/i.test(f.power)&&!equipment?.isUtilityVehicle?.(f);
+  const component=['batteries','chargers'].includes(state.shopMode);
+  const equipment=window.WestEndEquipmentPackages,battery=!component&&/battery/i.test(f.power)&&!equipment?.isUtilityVehicle?.(f);
+  if(component)window.WestEndPackagePricing?.actions(f,context);
   if(battery)equipment?.render(f,context); // Clear any previous fallback context before battery initialization.
   const batteryMarkup=battery?window.WestEndPackagePricing?.render(f,context):null;
-  const packageMarkup=batteryMarkup??equipment?.render(f,battery?{...context,emptyBattery:true}:context)??window.WestEndPackagePricing?.render(f,context)??null;
-  const compact=clean(f.brand).toUpperCase()==='YANMAR'&&/^compact tractors?$/i.test(clean(f.category)),v=selectedPriceVariant(f),tool=(compact?context.compactBaseVariant?.(f,v,true):null)||equipment?.tool(f)||window.WestEndPackagePricing?.tool(f,context)||v,heading=clean(tool.description)||clean(f.model)||clean(tool.sku),displaySku=compact?v.sku:tool.sku;
+  const packageMarkup=component?null:batteryMarkup??equipment?.render(f,battery?{...context,emptyBattery:true}:context)??window.WestEndPackagePricing?.render(f,context)??null;
+  const compact=clean(f.brand).toUpperCase()==='YANMAR'&&/^compact tractors?$/i.test(clean(f.category)),v=selectedPriceVariant(f),tool=(compact?context.compactBaseVariant?.(f,v,true):null)||(!component&&(equipment?.tool(f)||window.WestEndPackagePricing?.tool(f,context)))||v,heading=clean(tool.description)||clean(f.model)||clean(tool.sku),displaySku=compact?v.sku:tool.sku;
   let product='product.html?'+new URLSearchParams({brand:f.brand,sku:tool.sku||''});
   try{const url=new URL(clean(tool.marketplaceRow?.ProductURL||tool.productUrl||f.productUrl));if(['http:','https:'].includes(url.protocol))product=url.href;}catch{}
   const build=new URL(equipment?.buildUrl(f,context)||window.WestEndPackagePricing?.buildUrl(f,context)||paymentSelectionUrl(f));build.pathname=build.pathname.replace(/payment-options(?:\.html)?\/?$/,'product-options.html');
@@ -49,8 +51,8 @@
     '<div class="market-price-lines">'+(packageMarkup??choices.map(choice=>pricePanel(choice.label,choice.v,choice.isPackage,f,choice.variants,true)).join(''))+'</div>'+
     '<div class="market-card-action-row"><button type="button" class="market-inventory-button" data-pp-inventory title="Check tool and package inventory"><span aria-hidden="true">✓</span> Inventory</button><label class="market-compare-detail" title="Compare this product"><input type="checkbox" data-compare="'+escape(f.key)+'" '+(state.compare.has(f.key)?'checked':'')+'> <span>Compare</span></label>'+
     (battery?'<a href="'+escape(runtime.href)+'" title="View run and charge times" data-wep-runtime-brand="'+escape(f.brand)+'" data-wep-runtime-sku="'+escape(tool.sku)+'">Run Times</a>':'')+
-    (equipment?.actions(f,context)||window.WestEndPackagePricing?.actions(f,context)||'')+
-    '</div><span class="pp-cart-status" role="status" aria-live="polite"></span>'+cardFinanceMarkup(f,build.href)+
+    (component?'<button type="button" data-component-add="'+escape(f.key)+'" aria-label="Add selected component to cart">🛒 Add</button>':equipment?.actions(f,context)||window.WestEndPackagePricing?.actions(f,context)||'')+
+    '</div><span class="pp-cart-status" role="status" aria-live="polite"></span>'+(component?'':cardFinanceMarkup(f,build.href))+
    '</section></div></article>';
  }
  window.WestEndMarketplaceCard={render,expiration};
