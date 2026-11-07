@@ -244,3 +244,8 @@ Change a baseline only when John requests or approves that layout change.
 ## Stock confirmation contacts (November 7, 2026)
 
 - Check Stock/Inventory uses one selected tool–battery–charger heading, including selected component quantities, followed by compact store rows. Each row offers Text to Confirm and Email to Confirm using the published location contacts. Both drafts identify that store and include only the current selection’s names, SKUs and quantities. Do not send messages automatically or list all compatible alternatives. The former per-component status matrix is removed from this popup; serialized inventory selection remains unchanged.
+
+## Stock availability labels (November 7, 2026)
+
+- Preserve In-Stock (N), including one, for selectable serialized Inventory-tab units and Build / Order for returning from a selected stock unit. Without serialized units, the selected displayed tool/configuration shows Stocked when QtyDanbury or QtyNewMilford is positive; otherwise show Check Availability. Do not infer tool stock from a different family variant or a selected battery/charger.
+- The compact confirmation window repeats Stocked or Check Availability as its heading, with a short explanatory sentence and the selected equipment names. Keep both store confirmation rows and prefilled text/email drafts.

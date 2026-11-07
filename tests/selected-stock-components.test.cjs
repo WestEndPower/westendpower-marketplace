@@ -12,7 +12,7 @@ test('compact stock dialog has one selected heading and text/email on each store
  const r=packageAPI(),items=[{type:'tool',qty:1,row:{SKU:'T',Model:'BGA86'}},{type:'battery',qty:2,row:{SKU:'B',BatteryID:'AP300S'}},{type:'charger',qty:1,row:{SKU:'C',ChargerID:'AL301'}}];
  const locations=[{id:'NM',name:'New Milford',phone:'8603558722',email:'sales@westendpower.com'},{id:'D',name:'Danbury',phone:'4754443901',email:'dawepe@westendpower.com'}];
  r.api.showInventory({brand:'STIHL'}, {inventoryStatus:()=>({locations})},items,{});
- const html=r.opened().innerHTML;assert.match(html,/<h2>Check Stock \/ Availability<\/h2>/);assert.match(html,/BGA86 — AP300S × 2 — AL301/);assert.equal((html.match(/class="pp-stock-location"/g)||[]).length,2);assert.equal((html.match(/href="sms:/g)||[]).length,2);assert.equal((html.match(/href="mailto:/g)||[]).length,2);assert.doesNotMatch(html,/<table|Normally Stocked|Check Lead Time/);
+ const html=r.opened().innerHTML;assert.match(html,/<h2>Check Availability<\/h2>/);assert.match(html,/Confirm availability and lead time/);assert.match(html,/BGA86 — AP300S × 2 — AL301/);assert.equal((html.match(/class="pp-stock-location"/g)||[]).length,2);assert.equal((html.match(/href="sms:/g)||[]).length,2);assert.equal((html.match(/href="mailto:/g)||[]).length,2);assert.doesNotMatch(html,/<table|Normally Stocked|Check Lead Time/);
  const links=[...html.matchAll(/href="([^"]+)"/g)].map(m=>m[1].replace(/&amp;/g,'&'));
  for(const link of links){const url=new URL(link),body=url.searchParams.get('body');assert.match(body,/Tool: BGA86 \(SKU: T\), quantity 1/);assert.match(body,/Battery: AP300S \(SKU: B\), quantity 2/);assert.match(body,/Charger: AL301 \(SKU: C\), quantity 1/);assert.match(body,/STIHL/);}
  assert.match(new URL(links[0]).searchParams.get('body'),/New Milford/);assert.match(new URL(links[2]).searchParams.get('body'),/Danbury/);
@@ -42,4 +42,14 @@ test('serialized stock is assigned only to its actual store in compact stock res
  vm.runInNewContext(section(source,'  function familyInventoryStatus(','  function availabilityText(')+';this.status=familyInventoryStatus;',box);
  const result=box.status({brand:'STIHL',variants:[{sku:'T',marketplaceRow:{QtyDanbury:0,QtyNewMilford:0}}]});
  assert.equal(result.locations[0].status,'confirm-stock');assert.equal(result.locations[1].status,'in-stock');
+});
+
+test('stock window heading follows the header action and the selected tool quantities',()=>{
+ const r=packageAPI(),context={inventoryStatus:()=>({locations:[]})};
+ r.api.showInventory({},context,[{row:{SKU:'T',Model:'Tool',QtyNewMilford:1},qty:1,type:'tool'}],{});
+ assert.match(r.opened().innerHTML,/<h2>Stocked<\/h2>/);assert.match(r.opened().innerHTML,/Confirm before visiting/);
+ r.api.showInventory({},context,[{row:{SKU:'T',Model:'Tool'},qty:1,type:'tool'},{row:{SKU:'B',QtyDanbury:5},qty:1,type:'battery'}],{});
+ assert.match(r.opened().innerHTML,/<h2>Check Availability<\/h2>/);
+ r.api.showInventory({},context,[{row:{SKU:'T',Model:'Tool'},qty:1,type:'tool'}],{dataset:{stockLabel:'Stocked'}});
+ assert.match(r.opened().innerHTML,/<h2>Stocked<\/h2>/);
 });
