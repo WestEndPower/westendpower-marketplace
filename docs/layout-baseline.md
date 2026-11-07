@@ -280,3 +280,10 @@ Change a baseline only when John requests or approves that layout change.
 
 - Start inventory loading alongside independent finance/component startup work, but retain the stock-readiness gate before interactive cards. Preserve all-brand inventory coverage and stock authority.
 - Render equipment cards in batches of six, yielding between batches. Keep exact order, selections and the stale-render cancellation guard. Counts and comparison reflect the full filtered result, even while later cards are being appended.
+
+## Responsive card images and logo space (November 7, 2026)
+
+- Reserve the embedded 200 × 61 dealer logo’s intrinsic dimensions in all shopping headers. Keep its existing CSS constraints and appearance.
+- The four PageSpeed-flagged STIHL blower pictures use generated WebP card copies at 320 and up to 640 pixels, with srcset/sizes. Keep originals and product/detail links unchanged; unlisted images use their existing source. Trim only white/transparent outer margins using the existing card-fit rule and a safety border; preserve equipment proportions, image priority, margin fitting and original-image fallback.
+- Run `python scripts/build-responsive-images.py` with Pillow installed after updating any source listed in `data/responsive-image-sources.json`; commit the updated runtime manifest and copies together. Add more source paths there to extend coverage. Source hashes keep copy URLs immutable.
+- Use `scripts/Trace-Webpage-Performance.ps1` on Windows with Chrome and Node installed to record a local Lighthouse report plus trace. That report is diagnostic and is not the Google-hosted score.
