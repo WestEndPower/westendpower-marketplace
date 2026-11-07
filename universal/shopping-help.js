@@ -44,8 +44,12 @@
  function mount(rows=[]){
   stores=rows.filter(s=>!clean(s.Active)||/^(T|TRUE|YES|Y|1)$/i.test(clean(s.Active)));
   const sidebar=document.querySelector('.market-sidebar');if(!sidebar)return;
-  if(!sidebar.querySelector('[data-shopping-help]')){
-   const button=document.createElement('button');button.type='button';button.className='wep-shopping-help-button';button.dataset.shoppingHelp='';button.textContent='Need help choosing?';button.setAttribute('aria-haspopup','dialog');button.onclick=show;sidebar.prepend(button);
+  let column=sidebar.parentElement;
+  if(!column.classList.contains('wep-filter-column')){
+   column=document.createElement('div');column.className='wep-filter-column';sidebar.before(column);column.append(sidebar);
+  }
+  if(!column.querySelector('[data-shopping-help]')){
+   const button=document.createElement('button');button.type='button';button.className='wep-shopping-help-button';button.dataset.shoppingHelp='';button.textContent='Need help choosing?';button.setAttribute('aria-haspopup','dialog');button.onclick=show;column.prepend(button);
   }
   // Retain the server's contact/compare fallback without JavaScript, but save a row in shopping mode.
   document.querySelector('.wep-equipment-help')?.remove();
