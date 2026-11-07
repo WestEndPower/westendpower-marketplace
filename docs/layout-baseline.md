@@ -270,3 +270,8 @@ Change a baseline only when John requests or approves that layout change.
 ## First-result image priority (November 7, 2026)
 
 - The first current result image loads eagerly with high fetch priority; other product-card images remain lazy. All card images use asynchronous decoding. Recompute the first result after filtering without changing source images, crop/fit behavior, card dimensions, pricing or stock controls. This is a loading-policy improvement, not a measured Core Web Vitals result.
+
+## Shopping startup work (November 7, 2026)
+
+- Reuse scope analysis and group definitions only within a compact-filter render; recompute on each render after state/row changes. Do not rebuild unchanged filter markup. Preserve selection, option order, one open row and all three entry routes.
+- Navigation and shopping share one in-flight version of the same public catalog URL and its JSON decode. Keep active-brand filtering, published-page links, standalone fallbacks and failure retry. This reduces duplicate startup work without changing catalog data or analytics.

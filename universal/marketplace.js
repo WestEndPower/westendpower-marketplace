@@ -3002,9 +3002,7 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     try{
       const preload=document.querySelector('link[data-marketplace-catalog]');
       const url=preload ? preload.getAttribute('href') : 'data/marketplace-catalog.json';
-      const response=await fetch(url,{cache:'no-cache',credentials:'same-origin'});
-      if(!response.ok)throw new Error('Combined catalog HTTP '+response.status);
-      const bundle=await response.json();
+      const bundle=await (window.WEPReadMarketplaceCatalog?window.WEPReadMarketplaceCatalog(url):fetch(url,{cache:'no-cache',credentials:'same-origin'}).then(response=>{if(!response.ok)throw new Error('Combined catalog HTTP '+response.status);return response.json();}));
       const expected=Array.isArray(bundle.brands)?bundle.brands:[];
       if(!expected.length || new Set(expected).size!==expected.length || expected.some(id=>typeof id!=='string'||!id.trim()))throw new Error('Invalid published brand list');
       if(bundle.schema!==1 || JSON.stringify(bundle.brands)!==JSON.stringify(expected) ||

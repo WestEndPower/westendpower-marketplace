@@ -2,7 +2,10 @@
 (() => {
  'use strict';
  const clean=v=>String(v??'').trim(),esc=v=>clean(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const unique=values=>[...new Set(values.map(clean).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+ const collator=new Intl.Collator(undefined,{numeric:true});
+ let renderMemo;
+ const hostMarkup=new WeakMap();
+ const unique=values=>[...new Set(values.map(clean).filter(Boolean))].sort((a,b)=>collator.compare(a,b));
  function seriesOrder(rows,values){
   const ranks=new Map(),positions=new Map();
   rows.forEach((row,index)=>{
@@ -10,7 +13,7 @@
    if(!positions.has(series))positions.set(series,index);
    ranks.set(series,Math.min(ranks.get(series)??Infinity,rank));
   });
-  return values.sort((a,b)=>((ranks.get(a)??Infinity)-(ranks.get(b)??Infinity))||((positions.get(a)??Infinity)-(positions.get(b)??Infinity))||a.localeCompare(b,undefined,{numeric:true}));
+  return values.sort((a,b)=>((ranks.get(a)??Infinity)-(ranks.get(b)??Infinity))||((positions.get(a)??Infinity)-(positions.get(b)??Infinity))||collator.compare(a,b));
  }
  function deckValue(row){
   if(clean(row.CuttingWidth))return clean(row.CuttingWidth);
@@ -25,12 +28,14 @@
   return rows.length&&rows.every(r=>/^battery$/i.test(clean(r.PowerType))&&clean(r.System)&&clean(r.System)===clean(r.Series))?'Battery Series':'Series';
  }
  function builderGroups(context){
+  if(renderMemo?.context===context&&renderMemo.groups)return renderMemo.groups;
   const {state}=context;
   const series=[...groups[0]];series[1]=seriesHeading(context);
   const list=[['category','Category','category','ignoreCategory',r=>clean(r.Category)],['subcategory','Subcategory','subcategory','ignoreSubcategory',r=>clean(r.SubCategory)],groups[3],series,groups[1],groups[2]];
   for(const spec of context.specGroups||[])list.push(['spec:'+spec.field,spec.label,'','ignoreField',r=>clean(r[spec.field]),spec.field]);
   if((context.packageGroups||[]).length||state.packageComponents?.size)list.push(['packages','Packages','','ignorePackage',null]);
   if(context.powerContext&&state.seriesOrEngine)list.push(['context',context.powerContext.label,'seriesOrEngine','ignoreContext',r=>clean(r[context.powerContext.field])]);
+  if(renderMemo?.context===context)renderMemo.groups=list;
   return list;
  }
  function builderSelected(group,state){
@@ -41,7 +46,8 @@
  function builderOptions(context,group,scope=false){
   const all={ignoreCategory:true,ignoreSubcategory:true,ignoreSeries:true,ignoreModel:true,ignorePower:true,ignoreUse:true,ignoreDeck:true,ignoreContext:true,ignorePackage:true,ignorePromo:true,ignoreSpecifications:true};
   const ignored=scope?all:{[group[3]]:group[5]||true};
-  const rows=context.rows.filter(r=>context.matches(r,ignored));
+  const memo=renderMemo?.context===context?renderMemo:null;
+  const rows=scope&&memo?(memo.scopeRows||(memo.scopeRows=context.rows.filter(r=>context.matches(r,ignored)))):context.rows.filter(r=>context.matches(r,ignored));
   if(group[0]==='packages')return (context.packageGroups||[]).filter(g=>rows.some(r=>/^(T|TRUE|Y|YES|1)$/i.test(clean(r[g.field])))).map(g=>g.field);
   return unique(rows.map(group[4]));
  }
@@ -78,7 +84,7 @@
   }
   return '<div class="wep-filter-top" aria-label="Equipment filters">'+top.join('')+(context.componentControls||'')+promos+'</div>'+choices;
  }
- function markup(context){
+ function buildMarkup(context){
   if(context.generated||context.categoryLayout)return builderMarkup(context);
   const {rows,state,matches}=context;
   const scope=rows.filter(r=>matches(r,{ignoreSeries:true,ignoreModel:true,ignoreUse:true,ignoreDeck:true,ignorePower:true}));
@@ -97,13 +103,17 @@
   const categoryPrefix=context.categoryLayout?'<button type="button" class="market-chip" data-compact-action="models">All Models</button>'+subcategoryButtons(context):'';
   return '<div class="wep-filter-top" aria-label="Equipment filters">'+categoryPrefix+uses+top.join('')+(context.componentControls||'')+'</div>'+choices;
  }
+ function markup(context){
+  const previous=renderMemo;renderMemo={context};
+  try{return buildMarkup(context);}finally{renderMemo=previous;}
+ }
  function render(context){
   if(context.generated||context.categoryLayout){
    if(context.state.subcategory!==lastSubcategory)open='power';
    if(!current&&context.state.power)open='power';
    if(context.state.power==='Battery'&&lastPower!=='Battery')open='series';
   }
-  lastPower=context.state.power;lastSubcategory=context.state.subcategory;current=context;const html=markup(context);for(const host of context.hosts.filter(Boolean))host.innerHTML=html;
+  lastPower=context.state.power;lastSubcategory=context.state.subcategory;current=context;const html=markup(context);for(const host of context.hosts.filter(Boolean)){const previous=hostMarkup.get(host);if(previous?.html!==html||previous?.firstChild!==host.firstChild){host.innerHTML=html;hostMarkup.set(host,{html,firstChild:host.firstChild});}}
  }
  document.addEventListener('change',event=>{
   if(!current||!event.target.matches?.('[data-brand]')||!document.querySelector('#market-refine.wep-compact-active'))return;

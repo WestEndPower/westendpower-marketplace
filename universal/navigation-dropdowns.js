@@ -1,6 +1,19 @@
 (() => {
  'use strict';
- const brandNavigation=document.createElement('script');brandNavigation.src='https://westendpower.github.io/westendpower-marketplace/universal/brand-navigation.js?v=20261106-menu-contrast1';document.head.append(brandNavigation);
+ // Navigation and shopping share the same in-flight public catalog and JSON decode.
+ if(!window.WEPReadMarketplaceCatalog){
+  const requests=new Map();
+  window.WEPReadMarketplaceCatalog=url=>{
+   const key=new URL(url,document.baseURI).href,entry=requests.get(key);
+   if(entry&&entry.until>Date.now())return entry.pending;
+   const pending=fetch(key,{cache:'no-cache',credentials:'same-origin'}).then(response=>{if(!response.ok)throw Error('Catalog unavailable');return response.json();}).catch(error=>{if(requests.get(key)?.pending===pending)requests.delete(key);throw error;});
+   requests.set(key,{pending,until:Date.now()+60000});
+   while(requests.size>8)requests.delete(requests.keys().next().value);
+   return pending;
+  };
+ }
+
+ const brandNavigation=document.createElement('script');brandNavigation.src='https://westendpower.github.io/westendpower-marketplace/universal/brand-navigation.js?v=20261107-startup-performance1';document.head.append(brandNavigation);
  const displayNames={BILLYGOAT:'Billy Goat',GREENWORKS:'Greenworks',HONDA:'Honda',MITM:'Mi-T-M',REDMAX:'RedMax',STIHL:'STIHL',TORO:'Toro',YANMAR:'Yanmar'};
  const colors={BILLYGOAT:'#00653d',GREENWORKS:'#447a12',HONDA:'#c00000',MITM:'#003b70',REDMAX:'#ba1425',STIHL:'#aa4b00',TORO:'#c00025',YANMAR:'#bb002a'};
  function initializeMenus(){document.querySelectorAll('.wep-nav').forEach(nav=>{
@@ -19,12 +32,13 @@
   });
  });}
  async function loadBrands(){if(Array.isArray(window.WESTEND_PUBLISHED_BRANDS)){drawBrands(window.WESTEND_PUBLISHED_BRANDS);return;}
-  try{const response=await fetch(new URL('data/marketplace-catalog.json',document.baseURI),{cache:'no-cache'});if(!response.ok)throw Error('Catalog unavailable');const data=await response.json();
+  try{const data=await window.WEPReadMarketplaceCatalog(new URL('data/marketplace-catalog.json',document.baseURI));
    const clean=v=>String(v??'').trim();const active=v=>/^(T|TRUE|Y|YES|1)$/i.test(clean(v));
    const profiles=(data.productSources||[]).filter(src=>{const ix=(src.headers||[]).indexOf('Active');return ix>=0&&(src.rows||[]).some(row=>{let value;if(src.encoding==='sparse'){for(let i=0;i<row.length;i+=2)if(row[i]===ix){value=row[i+1];break}}else value=row[ix];return active(value)})}).map(src=>({id:clean(src.brand).toUpperCase(),name:displayNames[clean(src.brand).toUpperCase()]||clean(src.brand)}));drawBrands(profiles);
   }catch(error){console.warn('Brand navigation will use its existing links until the catalog is available.',error);}
  }
- function start(){document.querySelectorAll('a[href*="marketplace.html?promo=1"]').forEach(link=>{link.href=new URL('promotions.html',document.currentScript?.src||'https://westendpower.github.io/westendpower-marketplace/').href;});initializeMenus();loadBrands();window.addEventListener('westend:catalog-ready',()=>drawBrands(window.WESTEND_PUBLISHED_BRANDS||[]));}
+ function start(){document.querySelectorAll('a[href*="marketplace.html?promo=1"]').forEach(link=>{link.href=new URL('promotions.html',document.currentScript?.src||'https://westendpower.github.io/westendpower-marketplace/').href;});initializeMenus();loadBrands();}
+ window.addEventListener('westend:catalog-ready',()=>drawBrands(window.WESTEND_PUBLISHED_BRANDS||[]));
  window.addEventListener('wep:shopping-shell-ready',start);
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
