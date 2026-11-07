@@ -57,7 +57,7 @@
     });
     if(!controllers.length)return;
     if(Array.isArray(window.WESTEND_PUBLISHED_BRANDS))applyProfiles(window.WESTEND_PUBLISHED_BRANDS);
-    else fetch(market+'data/marketplace-catalog.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('Catalog unavailable');return r.json();}).then(data=>{
+    else (window.WEPReadMarketplaceCatalog?window.WEPReadMarketplaceCatalog(market+'data/marketplace-catalog.json'):fetch(market+'data/marketplace-catalog.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('Catalog unavailable');return r.json();})).then(data=>{
       const active=src=>{const index=src.headers?.indexOf('Active');if(index<0)return false;return (src.rows||[]).some(row=>{let value;if(src.encoding==='sparse'){for(let i=0;i<row.length;i+=2)if(row[i]===index){value=row[i+1];break;}}else value=row[index];return /^(T|TRUE|Y|YES|1)$/i.test(String(value||'').trim());});};
       applyProfiles((data.productSources||[]).filter(active).map(src=>({id:src.brand,name:src.brand})));
     }).catch(()=>{profiles=published.map(b=>({id:b.id,name:b.label}));loaded=true;refresh();});
