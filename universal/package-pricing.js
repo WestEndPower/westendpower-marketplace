@@ -183,8 +183,11 @@
   const columns=items.map(p=>({...p,name:clean(p.row.BatteryID||p.row.ChargerID||p.row.Model||p.row.Description||p.row.SKU)}));
   const first=columns[0],locations=first?c.inventoryStatus(f,{sku:first.row.SKU,marketplaceRow:first.row}).locations||[]:[];
   const heading=columns.map(p=>p.name+(p.qty>1?' × '+p.qty:'')).join(' — ');
+  const stocked=number(first?.row.QtyDanbury)>0||number(first?.row.QtyNewMilford)>0;
+  const requested=clean(opener?.dataset?.stockLabel),title=['Stocked','Check Availability'].includes(requested)?requested:stocked?'Stocked':'Check Availability';
+  const explanation=title==='Stocked'?'Confirm before visiting.':'Confirm availability and lead time.';
   const dialog=document.createElement('dialog');dialog.className='pp-dialog pp-inventory-dialog pp-selected-inventory';dialog.setAttribute('aria-label','Selected tool, battery and charger stock');
-  dialog.innerHTML='<h2>Check Stock / Availability</h2><p class="pp-stock-selection">'+esc(heading)+'</p><div class="pp-stock-locations">'+locations.map(l=>{
+  dialog.innerHTML='<h2>'+esc(title)+'</h2><p class="pp-stock-description">'+esc(explanation)+'</p><p class="pp-stock-selection">'+esc(heading)+'</p><div class="pp-stock-locations">'+locations.map(l=>{
    const body='Please confirm availability at '+l.name+' for '+(clean(f.brand)?clean(f.brand)+' equipment:':'the following selection:')+'\n'+columns.map(p=>(p.type==='tool'?'Tool':p.type==='battery'?'Battery':'Charger')+': '+p.name+' (SKU: '+p.row.SKU+'), quantity '+p.qty).join('\n');
    const phone=clean(l.phone).replace(/[^0-9+]/g,''),email=clean(l.email);
    const text=phone?'<a aria-label="Text '+esc(l.name)+' to confirm" href="sms:'+esc(phone)+((typeof navigator!=='undefined'&&/iPad|iPhone|iPod/i.test(navigator.userAgent))?'&':'?')+'body='+esc(encodeURIComponent(body))+'">Text to Confirm</a>':'';

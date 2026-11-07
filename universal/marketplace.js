@@ -714,11 +714,13 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
     const description=names.length>1?names.slice(0,-1).join(', ')+' and '+names[names.length-1]:names[0]||'';
     return (clean(unit.variant.model)||clean(f.model))+(description?' with '+description:'');
   }
-  function stockHeaderMarkup(f){
+  function stockHeaderMarkup(f,variant){
     const choices=stockChoices(f),stock=selectedStock(f);
     const action=choices.length||stock?'data-stock-toggle="'+esc(f.key)+'"':'data-pp-inventory';
-    const label=stock?'Build / Order':choices.length?'In-Stock ('+choices.length+')':'Check Stock';
-    return '<button type="button" '+action+' style="margin-left:auto;padding:5px 9px;border:1px solid #9ebda7;border-radius:5px;background:#fff;color:#155d2d;font-size:12px;font-weight:800;cursor:pointer">'+label+'</button>';
+    const row=(variant||selectedPriceVariant(f)).marketplaceRow||{};
+    const stocked=num(row.QtyDanbury)>0||num(row.QtyNewMilford)>0;
+    const label=stock?'Build / Order':choices.length?'In-Stock ('+choices.length+')':stocked?'Stocked':'Check Availability';
+    return '<button type="button" '+action+' data-stock-label="'+esc(label)+'" style="margin-left:auto;padding:5px 9px;border:1px solid #9ebda7;border-radius:5px;background:#fff;color:#155d2d;font-size:12px;font-weight:800;cursor:pointer">'+label+'</button>';
   }
   function stockUnitMarkup(f){
     const unit=selectedStock(f);if(!unit)return '';

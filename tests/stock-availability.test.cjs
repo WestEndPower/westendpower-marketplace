@@ -16,9 +16,13 @@ for(const file of ['universal/marketplace.js','shop-by-product.html','shop-by-br
   state.availability=new Set(['Normally In Stock']);assert.equal(box.matches({brand:'STIHL',specs:{},variants:[{excluded:true,marketplaceRow:{QtyDanbury:1}},{marketplaceRow:{QtyDanbury:0,QtyNewMilford:0}}]}),false);
  });
  test(file+': card header always offers stock checking and counts single serialized units',()=>{
-  const box={stockChoices:f=>f.units||[],selectedStock:f=>f.selected||null,esc:v=>String(v).replace(/"/g,'&quot;')};
+  const box={num:v=>Number(v)||0,selectedPriceVariant:f=>f.variant||{marketplaceRow:{}},stockChoices:f=>f.units||[],selectedStock:f=>f.selected||null,esc:v=>String(v).replace(/"/g,'&quot;')};
   vm.runInNewContext(section(source,'  function stockHeaderMarkup(','  function stockUnitMarkup(')+';this.header=stockHeaderMarkup;',box);
-  assert.match(box.header({key:'A'}),/data-pp-inventory[^>]*>Check Stock<\/button>/);
+  assert.match(box.header({key:'A'}),/data-pp-inventory[^>]*>Check Availability<\/button>/);
+  assert.match(box.header({key:'A',variant:{marketplaceRow:{QtyDanbury:1}}}),/data-stock-label="Stocked"[^>]*>Stocked<\/button>/);
+  assert.match(box.header({key:'A',variant:{marketplaceRow:{QtyNewMilford:2}}}),/>Stocked<\/button>/);
+  assert.match(box.header({key:'A',variant:{marketplaceRow:{QtyDanbury:0,QtyNewMilford:0}},variants:[{marketplaceRow:{QtyDanbury:3}}]}),/>Check Availability<\/button>/);
+  assert.match(box.header({key:'A'}, {marketplaceRow:{QtyDanbury:2}}),/>Stocked<\/button>/);
   assert.match(box.header({key:'A',units:[{}]}),/data-stock-toggle="A"[^>]*>In-Stock \(1\)<\/button>/);
   assert.match(box.header({key:'A',units:[{},{},{}]}),/>In-Stock \(3\)<\/button>/);
   assert.match(box.header({key:'A',units:[{}],selected:{}}),/>Build \/ Order<\/button>/);
