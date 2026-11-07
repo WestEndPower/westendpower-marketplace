@@ -2315,8 +2315,19 @@ function sortOrderValue(v){const s=String(v??'').trim(),n=Number(s);return s!=='
   }
   window.addEventListener('resize',fitPriceDescriptions);
 
+  function syncGeneratedComparison(){
+    if(!window.WEPGeneratedCatalog)return;
+    const items=DATA.filtered.map(f=>{
+      const v=selectedPriceVariant(f),specs=v.specs||f.specs||{};
+      return {brand:clean(f.brand),sku:clean(v.sku),name:clean(v.description)||clean(f.model),power:clean(f.power),specs:Object.entries(specs).filter(([label,value])=>clean(value)&&!/(?:cost|profit|margin|dealer.?fee|password|secret|customer|serial|email)/i.test(label)).map(([label,value])=>({label:clean(label),value:clean(value)}))};
+    });
+    window.WEPFilteredComparison={items,mode:state.shopMode};
+    window.WEPGeneratedComparison?.update(items,state.shopMode);
+  }
+
   let cardRenderVersion=0;
   function renderCards(){
+    syncGeneratedComparison();
     const version=++cardRenderVersion;
     financeCardObserver?.disconnect();
     if(!marketplaceHasSelection()){
