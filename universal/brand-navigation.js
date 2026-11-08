@@ -53,7 +53,8 @@
         if(!anchor&&!(trigger.matches('summary')&&trigger.closest('#wep-home-brands')))return;
         event.preventDefault();event.stopImmediatePropagation();controller.mode=true;render(controller);
       },true);
-      if(location.pathname.endsWith('/shop-by-brand.html')){controller.mode=true;render(controller);}
+      // Published category pages retain the manufacturer menus used to reach them.
+      if(location.pathname.endsWith('/shop-by-brand.html')||document.getElementById('wep-generated-page')){controller.mode=true;render(controller);}
     });
     if(!controllers.length)return;
     if(Array.isArray(window.WESTEND_PUBLISHED_BRANDS))applyProfiles(window.WESTEND_PUBLISHED_BRANDS);
