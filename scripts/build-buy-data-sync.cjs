@@ -2,7 +2,7 @@
 'use strict';
 const fs=require('fs'),path=require('path');
 const names=['batteries','chargers','compatibility-runtime','attachments','accessories','parts','packages','battery-requirements'];
-function prepare(brand,sourceFile,root,{parse,encode,isPrivate}){
+function prepare(brand,sourceFile,root,{parse,encode,isPrivate,deferComponentImages=false}){
  if(!['stihl','toro','yanmar','honda','billygoat','redmax','greenworks','mitm'].includes(brand))throw Error('Unknown Build & Buy brand');
  if(/configuratorprivate/i.test(sourceFile))throw Error('Private export path rejected');
  const jobs=[];
@@ -10,7 +10,12 @@ function prepare(brand,sourceFile,root,{parse,encode,isPrivate}){
   const parsed=parse(fs.readFileSync(source,'utf8')),headers=parsed.headers.filter(h=>!isPrivate(h)&&(name!=='packages'||['ParentSKU','ToolSKU','BaseToolSKU','Description','Active','DeliveryGroup','SortOrder'].includes(h)||/^(Battery|Charger|Attachment|Accessory|Part)(SKU|Qty)\d+$/.test(h)));const id=name==='compatibility-runtime'?'ToolSKU':name==='packages'?'ParentSKU':name==='battery-requirements'?'ToolSKU':'SKU';
   if(!headers.includes(id))throw Error(name+' export missing '+id);
   const rows=[];for(const row of parsed.rows){const sku=String(row[id]||'').trim();if(sku.toUpperCase()==='STOP')break;if(!sku||['REFERENCE_ONLY','0000 000 0000'].includes(sku.toUpperCase()))continue;if(row.BrandID&&String(row.BrandID).trim().toLowerCase()!==brand)throw Error('Wrong brand in '+name+' export');rows.push(row);}
-  const file=path.join(root,'brands',brand,'data',name+'.csv'),before=fs.existsSync(file)?fs.readFileSync(file,'utf8'):null,after=encode(headers,rows);
+  const file=path.join(root,'brands',brand,'data',name+'.csv'),before=fs.existsSync(file)?fs.readFileSync(file,'utf8'):null;
+  if(deferComponentImages&&['attachments','accessories','parts'].includes(name)&&headers.includes('ImageURL')){
+   jobs.push({file,before,headers,rows,brand,name});
+   continue;
+  }
+  const after=encode(headers,rows);
   if(before!==after)jobs.push({file,before,after,brand,name});
  }
  return jobs;

@@ -91,7 +91,7 @@ function copyBillyGoatImages(rows,sourceFile,root,directory){
   }catch(error){for(const job of journal.reverse()){if(job.exists)fs.copyFileSync(job.saved,job.target);else fs.rmSync(job.target,{force:true});}throw error;}
   return jobs.length;
 }
-function syncBeforeBuildBuy({brand,sourceFile,root=path.resolve(__dirname,'..'),backupRoot}){
+function syncBeforeBuildBuy({brand,sourceFile,root=path.resolve(__dirname,'..'),backupRoot},componentImageRows){
   if(!BRANDS.includes(brand))throw Error('Unknown brand');
   if(path.basename(sourceFile).toLowerCase()!=='products.csv')throw Error('Only public products.csv exports are supported');
   if(/configuratorprivate/i.test(sourceFile))throw Error('Private export path rejected');
@@ -105,7 +105,7 @@ function syncBeforeBuildBuy({brand,sourceFile,root=path.resolve(__dirname,'..'),
 
   const directory=backupRoot||path.join(process.env.USERPROFILE||os.homedir(),'Desktop','Marketplace-Brand-Backups','automatic-product-sync');
   fs.mkdirSync(directory,{recursive:true});
-  const imageCount=brand==='mitm'?require('./mitm-marketplace-images.cjs').syncMitmImages(result.rows,sourceFile,root,directory):brand==='greenworks'?require('./greenworks-marketplace-images.cjs').syncGreenworksImages(result.rows,sourceFile,root,directory):brand==='honda'?require('./honda-marketplace-images.cjs').syncHondaImages(result.rows,sourceFile,root,directory):brand==='stihl'?require('./stihl-marketplace-images.cjs').syncStihlImages(result.rows,sourceFile,root,directory):(brand==='billygoat'?copyBillyGoatImages(result.rows,sourceFile,root,directory):0);
+  const imageCount=brand==='mitm'?require('./mitm-marketplace-images.cjs').syncMitmImages([...result.rows,...componentImageRows],sourceFile,root,directory):brand==='greenworks'?require('./greenworks-marketplace-images.cjs').syncGreenworksImages(result.rows,sourceFile,root,directory):brand==='honda'?require('./honda-marketplace-images.cjs').syncHondaImages(result.rows,sourceFile,root,directory):brand==='stihl'?require('./stihl-marketplace-images.cjs').syncStihlImages(result.rows,sourceFile,root,directory):(brand==='billygoat'?copyBillyGoatImages(result.rows,sourceFile,root,directory):0);
   const data=encode(result.headers,result.rows);
   if(data===old){
     const optionChanges=toroOptions?require('./toro-option-sync.cjs').apply(toroOptions,directory):0;
@@ -121,10 +121,12 @@ function syncBeforeBuildBuy({brand,sourceFile,root=path.resolve(__dirname,'..'),
 function sync(options){
  const root=options.root||path.resolve(__dirname,'..');
  const helper=require('./build-buy-data-sync.cjs');
- const jobs=helper.prepare(options.brand,options.sourceFile,root,{parse,encode,isPrivate});
- const result=syncBeforeBuildBuy(options);
+ const jobs=helper.prepare(options.brand,options.sourceFile,root,{parse,encode,isPrivate,deferComponentImages:options.brand==='mitm'});
+ const componentImageJobs=jobs.filter(job=>job.rows);
+ const result=syncBeforeBuildBuy(options,componentImageJobs.flatMap(job=>job.rows));
+ for(const job of componentImageJobs)job.after=encode(job.headers,job.rows);
  const backup=options.backupRoot||path.join(process.env.USERPROFILE||os.homedir(),'Desktop','Marketplace-Brand-Backups','automatic-product-sync',new Date().toISOString().replace(/[:.]/g,'-'));
- const dataChanges=helper.apply(jobs,backup);
+ const dataChanges=helper.apply(jobs.filter(job=>job.before!==job.after),backup);
  return {...result,changed:result.changed||dataChanges>0,buildBuyDataChanges:dataChanges};
 }
 module.exports={parse,encode,merge,sync,isPrivate};
